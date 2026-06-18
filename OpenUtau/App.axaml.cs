@@ -8,6 +8,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
 using OpenUtau.App.Views;
+using OpenUtau.App.Fonts;
 using OpenUtau.Colors;
 using Serilog;
 
@@ -18,6 +19,7 @@ namespace OpenUtau.App {
             AvaloniaXamlLoader.Load(this);
             InitializeCulture();
             InitializeTheme();
+            UiFontManager.Apply();
             Log.Information("Initialized application.");
         }
 
@@ -80,6 +82,7 @@ namespace OpenUtau.App {
             if (languages.TryGetValue(language, out var res1)) {
                 Current.Resources.MergedDictionaries.Add(res1);
             }
+            UiFontManager.Apply();
         }
 
         static void InitializeTheme() {

@@ -70,7 +70,7 @@
     </Setter>
   </Style>
   <Style Selector="ListBox.toolbar:not(.toolbarStrip)">
-    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.12}"/>
     <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}" />
   </Style>
 
@@ -419,7 +419,7 @@
 
   <Style Selector="RadioButton">
     <Setter Property="Padding" Value="0"/>
-    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.12}"/>
     <Setter Property="Template">
       <ControlTemplate TargetType="RadioButton">
         <StackPanel Orientation="Horizontal">
@@ -641,14 +641,14 @@
   </Style>
   <Style Selector="Button.sideToolbarAction TextBlock.sideToolbarGlyph">
     <Setter Property="Foreground" Value="{DynamicResource PianoRollSideIconOffBrush}" />
-    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.11}" />
     <Setter Property="FontWeight" Value="Bold" />
     <Setter Property="HorizontalAlignment" Value="Center" />
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
   <Style Selector="Button.sideToolbarAction TextBlock.sideToolbarGlyphCompact">
     <Setter Property="Foreground" Value="{DynamicResource PianoRollSideIconOffBrush}" />
-    <Setter Property="FontSize" Value="10" />
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.10}" />
     <Setter Property="FontWeight" Value="Bold" />
     <Setter Property="HorizontalAlignment" Value="Center" />
     <Setter Property="VerticalAlignment" Value="Center" />
@@ -700,7 +700,7 @@
   </Style>
   <Style Selector="ToggleButton.sideToolbarToggle TextBlock.sideToolbarGlyph">
     <Setter Property="Foreground" Value="{DynamicResource PianoRollSideIconOffBrush}" />
-    <Setter Property="FontSize" Value="15" />
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.15}" />
     <Setter Property="FontWeight" Value="Bold" />
     <Setter Property="HorizontalAlignment" Value="Center" />
     <Setter Property="VerticalAlignment" Value="Center" />
@@ -726,11 +726,11 @@
   </Style>
   <Style Selector="ToggleButton.sideToolbarToggle TextBlock.livePitchLabel">
     <Setter Property="Margin" Value="0" />
-    <Setter Property="FontSize" Value="8.5" />
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.8.5}" />
     <Setter Property="TextWrapping" Value="NoWrap" />
   </Style>
   <Style Selector="ToggleButton.sideToolbarToggle TextBlock.livePitchFastLabel">
-    <Setter Property="FontSize" Value="7.5" />
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.7.5}" />
   </Style>
   <Style Selector="ToggleButton.sideToolbarToggle:checked.tipsToggle TextBlock.sideToolbarGlyph">
     <Setter Property="Foreground" Value="{DynamicResource PianoRollSideAccentTipsBrush}" />

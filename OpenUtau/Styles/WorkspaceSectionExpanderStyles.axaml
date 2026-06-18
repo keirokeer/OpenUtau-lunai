@@ -293,7 +293,7 @@
     <Setter Property="HorizontalAlignment" Value="Stretch"/>
     <Setter Property="VerticalAlignment" Value="Center"/>
     <Setter Property="VerticalContentAlignment" Value="Center"/>
-    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.12}"/>
     <Setter Property="Background" Value="{DynamicResource WorkspaceCanvasBrush}"/>
     <Setter Property="BorderBrush" Value="{DynamicResource MutedIconBrush}"/>
     <Setter Property="BorderThickness" Value="1"/>

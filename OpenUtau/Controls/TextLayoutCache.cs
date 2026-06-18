@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Avalonia.Media;
 using Avalonia.Media.TextFormatting;
+using OpenUtau.App.Fonts;
 
 namespace OpenUtau.App.Controls {
     static class TextLayoutCache {
@@ -13,12 +14,13 @@ namespace OpenUtau.App.Controls {
         }
 
         public static TextLayout Get(string text, IBrush brush, double fontSize, bool bold = false) {
+            fontSize = UiFontManager.ScaleFontSize(fontSize);
             var key = Tuple.Create(text, brush, fontSize, bold);
             if (!cache.TryGetValue(key, out var textLayout)) {
                 var fontWeight = bold ? FontWeight.Bold : FontWeight.Normal;
                 textLayout = new TextLayout(
                     text,
-                    new Typeface(FontFamily.Default, weight: fontWeight),
+                    new Typeface(UiFontManager.GetUiFontFamily(), weight: fontWeight),
                     fontSize,
                     brush,
                     TextAlignment.Left,

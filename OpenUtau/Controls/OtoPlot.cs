@@ -9,6 +9,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Media.TextFormatting;
+using OpenUtau.App.Fonts;
 using NWaves.Audio;
 using NWaves.FeatureExtractors;
 using NWaves.FeatureExtractors.Options;
@@ -94,11 +95,11 @@ namespace OpenUtau.App.Controls {
             ClipToBounds = true;
             ovlText = new TextLayout(
                 "OVL",
-                new Typeface(FontFamily.Default, weight: FontWeight.Normal),
+                new Typeface(UiFontManager.GetUiFontFamily(), weight: FontWeight.Normal),
                 12, Brushes.Lime, TextAlignment.Left, TextWrapping.NoWrap);
             preText = new TextLayout(
                 "PRE",
-                new Typeface(FontFamily.Default, weight: FontWeight.Normal),
+                new Typeface(UiFontManager.GetUiFontFamily(), weight: FontWeight.Normal),
                 12, Brushes.Red, TextAlignment.Left, TextWrapping.NoWrap);
 
             PointerPressed += OtoPlot_PointerPressed;

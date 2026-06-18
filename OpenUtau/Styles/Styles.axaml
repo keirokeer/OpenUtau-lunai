@@ -30,7 +30,7 @@
   </Style>
   <Style Selector="MenuItem">
     <Setter Property="Background" Value="Transparent"/>
-    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.12}"/>
     <Setter Property="Height" Value="24"/>
     <Setter Property="Padding" Value="8,2,8,2"/>
   </Style>
@@ -67,7 +67,7 @@
 
   <Style Selector="ContextMenu MenuItem">
     <Setter Property="Background" Value="Transparent"/>
-    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.12}"/>
     <Setter Property="Padding" Value="4,2,4,2"/>
   </Style>
 
@@ -88,10 +88,10 @@
   </Style>
 
   <Style Selector="TextBlock">
-    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.12}"/>
   </Style>
   <Style Selector="Label">
-    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.12}"/>
   </Style>
   <Style Selector="TextBox">
     <Setter Property="CornerRadius" Value="6"/>
@@ -99,7 +99,7 @@
     <Setter Property="Height" Value="20"/>
     <Setter Property="Padding" Value="4,1"/>
     <Setter Property="Margin" Value="0,0,0,4"/>
-    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.12}"/>
     <Setter Property="VerticalAlignment" Value="Top"/>
     <Setter Property="SelectionBrush" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
     <Setter Property="SelectionForegroundBrush" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
@@ -112,7 +112,7 @@
     <Setter Property="CornerRadius" Value="6"/>
     <Setter Property="BorderThickness" Value="0"/>
     <Setter Property="BorderBrush" Value="Transparent"/>
-    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.12}"/>
     <Setter Property="Height" Value="24"/>
     <Setter Property="MinHeight" Value="24"/>
     <Setter Property="Margin" Value="0"/>
@@ -176,7 +176,7 @@
   <Style Selector="Button.clear">
     <Setter Property="CornerRadius" Value="6"/>
     <Setter Property="BorderThickness" Value="0"/>
-    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.12}"/>
     <Setter Property="Height" Value="20"/>
     <Setter Property="MinHeight" Value="0"/>
     <Setter Property="Margin" Value="0,4"/>
@@ -218,7 +218,7 @@
   <Style Selector="ToggleButton.normal">
     <Setter Property="CornerRadius" Value="6"/>
     <Setter Property="BorderThickness" Value="0"/>
-    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.12}"/>
     <Setter Property="Height" Value="20"/>
     <Setter Property="Margin" Value="0,4"/>
     <Setter Property="Padding" Value="4,0,4,2"/>
@@ -247,7 +247,7 @@
     <Setter Property="Foreground" Value="{DynamicResource ToolTipForegroundBrush}"/>
     <Setter Property="CornerRadius" Value="6"/>
     <Setter Property="BorderThickness" Value="0"/>
-    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.12}"/>
     <Setter Property="Height" Value="20"/>
     <Setter Property="Margin" Value="0,4"/>
     <Setter Property="Padding" Value="4,0,4,2"/>
@@ -295,7 +295,7 @@
   </Style>
   <Style Selector="ToggleButton.toolbar TextBlock.toolbarGlyphText">
     <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
-    <Setter Property="FontSize" Value="15" />
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.15}" />
   </Style>
   <Style Selector="ToggleButton.toolbar:checked TextBlock.toolbarGlyphText">
     <Setter Property="Foreground" Value="{DynamicResource SystemControlBackgroundAltHighBrush}" />
@@ -306,7 +306,7 @@
 
   <Style Selector="ToggleButton.switch">
     <Setter Property="CornerRadius" Value="6"/>
-    <Setter Property="FontSize" Value="13"/>
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.13}"/>
     <Setter Property="Padding" Value="6,2"/>
     <Setter Property="BorderThickness" Value="0"/>
   </Style>
@@ -317,14 +317,14 @@
 
   <Style Selector="ComboBox">
     <Setter Property="Background" Value="{DynamicResource SystemRegionBrush}"/>
-    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.12}"/>
     <Setter Property="MinHeight" Value="20"/>
     <Setter Property="Height" Value="20"/>
     <Setter Property="Margin" Value="0,4"/>
     <Setter Property="Padding" Value="4,0,0,2"/>
   </Style>
   <Style Selector="ComboBoxItem">
-    <Setter Property="FontSize" Value="12"/>
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.12}"/>
     <Setter Property="MinHeight" Value="20"/>
     <Setter Property="Height" Value="20"/>
     <Setter Property="Margin" Value="0"/>
@@ -373,11 +373,11 @@
   </Style>
 
   <Style Selector="DataGridColumnHeader">
-    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.12}" />
     <Setter Property="MinHeight" Value="20" />
   </Style>
   <Style Selector="DataGridCell">
-    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.12}" />
     <Setter Property="MinHeight" Value="20" />
   </Style>
   <Style Selector="DataGridCell > TextBox">
@@ -473,12 +473,12 @@
     <Setter Property="ClipToBounds" Value="False" />
   </Style>
   <Style Selector="TextBlock.workspacePanelTitle">
-    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.12}" />
     <Setter Property="Opacity" Value="0.55" />
     <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
   </Style>
   <Style Selector="TextBlock.notePropsPanelTitle">
-    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.12}" />
     <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
@@ -527,7 +527,7 @@
     <Setter Property="HorizontalContentAlignment" Value="Center" />
     <Setter Property="Padding" Value="12,10" />
     <Setter Property="MinHeight" Value="40" />
-    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.12}" />
   </Style>
   <Style Selector="Button.welcomeActionButton">
     <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
@@ -557,7 +557,7 @@
     <Setter Property="Padding" Value="6,2" />
     <Setter Property="Height" Value="24" />
     <Setter Property="MinHeight" Value="24" />
-    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.12}" />
     <Setter Property="Background" Value="{DynamicResource TransportToolbarOffHoverBrush}" />
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="CornerRadius" Value="6" />
@@ -592,7 +592,7 @@
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
   <Style Selector="Border.singerHubCompanyChip TextBlock">
-    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.12}" />
     <Setter Property="VerticalAlignment" Value="Center" />
     <Setter Property="HorizontalAlignment" Value="Center" />
   </Style>
@@ -626,11 +626,11 @@
     <Setter Property="Background" Value="{DynamicResource AppTopBarTransportHoverBrush}" />
   </Style>
   <Style Selector="TextBlock.welcomeActionTitle">
-    <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.13}" />
     <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
   </Style>
   <Style Selector="TextBlock.welcomeActionDescription">
-    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.11}" />
     <Setter Property="Opacity" Value="0.55" />
     <Setter Property="TextWrapping" Value="Wrap" />
   </Style>
@@ -654,11 +654,11 @@
     <Setter Property="Background" Value="{DynamicResource PianoRollSideHoverBackgroundBrush}" />
   </Style>
   <Style Selector="TextBlock.welcomeFileName">
-    <Setter Property="FontSize" Value="13" />
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.13}" />
     <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
   </Style>
   <Style Selector="TextBlock.welcomeFilePath">
-    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.11}" />
     <Setter Property="Opacity" Value="0.55" />
     <Setter Property="TextWrapping" Value="Wrap" />
   </Style>
@@ -679,7 +679,7 @@
     <Setter Property="Background" Value="Transparent" />
   </Style>
   <Style Selector="Border.appTopBar Menu > MenuItem">
-    <Setter Property="FontSize" Value="12" />
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.12}" />
     <Setter Property="Height" Value="32" />
     <Setter Property="MinHeight" Value="32" />
     <Setter Property="Padding" Value="8,0,8,0" />
@@ -707,7 +707,7 @@
     <Setter Property="Background" Value="Transparent" />
   </Style>
   <Style Selector="TextBlock.appTopBarLabel">
-    <Setter Property="FontSize" Value="15" />
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.15}" />
     <Setter Property="FontFamily" Value="{DynamicResource ui.fontfamily}" />
     <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
     <Setter Property="VerticalAlignment" Value="Center" />
@@ -952,7 +952,7 @@
   </Style>
   <Style Selector="Border.transportToolbarStrip TextBlock">
     <Setter Property="Padding" Value="6,0,0,1"/>
-    <Setter Property="FontSize" Value="11"/>
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.11}"/>
     <Setter Property="FontFamily" Value="Monospace"/>
     <Setter Property="VerticalAlignment" Value="Center"/>
     <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -1166,7 +1166,7 @@
   </Style>
   <Style Selector="Border.pianoRollTopBar Button.topBarTextChip TextBlock">
     <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
-    <Setter Property="FontSize" Value="10" />
+    <Setter Property="FontSize" Value="{DynamicResource ui.fontsize.10}" />
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
 

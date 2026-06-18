@@ -262,6 +262,19 @@
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
+            <Separator Classes="workspacePanelSectionDivider" Margin="0,6,0,4"/>
+            <TextBlock Classes="themePickerSectionLabel"
+                       Text="{DynamicResource prefs.appearance.section.typography}"/>
+            <TextBlock Text="{DynamicResource prefs.appearance.font.label}" FontWeight="SemiBold"/>
+            <c:WorkspacePanelComboBox Classes="workspacePanelCombo" HorizontalAlignment="Stretch"
+                                      ItemsSource="{Binding UiFontPresets}"
+                                      SelectedItem="{Binding SelectedUiFontPreset}">
+              <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:UiFontPresetViewModel">
+                  <TextBlock Text="{Binding DisplayName}" FontFamily="{Binding PreviewFontFamily}"/>
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </c:WorkspacePanelComboBox>
           </StackPanel>
         </Expander>
         <Separator Classes="workspacePanelSectionDivider"/>

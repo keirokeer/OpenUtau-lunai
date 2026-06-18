@@ -140,6 +140,9 @@ namespace OpenUtau.Core.Util {
                     Default.AppearancePanelWidth = Math.Clamp(Default.AppearancePanelWidth, 300, 450);
                     Default.ThemeEditorPanelWidth = Math.Clamp(Default.ThemeEditorPanelWidth, 300, 450);
                     Default.NotePropertiesPanelWidth = Math.Clamp(Default.NotePropertiesPanelWidth, 350, 450);
+                    if (string.IsNullOrWhiteSpace(Default.UiFontPreset)) {
+                        Default.UiFontPreset = "system";
+                    }
                     if (!Renderers.getRendererOptions().Contains(Default.DefaultRenderer)) Default.DefaultRenderer = string.Empty;
                     if (!Onnx.getRunnerOptions().Contains(Default.OnnxRunner)) Default.OnnxRunner = string.Empty;
                     if (Default.Theme != null) {
@@ -185,6 +188,7 @@ namespace OpenUtau.Core.Util {
             public int MetronomeHighFrequency = 2200;
             public int MetronomeLowFrequency = 1320;
             public string ThemeName = "Light";
+            public string UiFontPreset = "system";
             public bool PenPlusDefault = false;
             public int DegreeStyle;
             public bool UseTrackColor = true;

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Text.RegularExpressions;
 using OpenUtau.App;
+using OpenUtau.App.Fonts;
 using OpenUtau.Audio;
 using OpenUtau.Classic;
 using OpenUtau.Core;
@@ -145,6 +146,8 @@ namespace OpenUtau.App.ViewModels {
         public ObservableCollection<ThemePickerItemViewModel> BuiltInThemePickerItems { get; } = new();
         public ObservableCollection<ThemePickerItemViewModel> BuiltInCustomThemePickerItems { get; } = new();
         public ObservableCollection<ThemePickerItemViewModel> CustomThemePickerItems { get; } = new();
+        public ObservableCollection<UiFontPresetViewModel> UiFontPresets { get; } = new();
+        [Reactive] public UiFontPresetViewModel? SelectedUiFontPreset { get; set; }
         public bool IsThemeEditorOpen => Views.ThemeEditorWindow.IsOpen || ThemeEditorDockState.IsOpen;
 
         // UTAU
@@ -550,6 +553,10 @@ namespace OpenUtau.App.ViewModels {
             ThemeName = Preferences.Default.ThemeName;
             ThemeEditable = !BuiltInThemeLoader.IsBuiltInTheme(ThemeName);
             RefreshThemePickerItems();
+            RefreshUiFontPresets();
+            SelectedUiFontPreset = UiFontPresets.FirstOrDefault(preset =>
+                string.Equals(preset.Id, UiFontCatalog.NormalizePresetId(Preferences.Default.UiFontPreset), StringComparison.OrdinalIgnoreCase))
+                ?? UiFontPresets.FirstOrDefault();
             PenPlusDefault = Preferences.Default.PenPlusDefault;
             DegreeStyle = Preferences.Default.DegreeStyle;
             UseTrackColor = Preferences.Default.UseTrackColor;
@@ -656,6 +663,21 @@ namespace OpenUtau.App.ViewModels {
                 });
             this.WhenAnyValue(vm => vm.ThemeName)
                 .Subscribe(_ => SyncThemePickerSelection());
+            this.WhenAnyValue(vm => vm.SelectedUiFontPreset)
+                .WhereNotNull()
+                .Skip(1)
+                .Subscribe(preset => {
+                    if (!UiFontCatalog.IsValidPreset(preset.Id)) {
+                        return;
+                    }
+                    var normalizedId = UiFontCatalog.NormalizePresetId(preset.Id);
+                    if (string.Equals(Preferences.Default.UiFontPreset, normalizedId, StringComparison.OrdinalIgnoreCase)) {
+                        return;
+                    }
+                    Preferences.Default.UiFontPreset = normalizedId;
+                    Preferences.Save();
+                    UiFontManager.Apply(normalizedId);
+                });
             this.WhenAnyValue(vm => vm.ThemeName)
                 .Skip(1)
                 .ObserveOn(RxApp.MainThreadScheduler)
@@ -933,6 +955,13 @@ namespace OpenUtau.App.ViewModels {
         public void RefreshThemes() {
             this.RaisePropertyChanged(nameof(ThemeItems));
             RefreshThemePickerItems();
+        }
+
+        void RefreshUiFontPresets() {
+            UiFontPresets.Clear();
+            foreach (var preset in UiFontCatalog.Presets) {
+                UiFontPresets.Add(UiFontPresetViewModel.FromPreset(preset));
+            }
         }
 
         void RefreshThemePickerItems() {

@@ -658,6 +658,12 @@ OpenUtau стремится стать средой редактирования
   <system:String x:Key="prefs.appearance.theme.name.gray">Серая</system:String>
   <system:String x:Key="prefs.appearance.theme.name.cold">Холодная</system:String>
   <system:String x:Key="prefs.appearance.theme.name.warm">Теплая</system:String>
+  <system:String x:Key="prefs.appearance.section.typography">Шрифты</system:String>
+  <system:String x:Key="prefs.appearance.font.label">Шрифт интерфейса</system:String>
+  <system:String x:Key="prefs.appearance.font.classic">Классический</system:String>
+  <system:String x:Key="prefs.appearance.font.classic.description">Исходный шрифт программы (ОС / язык интерфейса).</system:String>
+  <system:String x:Key="prefs.appearance.font.inter">Inter</system:String>
+  <system:String x:Key="prefs.appearance.font.inter.description">Встроенный Inter, чуть меньше — как у классического кегля.</system:String>
   <system:String x:Key="prefs.appearance.section.pianoroll">Пианоролл</system:String>
   <system:String x:Key="prefs.appearance.section.grid">Сетка и прокрутка</system:String>
   <system:String x:Key="prefs.appearance.section.expressions">Параметры и фонемы</system:String>
