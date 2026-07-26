@@ -19,11 +19,25 @@ on:
         default: true
         description: "Draft"
 
+# DEPRECATED: Windows packaging here still uses NSIS + NetSparkle appcasts.
+# The app now uses Velopack (see .github/workflows/release-lunai.yml).
+# Do not publish releases from this workflow — users would get an installer
+# that cannot update via Help → Check for Update.
 env:
   release-name: ${{ inputs.version }}${{ inputs.beta && ' Beta' || '' }}
 
 jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Refuse accidental NSIS/NetSparkle release
+        run: |
+          echo "::error::This workflow is deprecated for releases. Use 'Release Build New' (release-lunai.yml) which packs Velopack Setup + update feeds."
+          echo "build.yml still contains legacy NSIS/appcast steps and must not ship Windows installers after the Velopack migration."
+          exit 1
+
   build:
+    if: false # kept for history; enable only after porting to Velopack like release-lunai.yml
     runs-on: ${{ matrix.arch.runs-on }}
 
     strategy:

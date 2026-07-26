@@ -824,7 +824,10 @@ OpenUtau стремится стать средой редактирования
   <!--<system:String x:Key="updater.github">GitHub</system:String>-->
   <system:String x:Key="updater.status.available">Доступно обновление {0}!</system:String>
   <system:String x:Key="updater.status.checking">Проверка наличия обновлений...</system:String>
+  <system:String x:Key="updater.status.installing">Установка обновления...</system:String>
+  <system:String x:Key="updater.status.manual">Автообновления на этой ОС пока нет. Скачайте сборку на GitHub Releases.</system:String>
   <system:String x:Key="updater.status.notavailable">Установлена актуальная версия</system:String>
+  <system:String x:Key="updater.status.notinstalled">Установите Windows Setup с GitHub Releases один раз — дальше обновления будут из приложения.</system:String>
   <system:String x:Key="updater.status.unknown">Не удалось проверить наличие обновлений</system:String>
   <system:String x:Key="updater.update">Обновить</system:String>
 

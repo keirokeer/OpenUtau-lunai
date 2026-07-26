@@ -49,13 +49,15 @@ namespace OpenUtau.Core {
                 HomePathIsAscii = true;
             } else {
                 string exePath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
-                IsInstalled = File.Exists(Path.Combine(exePath, "installed.txt"));
+                // NSIS marker and/or Velopack layout (%LocalAppData%\OpenUtau.Lunai\current + Update.exe).
+                IsInstalled = IsWindowsInstalledLayout(exePath);
                 string dataHome = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
                 LegacyDataPath = Path.Combine(dataHome, LegacyDataFolderName);
                 if (!IsInstalled) {
                     DataPath = exePath;
                     ShareLegacySingers = false;
                 } else {
+                    // Never store prefs under Velopack's current\ (replaced on every update).
                     DataPath = Path.Combine(dataHome, AppDataFolderName);
                     ShareLegacySingers = true;
                 }
@@ -81,6 +83,23 @@ namespace OpenUtau.Core {
         public bool IsInstalled { get; private set; }
         /// <summary>When true, singers load from LegacyDataPath instead of Lunai DataPath.</summary>
         public bool ShareLegacySingers { get; private set; }
+
+        /// <summary>
+        /// True for NSIS installs (installed.txt) and Velopack installs (Update.exe next to current\).
+        /// </summary>
+        public static bool IsWindowsInstalledLayout(string? exePath) {
+            if (string.IsNullOrEmpty(exePath)) {
+                return false;
+            }
+            if (File.Exists(Path.Combine(exePath, "installed.txt"))) {
+                return true;
+            }
+            if (File.Exists(Path.Combine(exePath, "Update.exe"))) {
+                return true;
+            }
+            var parent = Directory.GetParent(exePath)?.FullName;
+            return parent != null && File.Exists(Path.Combine(parent, "Update.exe"));
+        }
 
         string SingersRoot => ShareLegacySingers ? LegacyDataPath : DataPath;
         public string SingersPathOld => Path.Combine(SingersRoot, "Content", "Singers");

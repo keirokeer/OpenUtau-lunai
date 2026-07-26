@@ -63,20 +63,6 @@ jobs:
         with:
           node-version: 20
 
-      # SourceForge mirror used by repolevedavaj/install-nsis often returns a corrupt file on windows-2025.
-      - name: Install NSIS
-        if: matrix.arch.os == 'win'
-        shell: pwsh
-        run: |
-          if (Test-Path 'C:\Program Files (x86)\NSIS\makensis.exe') {
-            Write-Host 'NSIS already present on runner image.'
-          } else {
-            choco install nsis --version=3.11.0 -y --no-progress
-          }
-          Add-Content $env:GITHUB_PATH 'C:\Program Files (x86)\NSIS\Bin'
-          Add-Content $env:GITHUB_PATH 'C:\Program Files (x86)\NSIS'
-          & 'C:\Program Files (x86)\NSIS\makensis.exe' /VERSION
-
       - name: Patch Version
         uses: justalemon/VersionPatcher@v0.8
         with:
@@ -114,34 +100,6 @@ jobs:
           tar -xf Microsoft.AI.DirectML.nupkg -C Microsoft.AI.DirectML
           copy /y Microsoft.AI.DirectML\bin\${{ matrix.arch.arch }}-win\DirectML.dll bin\${{ matrix.arch.name }}
 
-      - name: Download VC Redist (Windows)
-        if: matrix.arch.os == 'win'
-        shell: pwsh
-        run: |
-          $arch = '${{ matrix.arch.arch }}'
-          $url = "https://aka.ms/vs/17/release/vc_redist.$arch.exe"
-          $out = "vc_redist.$arch.exe"
-          $minBytes = switch ($arch) {
-            'x64'   { 20MB }
-            'x86'   { 10MB }
-            'arm64' { 10MB }
-            default { throw "Unknown architecture: $arch" }
-          }
-          for ($attempt = 1; $attempt -le 5; $attempt++) {
-            Write-Host "Downloading VC redist ($arch), attempt $attempt..."
-            Remove-Item $out -ErrorAction SilentlyContinue
-            curl.exe -L --fail --http1.1 --retry 3 --retry-all-errors --retry-delay 5 `
-              --connect-timeout 30 --max-time 600 -o $out $url
-            $size = (Get-Item $out).Length
-            if ($size -ge $minBytes) {
-              Write-Host "Downloaded $size bytes."
-              exit 0
-            }
-            Write-Host "Download incomplete ($size bytes, expected at least $minBytes), retrying..."
-            Start-Sleep -Seconds 5
-          }
-          throw "Failed to download VC redist for $arch after 5 attempts"
-
       # Linux specific
       - name: Set Linux executable permissions
         if: matrix.arch.os == 'linux'
@@ -159,13 +117,64 @@ jobs:
         run: |
           tar -czf OpenUtau-Lunai-${{ matrix.arch.name }}.tar.gz -C bin/${{ matrix.arch.name }} .
 
-      # Windows installer (AFTER DirectML is added)
-      - name: Create Windows Installer
+      # Windows Velopack installer + update packages
+      - name: Create Windows Velopack packages
         if: matrix.arch.os == 'win'
-        uses: joncloud/makensis-action@v5.0
-        with:
-          script-file: OpenUtau.nsi
-          arguments: "-DPRODUCT_VERSION=${{ inputs.version }} -DARCH=${{ matrix.arch.arch }}"
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $rid = '${{ matrix.arch.rid }}'
+          $arch = '${{ matrix.arch.arch }}'
+          $channel = if ('${{ inputs.beta }}' -eq 'true') { "$rid-beta" } else { $rid }
+          $vcredist = "vcredist143-$arch"
+          $version = '${{ inputs.version }}'
+          $outDir = "Releases/$rid"
+          New-Item -ItemType Directory -Force -Path $outDir | Out-Null
+
+          dotnet tool install -g vpk --version 1.2.0
+          $env:PATH = "$env:USERPROFILE\.dotnet\tools;$env:PATH"
+
+          # Pull previous releases for deltas (must not fail the job on first channel release).
+          $downloadArgs = @(
+            'download', 'github',
+            '--repoUrl', 'https://github.com/keirokeer/OpenUtau-lunai',
+            '--channel', $channel,
+            '--token', $env:GITHUB_TOKEN,
+            '--outputDir', $outDir
+          )
+          if ('${{ inputs.beta }}' -eq 'true') { $downloadArgs += '--pre' }
+          # Native tools can throw under $ErrorActionPreference=Stop on some pwsh versions.
+          $prevNative = $PSNativeCommandUseErrorActionPreference
+          $PSNativeCommandUseErrorActionPreference = $false
+          try {
+            & vpk @downloadArgs
+            if ($LASTEXITCODE -ne 0) {
+              Write-Host "vpk download skipped/failed (first release for channel?). Continuing with pack."
+            }
+          } finally {
+            $PSNativeCommandUseErrorActionPreference = $prevNative
+          }
+
+          & vpk pack `
+            --packId OpenUtau.Lunai `
+            --packVersion $version `
+            --packDir "bin/${{ matrix.arch.name }}" `
+            --mainExe OpenUtau-Lunai.exe `
+            --packTitle "OpenUtau Lunai" `
+            --icon "OpenUtau/Assets/open-utau.ico" `
+            --channel $channel `
+            --framework $vcredist `
+            --outputDir $outDir
+          if ($LASTEXITCODE -ne 0) { throw "vpk pack failed" }
+
+          Get-ChildItem $outDir | ForEach-Object { Write-Host "Velopack asset: $($_.Name)" }
+          $setup = Get-ChildItem $outDir -Filter '*Setup*.exe' | Select-Object -First 1
+          if (-not $setup) { throw "Velopack Setup.exe not found in $outDir" }
+          Copy-Item $setup.FullName "OpenUtau-Lunai-$rid-Setup.exe" -Force
+          # Stable download name used in release notes / migration from NSIS .exe
+          Copy-Item $setup.FullName "OpenUtau-Lunai-$rid.exe" -Force
 
       # macOS specific
       - name: Create macOS DMG
@@ -199,39 +208,22 @@ jobs:
           done
         if: ${{ matrix.arch.os == 'linux' }}
 
-      # Appcast generation
-      - name: Generate Appcast for Windows
-        if: inputs.release && matrix.arch.os == 'win'
-        shell: cmd
-        run: |
-          python appcast.py -v=${{ inputs.version }} -o=windows -r=${{ matrix.arch.name }} -f=OpenUtau-Lunai-${{ matrix.arch.name }}.zip
-          python appcast.py -v=${{ inputs.version }} -o=windows -r=${{ matrix.arch.name }}-installer -f=OpenUtau-Lunai-${{ matrix.arch.name }}.exe
-
-      - name: Generate Appcast for macOS
-        if: inputs.release && matrix.arch.os == 'osx'
-        run: |
-          python appcast.py -v=${{ inputs.version }} -o=macos -r=${{ matrix.arch.name }} -f=OpenUtau-Lunai-${{ matrix.arch.name }}.dmg
-
-      - name: Generate Appcast for Linux
-        if: inputs.release && matrix.arch.os == 'linux'
-        run: |
-          python appcast.py -v=${{ inputs.version }} -o=linux -r=${{ matrix.arch.name }} -f=OpenUtau-Lunai-${{ matrix.arch.name }}.zip
-
-      # Upload all artifacts
+      # Upload all artifacts (each matrix job uploads its own; softprops merges into the tag)
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: artifacts-${{ matrix.arch.name }}
           path: |
             OpenUtau-Lunai-${{ matrix.arch.name }}.exe
+            OpenUtau-Lunai-${{ matrix.arch.name }}-Setup.exe
             OpenUtau-Lunai-${{ matrix.arch.name }}.zip
             OpenUtau-Lunai-${{ matrix.arch.name }}.dmg
             OpenUtau-Lunai-${{ matrix.arch.name }}.tar.gz
             OpenUtau-Lunai-*.AppImage
             bin/${{ matrix.arch.name }}/*.AppImage
-            appcast.${{ matrix.arch.name }}*.xml
+            Releases/${{ matrix.arch.rid }}/*
 
-      # Create Release
+      # Create / update GitHub Release with this arch's files
       - name: Create GitHub Release
         if: inputs.release
         uses: softprops/action-gh-release@v2
@@ -241,32 +233,24 @@ jobs:
           prerelease: ${{ inputs.beta }}
           draft: ${{ inputs.draft }}
           files: |
-            OpenUtau-Lunai-win-x64.exe
-            OpenUtau-Lunai-win-x64.zip
-            OpenUtau-Lunai-win-x86.exe
-            OpenUtau-Lunai-win-x86.zip
-            OpenUtau-Lunai-win-arm64.exe
-            OpenUtau-Lunai-win-arm64.zip
-            OpenUtau-Lunai-osx-x64.dmg
-            OpenUtau-Lunai-osx-arm64.dmg
-            OpenUtau-Lunai-linux-x64.zip
-            OpenUtau-Lunai-linux-x64.tar.gz
-            OpenUtau-Lunai-linux-arm64.zip
-            OpenUtau-Lunai-linux-arm64.tar.gz
+            OpenUtau-Lunai-${{ matrix.arch.name }}.exe
+            OpenUtau-Lunai-${{ matrix.arch.name }}-Setup.exe
+            OpenUtau-Lunai-${{ matrix.arch.name }}.zip
+            OpenUtau-Lunai-${{ matrix.arch.name }}.dmg
+            OpenUtau-Lunai-${{ matrix.arch.name }}.tar.gz
             OpenUtau-Lunai-*.AppImage
-            bin/linux-x64/*.AppImage
-            bin/linux-arm64/*.AppImage
-            appcast.*.xml
+            bin/${{ matrix.arch.name }}/*.AppImage
+            Releases/${{ matrix.arch.rid }}/*
           body: |
             ### Download for your OS:
 
-            **Windows**  
-            [Installer (64-bit)](${{ env.REPO_URL }}/releases/download/${{ inputs.version }}/OpenUtau-Lunai-win-x64.exe)  
-            [Installer (32-bit)](${{ env.REPO_URL }}/releases/download/${{ inputs.version }}/OpenUtau-Lunai-win-x86.exe)  
-            [Installer (ARM64)](${{ env.REPO_URL }}/releases/download/${{ inputs.version }}/OpenUtau-Lunai-win-arm64.exe)  
-            [Portable ZIP (64-bit)](${{ env.REPO_URL }}/releases/download/${{ inputs.version }}/OpenUtau-Lunai-win-x64.zip)
-            [Portable ZIP (32-bit)](${{ env.REPO_URL }}/releases/download/${{ inputs.version }}/OpenUtau-Lunai-win-x86.zip)
-            [Portable ZIP (ARM64)](${{ env.REPO_URL }}/releases/download/${{ inputs.version }}/OpenUtau-Lunai-win-arm64.zip)
+            **Windows (Velopack — recommended)**  
+            [Setup 64-bit](${{ env.REPO_URL }}/releases/download/${{ inputs.version }}/OpenUtau-Lunai-win-x64-Setup.exe)  
+            [Setup 32-bit](${{ env.REPO_URL }}/releases/download/${{ inputs.version }}/OpenUtau-Lunai-win-x86-Setup.exe)  
+            [Setup ARM64](${{ env.REPO_URL }}/releases/download/${{ inputs.version }}/OpenUtau-Lunai-win-arm64-Setup.exe)  
+            [Portable ZIP (no in-app updates) 64-bit](${{ env.REPO_URL }}/releases/download/${{ inputs.version }}/OpenUtau-Lunai-win-x64.zip)
+
+            **Migrating from older NSIS installs:** install the new Setup once. After that, use Help → Check for Update inside the app.
 
             **macOS**  
             [Intel Mac (.dmg)](${{ env.REPO_URL }}/releases/download/${{ inputs.version }}/OpenUtau-Lunai-osx-x64.dmg)  
@@ -280,7 +264,8 @@ jobs:
             [ARM64 (.tar.gz)](${{ env.REPO_URL }}/releases/download/${{ inputs.version }}/OpenUtau-Lunai-linux-arm64.tar.gz)
 
             ### Notes
-            - Settings live in a Lunai-specific data folder (shared singers with stock OpenUtau when installed).
+            - Windows settings stay in Documents\OpenUtau-Lunai (not inside the app folder).
+            - macOS/Linux: download new builds from Releases for now (Velopack auto-update is Windows-first).
             - macOS users: If you see "This app is damaged", run:
               ```sh
               xattr -rc "/Applications/OpenUtau-Lunai.app"

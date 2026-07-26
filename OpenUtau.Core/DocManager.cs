@@ -74,9 +74,15 @@ namespace OpenUtau.Core {
         public void SearchAllPlugins() {
             const string kBuiltin = "OpenUtau.Plugin.Builtin.dll";
             var stopWatch = Stopwatch.StartNew();
+            LogPhonemizerApiSurface();
             var files = new List<string>();
             try {
-                files.Add(Path.Combine(Path.GetDirectoryName(AppContext.BaseDirectory), kBuiltin));
+                // AppContext.BaseDirectory already ends with a separator; do not GetDirectoryName
+                // (that can climb to the parent folder when the trailing slash is missing).
+                string builtinPath = Path.Combine(AppContext.BaseDirectory, kBuiltin);
+                if (File.Exists(builtinPath)) {
+                    files.Add(builtinPath);
+                }
                 Directory.CreateDirectory(PathManager.Inst.PluginsPath);
                 string oldBuiltin = Path.Combine(PathManager.Inst.PluginsPath, kBuiltin);
                 if (File.Exists(oldBuiltin)) {
@@ -89,11 +95,15 @@ namespace OpenUtau.Core {
             foreach (var file in files) {
                 Assembly assembly;
                 try {
+                    if (IsHostOrShadowAssembly(file)) {
+                        Log.Information($"Skipping host/shadow assembly {file}");
+                        continue;
+                    }
                     if (!LibraryLoader.IsManagedAssembly(file)) {
                         Log.Information($"Skipping {file}");
                         continue;
                     }
-                    assembly = Assembly.LoadFile(file);
+                    assembly = PluginLoadContext.LoadPlugin(file);
                     foreach (var type in assembly.GetExportedTypes()) {
                         if (!type.IsAbstract && type.IsSubclassOf(typeof(Phonemizer))) {
                             PhonemizerFactory.Get(type);
@@ -120,11 +130,40 @@ namespace OpenUtau.Core {
             stopWatch.Stop();
             Log.Information($"Search all plugins: {stopWatch.Elapsed}");
         }
+
+        static void LogPhonemizerApiSurface() {
+            try {
+                var coreAsm = typeof(Phonemizer).Assembly;
+                var toneShift = typeof(Phonemizer.PhonemeAttributes).GetField("toneShift");
+                Log.Information(
+                    "Phonemizer API: Core={CoreLocation} toneShift={ToneShiftType}",
+                    coreAsm.Location,
+                    toneShift?.FieldType.FullName ?? "(missing)");
+            } catch (Exception e) {
+                Log.Warning(e, "Failed to log phonemizer API surface.");
+            }
+        }
+
+        static bool IsHostOrShadowAssembly(string file) {
+            // Never load a second OpenUtau.Core (or other host assemblies) from Plugins or
+            // leftover nested install folders — field layout must match the running host.
+            string name = Path.GetFileName(file);
+            return name.Equals("OpenUtau.Core.dll", StringComparison.OrdinalIgnoreCase)
+                || name.Equals("OpenUtau.dll", StringComparison.OrdinalIgnoreCase)
+                || name.Equals("OpenUtau-Lunai.dll", StringComparison.OrdinalIgnoreCase);
+        }
+
         private void SearchPluginInternal(string path, List<string> result) {
             if (Directory.EnumerateFiles(path, "plugin.txt", SearchOption.TopDirectoryOnly).Any()) {
                 return;
             }
-            result.AddRange(Directory.EnumerateFiles(path, "*.dll", SearchOption.TopDirectoryOnly));
+            foreach (var file in Directory.EnumerateFiles(path, "*.dll", SearchOption.TopDirectoryOnly)) {
+                if (IsHostOrShadowAssembly(file)
+                    || Path.GetFileName(file).Equals("OpenUtau.Plugin.Builtin.dll", StringComparison.OrdinalIgnoreCase)) {
+                    continue;
+                }
+                result.Add(file);
+            }
             var directories = Directory.EnumerateDirectories(path, "*", SearchOption.TopDirectoryOnly);
             foreach (var directory in directories) {
                 SearchPluginInternal(directory, result);

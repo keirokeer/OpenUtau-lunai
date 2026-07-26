@@ -827,7 +827,10 @@ General
   <system:String x:Key="updater.github">GitHub</system:String>
   <system:String x:Key="updater.status.available">Update v{0} available!</system:String>
   <system:String x:Key="updater.status.checking">Checking for updates...</system:String>
+  <system:String x:Key="updater.status.installing">Installing update...</system:String>
+  <system:String x:Key="updater.status.manual">Automatic updates are not available on this OS yet. Open GitHub Releases to download.</system:String>
   <system:String x:Key="updater.status.notavailable">Up to date</system:String>
+  <system:String x:Key="updater.status.notinstalled">Install the Windows Setup from GitHub Releases once to enable in-app updates.</system:String>
   <system:String x:Key="updater.status.unknown">Unable to check update</system:String>
   <system:String x:Key="updater.update">Update</system:String>
 

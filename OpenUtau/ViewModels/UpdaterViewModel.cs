@@ -1,142 +1,130 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
+using System.Reflection;
 using System.Threading.Tasks;
 using Avalonia.Media;
-using NetSparkleUpdater;
-using NetSparkleUpdater.AppCastHandlers;
-using NetSparkleUpdater.Enums;
-using NetSparkleUpdater.Interfaces;
-using NetSparkleUpdater.SignatureVerifiers;
-using Newtonsoft.Json;
+using Avalonia.Threading;
 using OpenUtau.Core;
 using OpenUtau.Core.Util;
 using ReactiveUI.Fody.Helpers;
 using Serilog;
+using Velopack;
+using Velopack.Exceptions;
+using Velopack.Sources;
 
 namespace OpenUtau.App.ViewModels {
     public class UpdaterViewModel : ViewModelBase {
-        class GithubReleaseAsset {
-            public string name = string.Empty;
-            public string browser_download_url = string.Empty;
-        }
-        class GithubRelease {
-#pragma warning disable 0649
-            public string html_url = string.Empty;
-            public long id = long.MaxValue;
-            public bool draft;
-            public bool prerelease;
-            public string name = string.Empty;
-            public GithubReleaseAsset[] assets = new GithubReleaseAsset[0];
-#pragma warning restore 0649
-        }
         public const string LunaiRepository = "keirokeer/OpenUtau-lunai";
-        public const string LunaiReleasesApi = "https://api.github.com/repos/keirokeer/OpenUtau-lunai/releases";
         public const string LunaiReleasesUrl = "https://github.com/keirokeer/OpenUtau-lunai/releases";
         public const string LunaiRepoUrl = "https://github.com/keirokeer/OpenUtau-lunai";
         public const string LunaiDiscordInviteUrl = "https://discord.gg/GKSxrSd7mB";
         public const string LunaiSupportEmail = "lunaiproject@gmail.com";
+        public const string VelopackPackId = "OpenUtau.Lunai";
 
-        public string AppVersion => $"v{System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version}";
+        public string AppVersion => $"v{Assembly.GetEntryAssembly()?.GetName().Version}";
         public bool IsDarkMode => ThemeManager.IsDarkMode;
         [Reactive] public string UpdaterStatus { get; set; }
         [Reactive] public bool UpdateAvailable { get; set; }
         [Reactive] public FontWeight UpdateButtonFontWeight { get; set; }
+        /// <summary>When true, Update button opens GitHub instead of applying a Velopack package.</summary>
+        [Reactive] public bool OpenGitHubOnUpdate { get; set; }
         public Action? CloseApplication { get; set; }
 
-        private SparkleUpdater? sparkle;
-        private UpdateInfo? updateInfo;
-        private bool updateAccepted;
+        UpdateManager? updateManager;
+        UpdateInfo? updateInfo;
+        bool updateAccepted;
 
         public UpdaterViewModel() {
             UpdaterStatus = string.Empty;
             UpdateAvailable = false;
             UpdateButtonFontWeight = FontWeight.Normal;
-            Init();
+            OpenGitHubOnUpdate = false;
+            _ = InitAsync();
         }
 
-        public static async Task<SparkleUpdater?> NewUpdaterAsync() {
+        public static string GetVelopackChannel() {
+            string rid = OS.GetUpdaterRid();
+            return Preferences.Default.Beta ? $"{rid}-beta" : rid;
+        }
+
+        public static UpdateManager? TryCreateUpdateManager() {
+            if (!OS.IsWindows()) {
+                return null;
+            }
+            var source = new GithubSource(LunaiRepoUrl, accessToken: null, prerelease: Preferences.Default.Beta);
+            var options = new UpdateOptions {
+                ExplicitChannel = GetVelopackChannel(),
+                AllowVersionDowngrade = true,
+            };
+            return new UpdateManager(source, options);
+        }
+
+        /// <summary>Quiet check for startup prompt. Windows+Velopack only.</summary>
+        public static async Task<bool> IsUpdateAvailableQuietlyAsync() {
             try {
-                var release = await SelectRelease();
-                if (release == null) {
-                    Log.Error("No updatable release found (empty list or beta/stable filter mismatch).");
-                    return null;
+                var mgr = TryCreateUpdateManager();
+                if (mgr == null || !mgr.IsInstalled) {
+                    return false;
                 }
-                Log.Information($"Checking update at: {release.html_url}");
-                var appcast = SelectAppcast(release);
-                if (appcast == null) {
-                    Log.Error($"No appcast.{OS.GetUpdaterRid()}{(PathManager.Inst.IsInstalled ? "-installer" : "")}.xml in release assets.");
-                    return null;
+                var info = await mgr.CheckForUpdatesAsync();
+                if (info?.TargetFullRelease == null) {
+                    return false;
                 }
-                Log.Information($"Checking appcast: {appcast.browser_download_url}");
-                return new ZipUpdater(appcast.browser_download_url, new Ed25519Checker(SecurityMode.Unsafe)) {
-                    UIFactory = null,
-                    CheckServerFileName = false,
-                    RelaunchAfterUpdate = true,
-                    RelaunchAfterUpdateCommandPrefix = OS.IsLinux() ? "./" : string.Empty,
-                    AppCastHandler = new XMLAppCast() {
-                        AppCastFilter = new DowngradableFilter()
-                    },
-                };
+                string ver = info.TargetFullRelease.Version.ToString();
+                if (ver == Preferences.Default.SkipUpdate) {
+                    return false;
+                }
+                return true;
+            } catch (NotInstalledException) {
+                return false;
             } catch (Exception e) {
-                Log.Error(e, "Failed to select appcast to update.");
-                return null;
+                Log.Warning(e, "Quiet update check failed.");
+                return false;
             }
         }
 
-        static async Task<GithubRelease?> SelectRelease() {
-            using var client = new HttpClient();
-            client.DefaultRequestHeaders.Add("Accept", "application/vnd.github+json");
-            client.DefaultRequestHeaders.Add("User-Agent", "OpenUtau-Lunai");
-            client.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
-            client.Timeout = TimeSpan.FromSeconds(30);
-            using var resposne = await client.GetAsync(LunaiReleasesApi);
-            resposne.EnsureSuccessStatusCode();
-            string respBody = await resposne.Content.ReadAsStringAsync();
-            List<GithubRelease>? releases = JsonConvert.DeserializeObject<List<GithubRelease>>(respBody);
-            if (releases == null) {
-                return null;
-            }
-            return releases
-                .Where(r => !r.draft && r.prerelease == Preferences.Default.Beta)
-                .OrderByDescending(r => r.id)
-                .FirstOrDefault();
-        }
-
-        static GithubReleaseAsset? SelectAppcast(GithubRelease release) {
-            string suffix = PathManager.Inst.IsInstalled ? "-installer" : "";
-            return release.assets
-                .Where(a => a.name == $"appcast.{OS.GetUpdaterRid()}{suffix}.xml")
-                .FirstOrDefault();
-        }
-
-        async void Init() {
+        async Task InitAsync() {
             UpdaterStatus = ThemeManager.GetString("updater.status.checking");
-            sparkle = await NewUpdaterAsync();
-            if (sparkle == null) {
-                UpdaterStatus = ThemeManager.GetString("updater.status.unknown");
+            if (!OS.IsWindows()) {
+                UpdaterStatus = ThemeManager.GetString("updater.status.manual");
+                OpenGitHubOnUpdate = true;
+                UpdateAvailable = true;
+                UpdateButtonFontWeight = FontWeight.Bold;
                 return;
             }
-            updateInfo = await sparkle.CheckForUpdatesQuietly();
-            if (updateInfo == null) {
-                UpdaterStatus = ThemeManager.GetString("updater.status.unknown");
-                return;
-            }
-            switch (updateInfo.Status) {
-                case UpdateStatus.UpdateAvailable:
-                case UpdateStatus.UserSkipped:
-                    UpdaterStatus = string.Format(ThemeManager.GetString("updater.status.available"), updateInfo.Updates[0].Version);
+
+            try {
+                updateManager = TryCreateUpdateManager();
+                if (updateManager == null) {
+                    UpdaterStatus = ThemeManager.GetString("updater.status.unknown");
+                    return;
+                }
+                if (!updateManager.IsInstalled) {
+                    UpdaterStatus = ThemeManager.GetString("updater.status.notinstalled");
+                    OpenGitHubOnUpdate = true;
                     UpdateAvailable = true;
                     UpdateButtonFontWeight = FontWeight.Bold;
-                    break;
-                case UpdateStatus.UpdateNotAvailable:
+                    return;
+                }
+
+                updateInfo = await updateManager.CheckForUpdatesAsync();
+                if (updateInfo?.TargetFullRelease == null) {
                     UpdaterStatus = ThemeManager.GetString("updater.status.notavailable");
-                    break;
-                case UpdateStatus.CouldNotDetermine:
-                    UpdaterStatus = ThemeManager.GetString("updater.status.unknown");
-                    break;
+                    return;
+                }
+
+                UpdaterStatus = string.Format(
+                    ThemeManager.GetString("updater.status.available"),
+                    updateInfo.TargetFullRelease.Version);
+                UpdateAvailable = true;
+                UpdateButtonFontWeight = FontWeight.Bold;
+            } catch (NotInstalledException) {
+                UpdaterStatus = ThemeManager.GetString("updater.status.notinstalled");
+                OpenGitHubOnUpdate = true;
+                UpdateAvailable = true;
+                UpdateButtonFontWeight = FontWeight.Bold;
+            } catch (Exception e) {
+                Log.Error(e, "Failed to check for Velopack updates.");
+                UpdaterStatus = ThemeManager.GetString("updater.status.unknown");
             }
         }
 
@@ -149,105 +137,41 @@ namespace OpenUtau.App.ViewModels {
         }
 
         public async void OnUpdate() {
-            if (sparkle == null || updateInfo == null || updateInfo.Updates.Count == 0) {
+            if (OpenGitHubOnUpdate || !OS.IsWindows()) {
+                OnGithub();
                 return;
             }
+            if (updateManager == null || updateInfo?.TargetFullRelease == null) {
+                return;
+            }
+
             UpdateAvailable = false;
             updateAccepted = true;
-
-            AppCastItem? downloadedItem = null;
-            sparkle.CloseApplication += () => {
-                Log.Information($"shutting down for update");
+            try {
+                await updateManager.DownloadUpdatesAsync(updateInfo, progress => {
+                    Dispatcher.UIThread.Post(() => {
+                        UpdaterStatus = $"{progress}%";
+                    });
+                });
+                UpdaterStatus = ThemeManager.GetString("updater.status.installing");
+                // ApplyUpdatesAndRestart exits the process; CloseApplication is best-effort cleanup.
                 CloseApplication?.Invoke();
-                Log.Information($"shut down for update");
-            };
-            sparkle.DownloadStarted += (item, path) => {
-                Log.Information($"download started {path}");
-                downloadedItem = item;
-            };
-            sparkle.DownloadFinished += (item, path) => {
-                Log.Information($"download finished {path}");
-                // `item` is somehow null in this callback, likely a NetSparkle bug.
-                item = item ?? downloadedItem;
-                if (item == null) {
-                    Log.Error("DownloadFinished unexpected null item.");
-                } else {
-                    sparkle.InstallUpdate(downloadedItem, path);
-                }
-            };
-            sparkle.DownloadHadError += (item, path, e) => {
-                Log.Error(e, $"download error {path}");
-            };
-            sparkle.DownloadMadeProgress += (sender, item, e) => {
-                UpdaterStatus = $"{e.ProgressPercentage}%";
-            };
-
-            await sparkle.InitAndBeginDownload(updateInfo.Updates.First());
+                updateManager.ApplyUpdatesAndRestart(updateInfo);
+            } catch (Exception e) {
+                Log.Error(e, "Velopack update failed.");
+                UpdateAvailable = true;
+                UpdaterStatus = ThemeManager.GetString("updater.status.unknown");
+                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(e));
+            }
         }
 
         public void OnClosing() {
-            if (!updateAccepted && updateInfo != null &&
-                (updateInfo.Status == UpdateStatus.UpdateAvailable ||
-                updateInfo.Status == UpdateStatus.UserSkipped) &&
-                updateInfo.Updates.Count > 0) {
-                Log.Information($"Skipping update {updateInfo.Updates[0].Version}");
-                Preferences.Default.SkipUpdate = updateInfo.Updates[0].Version.ToString();
+            if (!updateAccepted && updateInfo?.TargetFullRelease != null) {
+                string ver = updateInfo.TargetFullRelease.Version.ToString();
+                Log.Information($"Skipping update {ver}");
+                Preferences.Default.SkipUpdate = ver;
                 Preferences.Save();
             }
-        }
-    }
-
-    // Force allow downgrading so that switching between beta and stable works.
-    public class DowngradableFilter : IAppCastFilter {
-        static bool Eq(int a, int b) {
-            a = a == -1 ? 0 : a;
-            b = b == -1 ? 0 : b;
-            return a == b;
-        }
-        // Ambiguous version equal where 1.2 == 1.2.0 == 1.2.0.0.
-        static bool Eq(Version a, Version b) {
-            return Eq(a.Major, b.Major)
-                && Eq(a.Minor, b.Minor)
-                && Eq(a.Build, b.Build)
-                && Eq(a.Revision, b.Revision);
-        }
-        public FilterResult GetFilteredAppCastItems(Version installed, List<AppCastItem> items) {
-            items = items.Where(item => !Eq(new Version(item.Version), installed)).ToList();
-            return new FilterResult(/*forceInstallOfLatestInFilteredList=*/true, items);
-        }
-    }
-
-    public class ZipUpdater : SparkleUpdater {
-        public ZipUpdater(string appcastUrl, ISignatureVerifier signatureVerifier) :
-            base(appcastUrl, signatureVerifier) { }
-        public ZipUpdater(string appcastUrl, ISignatureVerifier signatureVerifier, string referenceAssembly) :
-            base(appcastUrl, signatureVerifier, referenceAssembly) { }
-        public ZipUpdater(string appcastUrl, ISignatureVerifier signatureVerifier, string referenceAssembly, IUIFactory factory) :
-            base(appcastUrl, signatureVerifier, referenceAssembly, factory) { }
-
-        protected override string GetWindowsInstallerCommand(string downloadFilePath) {
-            string installerExt = Path.GetExtension(downloadFilePath);
-            if (DoExtensionsMatch(installerExt, ".exe")) {
-                return $"\"{downloadFilePath}\"";
-            }
-            if (DoExtensionsMatch(installerExt, ".msi")) {
-                return $"msiexec /i \"{downloadFilePath}\"";
-            }
-            if (DoExtensionsMatch(installerExt, ".msp")) {
-                return $"msiexec /p \"{downloadFilePath}\"";
-            }
-            if (DoExtensionsMatch(installerExt, ".zip")) {
-                string restart = RestartExecutablePath.TrimEnd('\\', '/');
-                if (Environment.OSVersion.Version.Major >= 10 && Environment.OSVersion.Version.Build >= 17063) {
-                    Log.Information("Starting update with tar.");
-                    return $"tar -x -f \"{downloadFilePath}\" -C \"{restart}\"";
-                }
-                var unzipperPath = Path.Combine(Path.GetDirectoryName(downloadFilePath) ?? Path.GetTempPath(), "Unzipper.exe");
-                File.WriteAllBytes(unzipperPath, Resources.Resources.Unzipper);
-                Log.Information("Starting update with unzipper.");
-                return $"{unzipperPath} \"{downloadFilePath}\" \"{restart}\"";
-            }
-            return downloadFilePath;
         }
     }
 }

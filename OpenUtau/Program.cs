@@ -12,6 +12,8 @@ using Avalonia.ReactiveUI;
 using OpenUtau.App.ViewModels;
 using OpenUtau.Core;
 using Serilog;
+using Velopack;
+using Velopack.Logging;
 
 namespace OpenUtau.App {
     public class Program {
@@ -20,6 +22,11 @@ namespace OpenUtau.App {
         // yet and stuff might break.
         [STAThread]
         public static void Main(string[] args) {
+            // Must be first: Velopack install/update/uninstall hooks exit inside Run().
+            VelopackApp.Build()
+                .SetLogger(new SerilogVelopackLogger())
+                .Run();
+
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             InitLogging();
             string processName = Process.GetCurrentProcess().ProcessName;
@@ -36,11 +43,13 @@ namespace OpenUtau.App {
                 $"{RuntimeInformation.ProcessArchitecture}");
             Log.Information($"OpenUtau Lunai v{Assembly.GetEntryAssembly()?.GetName().Version} " +
                 $"{RuntimeInformation.RuntimeIdentifier}");
+            Log.Information($"Installed = {PathManager.Inst.IsInstalled}");
             Log.Information($"Data path = {PathManager.Inst.DataPath}");
             Log.Information($"Legacy data path = {PathManager.Inst.LegacyDataPath}");
             Log.Information($"Singers path = {PathManager.Inst.SingersPath}");
             Log.Information($"Cache path = {PathManager.Inst.CachePath}");
             Log.Information($"System encoding = {Encoding.GetEncoding(0)?.WebName ?? "null"}");
+            OpenUtau.Core.Util.InstallLayoutCleanup.Run();
             try {
                 Run(args);
                 Log.Information($"Exiting.");
@@ -102,6 +111,36 @@ namespace OpenUtau.App {
                 Log.Error((Exception)args.ExceptionObject, "Unhandled exception");
             });
             Log.Information("Logging initialized.");
+        }
+
+        /// <summary>Routes Velopack diagnostics to Serilog when available, else Debug.</summary>
+        sealed class SerilogVelopackLogger : IVelopackLogger {
+            public void Log(VelopackLogLevel level, string? message, Exception? exception) {
+                message ??= string.Empty;
+                if (Serilog.Log.Logger == null) {
+                    System.Diagnostics.Debug.WriteLine($"[Velopack:{level}] {message}");
+                    return;
+                }
+                switch (level) {
+                    case VelopackLogLevel.Trace:
+                    case VelopackLogLevel.Debug:
+                        Serilog.Log.Debug(exception, "[Velopack] {Message}", message);
+                        break;
+                    case VelopackLogLevel.Information:
+                        Serilog.Log.Information(exception, "[Velopack] {Message}", message);
+                        break;
+                    case VelopackLogLevel.Warning:
+                        Serilog.Log.Warning(exception, "[Velopack] {Message}", message);
+                        break;
+                    case VelopackLogLevel.Error:
+                    case VelopackLogLevel.Critical:
+                        Serilog.Log.Error(exception, "[Velopack] {Message}", message);
+                        break;
+                    default:
+                        Serilog.Log.Information(exception, "[Velopack] {Message}", message);
+                        break;
+                }
+            }
         }
     }
 }

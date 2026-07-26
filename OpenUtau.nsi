@@ -13,6 +13,9 @@ ManifestDPIAware true
 
 ; MUI 1.8 compatible ------
 !include "MUI2.nsh"
+!include "FileFunc.nsh"
+!insertmacro GetParameters
+!insertmacro GetOptions
 
 ; MUI Settings
 !define MUI_ABORTWARNING
@@ -24,13 +27,24 @@ ManifestDPIAware true
 !define MUI_LANGDLL_REGISTRY_KEY "${PRODUCT_UNINST_KEY}"
 !define MUI_LANGDLL_REGISTRY_VALUENAME "NSIS:Language"
 
+Var IsAppUpdate
+
+; Skip wizard chrome for in-app updates (/UPDATE): keep Instfiles progress only.
+Function SkipIfAppUpdate
+  StrCmp $IsAppUpdate 1 0 +2
+  Abort
+FunctionEnd
+
 ; Welcome page
+!define MUI_PAGE_CUSTOMFUNCTION_PRE SkipIfAppUpdate
 !insertmacro MUI_PAGE_WELCOME
-; Directory page
+; Directory page (first-time / manual installs only)
+!define MUI_PAGE_CUSTOMFUNCTION_PRE SkipIfAppUpdate
 !insertmacro MUI_PAGE_DIRECTORY
-; Instfiles page
+; Instfiles page (always shown unless fully silent /S)
 !insertmacro MUI_PAGE_INSTFILES
 ; Finish page
+!define MUI_PAGE_CUSTOMFUNCTION_PRE SkipIfAppUpdate
 !define MUI_FINISHPAGE_RUN "$INSTDIR\${PRODUCT_EXE}"
 !insertmacro MUI_PAGE_FINISH
 
@@ -51,16 +65,34 @@ ManifestDPIAware true
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
 OutFile "OpenUtau-Lunai-win-${ARCH}.exe"
 InstallDir "$PROGRAMFILES64\OpenUtau-Lunai"
+; Remember last install dir for upgrades (Directory page + /D= from app updater).
+InstallDirRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "InstallLocation"
 ShowInstDetails show
 ShowUnInstDetails show
 
 Function .onInit
+  StrCpy $IsAppUpdate 0
+  ${GetParameters} $R0
+  ClearErrors
+  ${GetOptions} $R0 "/UPDATE" $R1
+  IfErrors check_silent
+  StrCpy $IsAppUpdate 1
+check_silent:
+
+  ; First-time / manual: language dialog. /S and /UPDATE: skip it.
+  StrCmp $IsAppUpdate 1 skip_lang
+  IfSilent skip_lang
   !insertmacro MUI_LANGDLL_DISPLAY
+skip_lang:
+
+  ; Close promptly after Instfiles when updating from the app (Finish is skipped).
+  StrCmp $IsAppUpdate 1 0 +2
+  SetAutoClose true
 FunctionEnd
 
 Section "MainSection" SEC01
   SetOutPath "$INSTDIR"
-  SetOverwrite ifnewer
+  SetOverwrite on
   File "bin\win-${ARCH}\*"
 SectionEnd
 
@@ -82,6 +114,12 @@ Section -Post
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayVersion" "${PRODUCT_VERSION}"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "URLInfoAbout" "${PRODUCT_WEB_SITE}"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "Publisher" "${PRODUCT_PUBLISHER}"
+  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "InstallLocation" "$INSTDIR"
+
+  ; Remove leftover nested binary install (old OpenUtau\ shadow) that can load a stale Core DLL.
+  IfFileExists "$INSTDIR\OpenUtau\OpenUtau.Core.dll" 0 skip_nested_cleanup
+  RMDir /r "$INSTDIR\OpenUtau"
+skip_nested_cleanup:
 
   WriteRegStr HKCR ".ustx" "" "${PRODUCT_PROGID}"
   WriteRegStr HKCR "${PRODUCT_PROGID}" "" "OpenUtau Sequence File"
@@ -92,7 +130,8 @@ SectionEnd
 Section "VC Redist"
   SetOutPath "$INSTDIR"
   File "vc_redist.${ARCH}.exe"
-  ExecWait "$INSTDIR\vc_redist.${ARCH}.exe"
+  ; Quiet so updates do not pop a second wizard; first install also fine without UI.
+  ExecWait '"$INSTDIR\vc_redist.${ARCH}.exe" /install /quiet /norestart'
   Delete "$INSTDIR\vc_redist.${ARCH}.exe"
 SectionEnd
 
