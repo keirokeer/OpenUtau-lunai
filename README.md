@@ -37,7 +37,7 @@ Credit belongs to the original OpenUtau project and to everyone listed in **Help
 
 ## Support
 
-Join our [Discord](https://discord.gg/GKSxrSd7mB) and ask in **#help**.
+Join our [Discord](https://discord.gg/GKSxrSd7mB) and ask in **#help**, or open an issue here.
 
 ## Building
 
