@@ -408,6 +408,7 @@ namespace OpenUtau.Plugin.Builtin {
                 // backups of hardcoded defaults exist
                 if (backupVowels == null) backupVowels = GetVowels() ?? Array.Empty<string>();
                 if (backupConsonants == null) backupConsonants = GetConsonants() ?? Array.Empty<string>();
+                if (backupTails == null) backupTails = (tails != null && tails.Length > 0) ? tails.ToArray() : "-,R".Split(',');
                 if (backupDictionaryReplacements == null) backupDictionaryReplacements = new Dictionary<string, string>(dictionaryReplacements);
                 if (backupDiphthongTails == null) backupDiphthongTails = new Dictionary<string, string>(diphthongTails);
                 if (backupDiphthongSplits == null) backupDiphthongSplits = new Dictionary<string, string[]>(diphthongSplits);
@@ -415,7 +416,9 @@ namespace OpenUtau.Plugin.Builtin {
                 // reset live arrays/lists back to defaults before stacking
                 vowels = backupVowels;
                 consonants = backupConsonants;
-                tails = "-".Split(','); 
+                // Keep default tails (e.g. R) unless yaml declares type: tail symbols.
+                // Resetting to "-" only dropped rest/tail lyrics and broke EN C+V endings.
+                tails = backupTails; 
 
                 fricative = Array.Empty<string>();
                 aspirate = Array.Empty<string>();
@@ -684,10 +687,13 @@ namespace OpenUtau.Plugin.Builtin {
                     } else {
                         for (int i = 0; i < subResult.Length; i++) {
                             string phoneme = subResult[i];
+                            // Prefer the dictionary symbol when the bank has that oto
+                            // (e.g. JA あ → [a]). Yaml replacements like a→aa are for
+                            // Arpabet banks missing the short vowel alias.
                             if (dictionaryReplacements.TryGetValue(phoneme, out string replaced)) {
-                                subResult[i] = replaced;
-                            } else if (dictionaryReplacements.TryGetValue(subResult[i], out string replacedExact)) {
-                                subResult[i] = replacedExact;
+                                if (!(HasOto(phoneme, note.tone) || HasOto(ValidateAlias(phoneme), note.tone))) {
+                                    subResult[i] = replaced;
+                                }
                             }
                         }
                     }
@@ -719,6 +725,7 @@ namespace OpenUtau.Plugin.Builtin {
         }
         private string[] backupVowels = null;
         private string[] backupConsonants = null;
+        private string[] backupTails = null;
         private Dictionary<string, string> backupDiphthongTails = null;
         private Dictionary<string, string[]> backupDiphthongSplits = null;
         private Dictionary<string, string> backupDictionaryReplacements = null;

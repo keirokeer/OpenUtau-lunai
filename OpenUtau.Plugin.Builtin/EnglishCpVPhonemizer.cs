@@ -209,11 +209,12 @@ namespace OpenUtau.Plugin.Builtin {
         }
 
         private string ReplacePhoneme(string phoneme, int tone) {
-            if (dictionaryReplacements.TryGetValue(phoneme, out var replaced)) {
-                return replaced;
-            }
+            // Prefer literal oto when present (JA-style a/i/u/e/o), else yaml Arpabet map.
             if (HasOto(phoneme, tone) || HasOto(ValidateAlias(phoneme), tone)) {
                 return phoneme;
+            }
+            if (dictionaryReplacements.TryGetValue(phoneme, out var replaced)) {
+                return replaced;
             }
             return phoneme;
         }
