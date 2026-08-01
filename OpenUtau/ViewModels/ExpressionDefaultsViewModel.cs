@@ -69,26 +69,58 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public bool HasStyles { get; private set; }
         [Reactive] public bool CanSaveStyle { get; private set; }
         [Reactive] public int SelectedVoiceColorIndex { get; set; }
+        [Reactive] public string VoiceColorCurveMaxText { get; set; } = "100";
 
         UVoicePart? part;
         int trackNo = -1;
         bool applyingSlider;
         bool applyingVoiceColor;
+        bool applyingVoiceColorMax;
         string? pendingAbbr;
         float pendingOldValue;
         float pendingNewValue;
 
         public ExpressionDefaultsViewModel() {
             DocManager.Inst.AddSubscriber(this);
+            applyingVoiceColorMax = true;
+            VoiceColorCurveMaxText = Preferences.GetVoiceColorCurveMax().ToString();
+            applyingVoiceColorMax = false;
             this.WhenAnyValue(vm => vm.SelectedVoiceColorIndex)
                 .Subscribe(index => {
                     if (!applyingVoiceColor) {
                         CommitDefaultVoiceColor(index);
                     }
                 });
+            this.WhenAnyValue(vm => vm.VoiceColorCurveMaxText)
+                .Subscribe(_ => OnVoiceColorCurveMaxTextChanged());
             RefreshList();
             RefreshStyles();
             RefreshPlayheadValues();
+        }
+
+        void OnVoiceColorCurveMaxTextChanged() {
+            if (applyingVoiceColorMax) {
+                return;
+            }
+            if (!int.TryParse(VoiceColorCurveMaxText, out var n)) {
+                return;
+            }
+            n = Math.Clamp(n, Preferences.VoiceColorCurveMaxMin, Preferences.VoiceColorCurveMaxMax);
+            if (n == Preferences.GetVoiceColorCurveMax()) {
+                return;
+            }
+            Preferences.SetVoiceColorCurveMax(n);
+            applyingVoiceColorMax = true;
+            VoiceColorCurveMaxText = n.ToString();
+            applyingVoiceColorMax = false;
+            SyncSuggestionsForOpenTrack();
+            RefreshExpressionLists();
+        }
+
+        void SyncVoiceColorCurveMaxTextFromPrefs() {
+            applyingVoiceColorMax = true;
+            VoiceColorCurveMaxText = Preferences.GetVoiceColorCurveMax().ToString();
+            applyingVoiceColorMax = false;
         }
 
         public void AttachPart(UVoicePart? voicePart) {
@@ -334,6 +366,11 @@ namespace OpenUtau.App.ViewModels {
         }
 
         void RefreshList() {
+            SyncVoiceColorCurveMaxTextFromPrefs();
+            RefreshExpressionLists();
+        }
+
+        void RefreshExpressionLists() {
             var project = DocManager.Inst.Project;
             if (trackNo < 0 || trackNo >= project.tracks.Count) {
                 ParameterItems.Clear();
@@ -353,15 +390,15 @@ namespace OpenUtau.App.ViewModels {
 
             VoiceColorOptions.Clear();
             applyingVoiceColor = true;
+            // Reset so Avalonia ComboBox rebinds when the effective index is still 0 after Clear.
+            SelectedVoiceColorIndex = -1;
             if (track.VoiceColorExp?.options != null && track.VoiceColorExp.options.Length > 0) {
                 foreach (var option in track.VoiceColorExp.options) {
                     VoiceColorOptions.Add(option);
                 }
                 ShowDefaultVoiceColorPicker = true;
-                SelectedVoiceColorIndex = Math.Clamp(
-                    (int)Math.Round(SetExpressionCustomDefaultCommand.GetEffectiveDefault(track.VoiceColorExp)),
-                    0,
-                    track.VoiceColorExp.options.Length - 1);
+                int index = (int)Math.Round(SetExpressionCustomDefaultCommand.GetEffectiveDefault(track.VoiceColorExp));
+                SelectedVoiceColorIndex = Math.Clamp(index, 0, track.VoiceColorExp.options.Length - 1);
                 HasVoiceColors = true;
             } else {
                 ShowDefaultVoiceColorPicker = false;
@@ -429,7 +466,9 @@ namespace OpenUtau.App.ViewModels {
                     value = expValue;
                     hasOverride = overridden || Math.Abs(value - baseline) > 0.0001f;
                 }
-                item.PlayheadValue = Math.Clamp(value, item.Min, item.Max);
+                item.PlayheadValue = item.Max < item.Min
+                    ? value
+                    : Math.Clamp(value, item.Min, item.Max);
                 item.ShowPlayheadMarker = inPart && hasOverride;
             }
         }

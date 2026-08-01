@@ -37,6 +37,9 @@
     <Style Selector="Grid.expDefaultRow">
       <Setter Property="Margin" Value="0,4,0,4"/>
     </Style>
+    <Style Selector="Grid.expDefaultSliderRow">
+      <Setter Property="Margin" Value="0,4,-10,4"/>
+    </Style>
     <Style Selector="StackPanel.expDefaultSectionContent">
       <Setter Property="Spacing" Value="2"/>
     </Style>
@@ -99,7 +102,7 @@
             <ItemsControl ItemsSource="{Binding ParameterItems}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="vm:ExpressionDefaultItem">
-                  <Grid Classes="expDefaultRow" ColumnDefinitions="110,*,Auto">
+                  <Grid Classes="expDefaultRow expDefaultSliderRow" ColumnDefinitions="110,*,Auto">
                     <Border Classes="expDefaultLabelHit" Grid.Column="0"
                             ToolTip.Tip="{DynamicResource workspace.panel.expressions.openinexppanel}"
                             PointerPressed="OnParameterNamePressed">
@@ -119,6 +122,14 @@
                   IsVisible="{Binding HasVoiceColors}"
                   Header="{DynamicResource workspace.panel.expressions.voicecolors}">
           <StackPanel Classes="expDefaultSectionContent">
+            <Grid Classes="expDefaultRow" ColumnDefinitions="*,Auto" Margin="0,0,0,8">
+              <TextBlock Classes="expDefaultLabel" Margin="4,0,8,0"
+                         Text="{DynamicResource workspace.panel.expressions.voicecolormax}"
+                         TextWrapping="Wrap" Grid.Column="0" VerticalAlignment="Center"/>
+              <c:WorkspacePanelTextBox Classes="workspacePanelTextBox" Grid.Column="1" Width="72"
+                                       Text="{Binding VoiceColorCurveMaxText}"
+                                       VerticalAlignment="Center"/>
+            </Grid>
             <Grid Classes="expDefaultRow" ColumnDefinitions="110,*"
                   IsVisible="{Binding ShowDefaultVoiceColorPicker}">
               <TextBlock Classes="expDefaultLabel" Margin="4,0,8,0"
@@ -131,7 +142,7 @@
             <ItemsControl ItemsSource="{Binding VoiceColorItems}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="vm:ExpressionDefaultItem">
-                  <Grid Classes="expDefaultRow" ColumnDefinitions="110,*,Auto">
+                  <Grid Classes="expDefaultRow expDefaultSliderRow" ColumnDefinitions="110,*,Auto">
                     <Border Classes="expDefaultLabelHit" Grid.Column="0"
                             ToolTip.Tip="{DynamicResource workspace.panel.expressions.openinexppanel}"
                             PointerPressed="OnParameterNamePressed">

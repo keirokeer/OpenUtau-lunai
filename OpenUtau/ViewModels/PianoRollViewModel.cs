@@ -80,10 +80,10 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public bool PianoRollFullscreen { get; set; }
         public bool UsesExpandedPianoRollLayout => PianoRollDetached || PianoRollFullscreen;
         public bool IsSidePanelVisible => !UsesExpandedPianoRollLayout;
-        public bool IsLeftDockPanelVisible => (ShowAppearancePanel || ShowDiffSingerPanel || ShowExpressionDefaultsPanel) && !UsesExpandedPianoRollLayout;
+        public bool IsLeftDockPanelVisible => (ShowAppearancePanel || ShowDiffSingerPanel || (ShowExpressionDefaultsPanel && IsDiffSingerTrack)) && !UsesExpandedPianoRollLayout;
         public bool IsAppearancePanelVisible => ShowAppearancePanel && !UsesExpandedPianoRollLayout;
         public bool IsDiffSingerPanelVisible => ShowDiffSingerPanel && !UsesExpandedPianoRollLayout;
-        public bool IsExpressionDefaultsPanelVisible => ShowExpressionDefaultsPanel && !UsesExpandedPianoRollLayout;
+        public bool IsExpressionDefaultsPanelVisible => ShowExpressionDefaultsPanel && IsDiffSingerTrack && !UsesExpandedPianoRollLayout;
         public bool IsThemeEditorPanelVisible => ShowThemeEditorPanel && IsAppearancePanelVisible;
         public bool IsAppearanceOnlyGapResizeVisible => IsLeftDockPanelVisible && !IsThemeEditorPanelVisible;
         public GridLength PianoRollSideColumnWidth => UsesExpandedPianoRollLayout ? new GridLength(0) : new GridLength(48);
@@ -578,10 +578,9 @@ namespace OpenUtau.App.ViewModels {
                     if (ShowDiffSingerPanel) {
                         ShowDiffSingerPanel = false;
                     }
-                    if (ShowExpressionDefaultsPanel) {
-                        ShowExpressionDefaultsPanel = false;
-                    }
+                    // Keep ShowExpressionDefaultsPanel preference; hide via IsExpressionDefaultsPanelVisible.
                 }
+                RaiseLeftDockLayoutProperties();
             }
             if (isDiffSinger) {
                 SyncOpenTrackExpressionSuggestions();

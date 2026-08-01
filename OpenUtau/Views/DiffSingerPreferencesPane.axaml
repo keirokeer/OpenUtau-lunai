@@ -83,6 +83,20 @@
         <Separator Classes="workspacePanelSectionDivider"/>
 
         <Expander Classes="workspacePanelSectionExpander" IsExpanded="True"
+                  Header="{DynamicResource prefs.diffsinger.section.voicecolor}">
+          <StackPanel Classes="diffSingerSectionContent">
+            <Grid Classes="prefRow" ColumnDefinitions="*,Auto">
+              <TextBlock Text="{DynamicResource prefs.voicecolormax.default}"
+                         ToolTip.Tip="{DynamicResource prefs.voicecolormax.hint}"/>
+              <c:WorkspacePanelTextBox Classes="workspacePanelTextBox" Grid.Column="1" Width="72"
+                                       Text="{Binding VoiceColorCurveMaxText}"
+                                       VerticalAlignment="Center" HorizontalAlignment="Right"/>
+            </Grid>
+          </StackPanel>
+        </Expander>
+        <Separator Classes="workspacePanelSectionDivider"/>
+
+        <Expander Classes="workspacePanelSectionExpander" IsExpanded="True"
                   Header="{DynamicResource prefs.diffsinger.section.renderquality}">
           <StackPanel Classes="diffSingerSectionContent">
             <TextBlock Classes="prefSubgroupTitle"
