@@ -385,6 +385,13 @@
             <TextBlock Text="{DynamicResource prefs.diffsinger.renderphraseboundaries}" HorizontalAlignment="Left" />
             <ToggleSwitch IsChecked="{Binding DiffSingerShowRenderPhraseBoundaries}" />
           </Grid>
+          <Grid Margin="0,5,0,0" ColumnDefinitions="*,Auto">
+            <TextBlock Text="{DynamicResource prefs.voicecolormax.default}" VerticalAlignment="Center"
+                       ToolTip.Tip="{DynamicResource prefs.voicecolormax.hint}"/>
+            <c:WorkspacePanelTextBox Classes="workspacePanelTextBox" Grid.Column="1" Width="72"
+                                     Text="{Binding VoiceColorCurveMaxText}"
+                                     VerticalAlignment="Center" HorizontalAlignment="Right"/>
+          </Grid>
         </StackPanel>
 
         <!-- Advanced -->

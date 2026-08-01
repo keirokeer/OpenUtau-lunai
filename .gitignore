@@ -1,6 +1,9 @@
 Doxyfile
 docs/
 
+# Local packaging / sample activation artifacts
+dist/
+
 # Crowdin local credentials (never commit tokens)
 .crowdin.yml
 crowdin.yml.local

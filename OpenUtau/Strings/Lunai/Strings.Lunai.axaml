@@ -240,6 +240,7 @@
   <system:String x:Key="prefs.diffsinger.section.quality">Quality</system:String>
   <system:String x:Key="prefs.diffsinger.section.renderquality">Render quality</system:String>
   <system:String x:Key="prefs.diffsinger.section.steps">Render steps</system:String>
+  <system:String x:Key="prefs.diffsinger.section.voicecolor">Voice color</system:String>
   <system:String x:Key="prefs.playback.experimentalinvalidaterender">Re-render after edits on play (experimental)</system:String>
   <system:String x:Key="prefs.playback.metronome">Metronome</system:String>
   <system:String x:Key="prefs.playback.modernplayhead">Modern playhead</system:String>
@@ -373,6 +374,10 @@
   <system:String x:Key="workspace.panel.expressions">Project Expressions</system:String>
   <system:String x:Key="workspace.panel.expressions.defaultcolor">Default color</system:String>
   <system:String x:Key="workspace.panel.expressions.voicecolors">Voice colors</system:String>
+  <system:String x:Key="workspace.panel.expressions.voicecolormax">Voice color max %</system:String>
+  <system:String x:Key="prefs.voicecolormax">Voice color max %</system:String>
+  <system:String x:Key="prefs.voicecolormax.default">Default voice color max %</system:String>
+  <system:String x:Key="prefs.voicecolormax.hint">Default ceiling for DiffSinger voice-color curves (0–1000). Also editable in Project Expressions.</system:String>
   <system:String x:Key="workspace.panel.expressions.parameters">Parameters</system:String>
   <system:String x:Key="workspace.panel.expressions.resettooltip">Right click to reset to the built-in default</system:String>
   <system:String x:Key="workspace.panel.expressions.openinexppanel">Open in expression panel</system:String>

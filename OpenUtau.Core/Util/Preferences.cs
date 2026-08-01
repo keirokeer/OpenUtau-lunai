@@ -35,6 +35,7 @@ namespace OpenUtau.Core.Util {
 
         public static void Save() {
             EnsureOverlayScrollbars();
+            ClampVoiceColorCurveMax();
             try {
                 File.WriteAllText(PathManager.Inst.PrefsFilePath,
                     JsonConvert.SerializeObject(Default, Formatting.Indented),
@@ -42,6 +43,27 @@ namespace OpenUtau.Core.Util {
             } catch (Exception e) {
                 Log.Error(e, "Failed to save prefs.");
             }
+        }
+
+        public const int VoiceColorCurveMaxMin = 0;
+        public const int VoiceColorCurveMaxMax = 1000;
+
+        public static int GetVoiceColorCurveMax() {
+            ClampVoiceColorCurveMax();
+            return Default.VoiceColorCurveMax;
+        }
+
+        public static void SetVoiceColorCurveMax(int value) {
+            Default.VoiceColorCurveMax = Math.Clamp(value, VoiceColorCurveMaxMin, VoiceColorCurveMaxMax);
+            Save();
+        }
+
+        static void ClampVoiceColorCurveMax() {
+            if (Default == null) {
+                return;
+            }
+            Default.VoiceColorCurveMax = Math.Clamp(
+                Default.VoiceColorCurveMax, VoiceColorCurveMaxMin, VoiceColorCurveMaxMax);
         }
 
         public static void Reset() {
@@ -177,6 +199,7 @@ namespace OpenUtau.Core.Util {
                     Default.PlaybackPitchFollowVerticalPosition = Math.Clamp(Default.PlaybackPitchFollowVerticalPosition, 0.15, 0.85);
                     Default.PlaybackPitchFollowFrameSmoothing = Math.Clamp(Default.PlaybackPitchFollowFrameSmoothing, 0.05, 1);
                     Default.AppearancePanelWidth = Math.Clamp(Default.AppearancePanelWidth, 300, 450);
+                    ClampVoiceColorCurveMax();
                     Default.ThemeEditorPanelWidth = Math.Clamp(Default.ThemeEditorPanelWidth, 300, 450);
                     Default.NotePropertiesPanelWidth = Math.Clamp(Default.NotePropertiesPanelWidth, 350, 450);
                     if (!Renderers.getRendererOptions().Contains(Default.DefaultRenderer)) Default.DefaultRenderer = string.Empty;
@@ -339,6 +362,8 @@ namespace OpenUtau.Core.Util {
             public string VLabelerPath = string.Empty;
             public string SetParamPath = string.Empty;
             public bool Beta = false;
+            /// <summary>Ceiling for DiffSinger voice-color curves (0–1000). Default 100.</summary>
+            public int VoiceColorCurveMax = 100;
             public bool RememberMid = false;
             public bool RememberUst = true;
             public bool RememberVsqx = true;

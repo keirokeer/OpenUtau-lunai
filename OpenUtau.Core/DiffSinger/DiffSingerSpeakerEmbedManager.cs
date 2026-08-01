@@ -114,13 +114,12 @@ namespace OpenUtau.Core.DiffSinger
             var singer = phrase.singer;
             var hiddenSize = dsConfig.hiddenSize;
             var speakerEmbeds = getSpeakerEmbeds();
-            //get default speaker for each phoneme
-            var headDefaultSpk = getSpeakerIndexBySuffix(phrase.phones[0].suffix);
-            var tailDefaultSpk = getSpeakerIndexBySuffix(phrase.phones[^1].suffix);
-            var defaultSpkByFrame = Enumerable.Repeat(headDefaultSpk, headFrames).ToList();
-            defaultSpkByFrame.AddRange(Enumerable.Range(0, phrase.phones.Length)
-                .SelectMany(phIndex => Enumerable.Repeat(getSpeakerIndexBySuffix(phrase.phones[phIndex].suffix), durations[phIndex+1])));
-            defaultSpkByFrame.AddRange(Enumerable.Repeat(tailDefaultSpk, tailFrames));
+            // Mix origin is always the first vocal mode in the singer list (usually "01: standard"),
+            // not the track's default CLR / phoneme suffix — so voice-color curves stay absolute.
+            int baseSpkId = 0;
+            if (singer.Subbanks != null && singer.Subbanks.Count > 0) {
+                baseSpkId = getSpeakerIndexBySuffix(singer.Subbanks[0].Suffix);
+            }
             //get speaker curves
             NDArray spkCurves = np.zeros<float>(totalFrames, dsConfig.speakers.Count);
             foreach(var curve in phrase.curves) {
@@ -131,20 +130,27 @@ namespace OpenUtau.Core.DiffSinger
                         .Select(f => (float)f).ToArray();
                 }
             }
-            foreach(int frameId in Enumerable.Range(0,totalFrames)) {
-                //standarization
-                var spkSum = spkCurves[frameId, ":"].ToArray<float>().Sum();
-                if (spkSum > 1) {
-                    spkCurves[frameId, ":"] /= spkSum;
-                } else {
-                    spkCurves[frameId, defaultSpkByFrame[frameId]] += 1 - spkSum;
+
+            // Linear embed mix: dest = base + Σ amount_i * (spk_i − base).
+            // Supports voice-color amounts above 100% (amount > 1) without normalizing them away.
+            var baseEmbed = speakerEmbeds[":", baseSpkId].ToArray<float>();
+            var result = new float[totalFrames * hiddenSize];
+            for (int frameId = 0; frameId < totalFrames; frameId++) {
+                var dest = result.AsSpan(frameId * hiddenSize, hiddenSize);
+                baseEmbed.CopyTo(dest);
+                for (int spk = 0; spk < dsConfig.speakers.Count; spk++) {
+                    float amount = (float)spkCurves[frameId, spk];
+                    if (Math.Abs(amount) < 1e-8f) {
+                        continue;
+                    }
+                    var target = speakerEmbeds[":", spk].ToArray<float>();
+                    for (int j = 0; j < dest.Length; j++) {
+                        dest[j] += amount * (target[j] - baseEmbed[j]);
+                    }
                 }
             }
-            var spkEmbedResult = np.dot(spkCurves, speakerEmbeds.T);
-            var spkEmbedTensor = new DenseTensor<float>(spkEmbedResult.ToArray<float>(), 
-                new int[] { totalFrames, hiddenSize })
+            return new DenseTensor<float>(result, new int[] { totalFrames, hiddenSize })
                 .Reshape(new int[] { 1, totalFrames, hiddenSize });
-            return spkEmbedTensor;
         }
     }
 }

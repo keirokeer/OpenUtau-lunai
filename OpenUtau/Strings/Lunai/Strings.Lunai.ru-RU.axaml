@@ -240,6 +240,7 @@
   <system:String x:Key="prefs.diffsinger.section.quality">Качество</system:String>
   <system:String x:Key="prefs.diffsinger.section.renderquality">Качество рендера</system:String>
   <system:String x:Key="prefs.diffsinger.section.steps">Шаги рендера</system:String>
+  <system:String x:Key="prefs.diffsinger.section.voicecolor">Оттенок голоса</system:String>
   <system:String x:Key="prefs.playback.experimentalinvalidaterender">Перерендер после правок при воспроизведении (экспериментально)</system:String>
   <system:String x:Key="prefs.playback.metronome">Метроном</system:String>
   <system:String x:Key="prefs.playback.modernplayhead">Современный указатель воспроизведения</system:String>
@@ -390,6 +391,10 @@
   <system:String x:Key="workspace.panel.expressions.parameters">Параметры</system:String>
   <system:String x:Key="workspace.panel.expressions.resettooltip">ПКМ — сбросить к встроенному значению по умолчанию</system:String>
   <system:String x:Key="workspace.panel.expressions.voicecolors">Оттенки голоса</system:String>
+  <system:String x:Key="workspace.panel.expressions.voicecolormax">Макс. % оттенка голоса</system:String>
+  <system:String x:Key="prefs.voicecolormax">Макс. % оттенка голоса</system:String>
+  <system:String x:Key="prefs.voicecolormax.default">Макс. % оттенка голоса по умолчанию</system:String>
+  <system:String x:Key="prefs.voicecolormax.hint">Потолок кривых voice color DiffSinger по умолчанию (0–1000). Также можно менять в Project Expressions.</system:String>
   <system:String x:Key="workspace.panel.render">Рендер</system:String>
   <system:String x:Key="workspace.panel.view">Вид</system:String>
   <system:String x:Key="workspace.tracks">Треки</system:String>

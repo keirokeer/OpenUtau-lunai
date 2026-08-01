@@ -74,6 +74,9 @@ namespace OpenUtau.App.ViewModels {
         }
         [Reactive] public bool Beta { get; set; }
 
+        // DiffSinger voice color
+        [Reactive] public string VoiceColorCurveMaxText { get; set; } = "100";
+
         // Playback
         private List<AudioOutputDevice>? audioOutputDevices;
         private AudioOutputDevice? audioOutputDevice;
@@ -594,6 +597,17 @@ namespace OpenUtau.App.ViewModels {
             NoteOpacity = Math.Clamp(Preferences.Default.NoteOpacity, 0.05, 1);
             NoteCornerRadius = Math.Clamp(Preferences.Default.NoteCornerRadius, 0, 12);
             Beta = Preferences.Default.Beta;
+            VoiceColorCurveMaxText = Preferences.GetVoiceColorCurveMax().ToString();
+            this.WhenAnyValue(vm => vm.VoiceColorCurveMaxText)
+                .Subscribe(text => {
+                    if (!int.TryParse(text, out var n)) {
+                        return;
+                    }
+                    n = Math.Clamp(n, Preferences.VoiceColorCurveMaxMin, Preferences.VoiceColorCurveMaxMax);
+                    if (n != Preferences.GetVoiceColorCurveMax()) {
+                        Preferences.SetVoiceColorCurveMax(n);
+                    }
+                });
             LyricsHelper = LyricsHelpers.FirstOrDefault(option => option.klass.Equals(ActiveLyricsHelper.Inst.GetPreferred()));
             LyricsHelperBrackets = Preferences.Default.LyricsHelperBrackets;
             OtoEditor = Preferences.Default.OtoEditor;

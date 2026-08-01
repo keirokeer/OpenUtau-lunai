@@ -705,6 +705,11 @@ namespace OpenUtau.Core.DiffSinger {
             }
             //speakers
             if (dsSinger != null && dsSinger.dsConfig.speakers != null) {
+                float voiceColorCeiling = Preferences.GetVoiceColorCurveMax();
+                // Prefer keeps a single "ceiling"; negative values flip the curve below 0
+                // so descriptor.min <= descriptor.max always holds for Clamp/sliders.
+                float voiceColorMin = Math.Min(0f, voiceColorCeiling);
+                float voiceColorMax = Math.Max(0f, voiceColorCeiling);
                 result.AddRange(Enumerable.Zip(
                     dsSinger.Subbanks,
                     Enumerable.Range(1, dsSinger.Subbanks.Count),
@@ -712,8 +717,8 @@ namespace OpenUtau.Core.DiffSinger {
                         name = $"voice color {subbank.Color}",
                         abbr = VoiceColorHeader + index.ToString("D2"),
                         type = UExpressionType.Curve,
-                        min = 0,
-                        max = 100,
+                        min = voiceColorMin,
+                        max = voiceColorMax,
                         defaultValue = 0,
                         isFlag = false,
                     }));
