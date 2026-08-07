@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version"
+        description: "Version (SemVer 3-part for Velopack, e.g. 0.1.0 or 0.1.529; 4-part 0.1.529.0 is normalized)"
         required: true
-        default: "0.0.0.0"
+        default: "0.1.0"
         type: string
       release:
         description: "Release"
@@ -129,7 +129,30 @@ jobs:
           $arch = '${{ matrix.arch.arch }}'
           $channel = if ('${{ inputs.beta }}' -eq 'true') { "$rid-beta" } else { $rid }
           $vcredist = "vcredist143-$arch"
-          $version = '${{ inputs.version }}'
+          $rawVersion = '${{ inputs.version }}'.Trim().TrimStart('v', 'V')
+          # Velopack requires SemVer2 with exactly 3 numeric parts (not 0.0.0.0 / 1.2.3.4).
+          if ($rawVersion -notmatch '^(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?((?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)$') {
+            throw "Invalid version '$rawVersion'. Use SemVer 3-part (e.g. 0.1.0 or 0.1.529). Four-part versions like 0.1.529.0 are normalized automatically."
+          }
+          $major = $Matches[1]
+          $minor = $Matches[2]
+          $patch = $Matches[3]
+          $revision = $Matches[4]
+          $suffix = $Matches[5]
+          $packVersion = "$major.$minor.$patch$suffix"
+          if ($revision -and $revision -ne '0') {
+            # Preserve non-zero 4th component as build metadata: 1.2.3.4 -> 1.2.3+4
+            if ($suffix -match '\+') {
+              $packVersion = "$major.$minor.$patch$($suffix -replace '^\+', "+$revision.")"
+            } else {
+              $packVersion = "$major.$minor.$patch$suffix+$revision"
+            }
+          }
+          if ($packVersion -match '^\d+\.\d+\.\d+\.\d+') {
+            throw "Velopack packVersion must not be 4-part: '$packVersion'"
+          }
+          Write-Host "Input version: $rawVersion"
+          Write-Host "Velopack packVersion: $packVersion"
           $outDir = "Releases/$rid"
           New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
@@ -159,7 +182,7 @@ jobs:
 
           & vpk pack `
             --packId OpenUtau.Lunai `
-            --packVersion $version `
+            --packVersion $packVersion `
             --packDir "bin/${{ matrix.arch.name }}" `
             --mainExe OpenUtau-Lunai.exe `
             --packTitle "OpenUtau Lunai" `
