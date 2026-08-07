@@ -115,7 +115,8 @@ namespace OpenUtau.Core.DiffSinger {
                         }
                     }
                     if (result.samples == null) {
-                        result.samples = InvokeDiffsinger(phrase, depth, steps, cancellation, renderEvents);
+                        result.samples = InvokeDiffsinger(phrase, depth, steps, cancellation, renderEvents, out var waveformSamples);
+                        result.waveformSamples = waveformSamples;
                         if (result.samples != null) {
                             var source = new WaveSource(0, 0, 0, 1);
                             source.SetSamples(result.samples);
@@ -124,6 +125,17 @@ namespace OpenUtau.Core.DiffSinger {
                     }
                     if (result.samples != null) {
                         Renderers.ApplyDynamics(phrase, result);
+                        if (result.waveformSamples != null &&
+                            !ReferenceEquals(result.waveformSamples, result.samples)) {
+                            var waveResult = new RenderResult {
+                                samples = result.waveformSamples,
+                                leadingMs = result.leadingMs,
+                                positionMs = result.positionMs,
+                                estimatedLengthMs = result.estimatedLengthMs,
+                            };
+                            Renderers.ApplyDynamics(phrase, waveResult);
+                            result.waveformSamples = waveResult.samples;
+                        }
                     }
                     progress.Complete(phrase.phones.Length, progressInfo);
                     return result;
@@ -136,7 +148,8 @@ namespace OpenUtau.Core.DiffSinger {
         leadingMs、positionMs、estimatedLengthMs: timeaxis layout in Ms, double
          */
 
-        float[] InvokeDiffsinger(RenderPhrase phrase, double depth, int steps, CancellationTokenSource cancellation, RenderPhraseEvents? renderEvents) {
+        float[] InvokeDiffsinger(RenderPhrase phrase, double depth, int steps, CancellationTokenSource cancellation, RenderPhraseEvents? renderEvents, out float[]? waveformSamples) {
+            waveformSamples = null;
             var singer = phrase.singer as DiffSingerSinger;
             //Check if dsconfig.yaml is correct
             if(String.IsNullOrEmpty(singer.dsConfig.vocoder) ||
@@ -241,6 +254,13 @@ namespace OpenUtau.Core.DiffSinger {
             var durations = DiffSingerUtils.PaddedPhoneDurations(phrase, frameMs, headFrames, tailFrames)
                 .ToList();
             int totalFrames = durations.Sum();
+            Func<string, int?> tryBlendToken = p =>
+                singer.TryPhonemeTokenize(p, out int tok) ? tok : null;
+            var tokensArr = tokens.ToArray();
+            var tokensB = DiffSingerPhonemeBlend.BuildTokensB(tokensArr, phrase.phones, tryBlendToken);
+            var tokenBlendWeights = DiffSingerPhonemeBlend.BuildTokenBlendWeights(
+                tokensArr, phrase.phones, tryBlendToken);
+            var frameBlendWeights = DiffSingerPhonemeBlend.ExpandToFrames(tokenBlendWeights, durations);
             float[] f0 = DiffSingerUtils.SampleCurve(phrase, phrase.pitches, 0, frameMs, totalFrames, headFrames, tailFrames, 
                 x => MusicMath.ToneToFreq(x * 0.01))
                 .Select(f => (float)f).ToArray();
@@ -351,7 +371,8 @@ namespace OpenUtau.Core.DiffSinger {
                 singer.dsConfig.useBreathinessEmbed
                 || singer.dsConfig.useEnergyEmbed
                 || singer.dsConfig.useVoicingEmbed
-                || singer.dsConfig.useTensionEmbed) {
+                || singer.dsConfig.useTensionEmbed
+                || singer.dsConfig.useMouthOpeningEmbed) {
                 if(!singer.HasVariancePredictor){
                     throw new Exception(
                         "This singer has no variance predictor but its acoustic model requires one.");
@@ -448,71 +469,216 @@ namespace OpenUtau.Core.DiffSinger {
                         new DenseTensor<float>(tension, new int[] { tension.Length })
                         .Reshape(new int[] { 1, tension.Length })));
                 }
-            }
-            Onnx.VerifyInputNames(acousticModel, acousticInputs);
-            var acousticCache = Preferences.Default.DiffSingerTensorCache
-                ? new DiffSingerCache(singer.acousticHash, acousticInputs)
-                : null;
-            var acousticOutputs = acousticCache?.Load();
-            if (acousticOutputs is null) {
-                lock(acousticModel){
-                    if(cancellation.IsCancellationRequested) {
-                        return null;
+                if(singer.dsConfig.useMouthOpeningEmbed){
+                    var userMouthOpening = DiffSingerUtils.SampleCurve(phrase, phrase.mouthOpening,
+                        50, frameMs, totalFrames, headFrames, tailFrames,
+                        x => x).Select(x => (float) x);
+                    if (varianceResult.mouthOpening == null) {
+                        throw new KeyNotFoundException(
+                            "The parameter \"mouth_opening\" required by acoustic model is not found in variance predictions.");
                     }
-                    acousticOutputs = acousticModel.Run(acousticInputs).Cast<NamedOnnxValue>().ToList();
+                    var predictedMouthOpening = DiffSingerUtils.ResamplePaddedCurve(
+                        varianceResult.mouthOpening, totalFrames,
+                        varianceResult.headFrames, varianceResult.tailFrames,
+                        headFrames, tailFrames,
+                        varianceResult.frameMs, frameMs);
+                    var mouthOpening = predictedMouthOpening.Zip(userMouthOpening, varianceDeltaFunctions[Format.Ustx.OPEC])
+                        .Select(x => Math.Clamp(x, 0f, 1f)).ToArray();
+                    acousticInputs.Add(NamedOnnxValue.CreateFromTensor("mouth_opening",
+                        new DenseTensor<float>(mouthOpening, new int[] { mouthOpening.Length })
+                        .Reshape(new int[] { 1, mouthOpening.Length })));
                 }
-                acousticCache?.Save(acousticOutputs);
-                phrase.AddCacheFile(acousticCache?.Filename);
             }
-            Tensor<float> mel = acousticOutputs.First().AsTensor<float>().Clone();
-            //mel transforms for different mel base
-            if (vocoder.mel_base != singer.dsConfig.mel_base) {
-                float k;
-                if (vocoder.mel_base == "e" && singer.dsConfig.mel_base == "10") {
-                    k = 2.30259f;
+            ulong? acousticRetakeKey = null;
+            AcousticRetakeState? previousAcoustic = null;
+            bool[]? acousticRetakeMask = null;
+            Tensor<float>? gtMel = null;
+            Tensor<float>? mel = null;
+            bool skipVocoderReuseSamples = false;
+            var acousticConditions = DiffSingerAcousticRetake.CaptureConditions(acousticInputs);
+            int hopSize = vocoder.hop_size;
+            int sampleRate = vocoder.sample_rate;
+            bool supportsAcousticRetake = DiffSingerAcousticRetake.Supports(acousticModel, singer.dsConfig);
+            bool useAcousticLocalRetake =
+                Preferences.Default.DiffSingerTensorCache &&
+                Preferences.Default.DiffSingerAcousticLocalRetake &&
+                supportsAcousticRetake;
+            uint noiseSeed = unchecked((uint)(phrase.hash & 0xFFFFFFFFUL)) | 1u;
+            bool forceAcousticRetake = false;
+            if (supportsAcousticRetake &&
+                DiffSingerAcousticRetake.TryConsumeForceRetake(
+                    phrase, durations, totalFrames, (float)frameMs,
+                    out var forceMask, out uint forceNonce)) {
+                forceAcousticRetake = true;
+                acousticRetakeMask = forceMask;
+                noiseSeed ^= forceNonce;
+                if (noiseSeed == 0) {
+                    noiseSeed = 1u;
                 }
-                else if (vocoder.mel_base == "10" && singer.dsConfig.mel_base == "e") {
-                    k = 0.434294f;
-                } else {
-                    // this should never happen
-                    throw new Exception("This should never happen");
+            }
+            if (useAcousticLocalRetake || forceAcousticRetake) {
+                acousticRetakeKey = DiffSingerAcousticRetake.BuildScopeKey(
+                    singer.acousticHash, acousticInputs, phrase.position, phrase.end);
+                if (DiffSingerAcousticRetake.TryGetState(acousticRetakeKey.Value, out var cachedAcoustic) &&
+                    cachedAcoustic.totalFrames == totalFrames &&
+                    cachedAcoustic.melBins == singer.dsConfig.num_mel_bins &&
+                    Math.Abs(cachedAcoustic.frameMs - (float)frameMs) < 1e-4f) {
+                    if (forceAcousticRetake) {
+                        previousAcoustic = cachedAcoustic;
+                        if (acousticRetakeMask != null &&
+                            acousticRetakeMask.Any(x => x) &&
+                            !acousticRetakeMask.All(x => x)) {
+                            gtMel = DiffSingerAcousticRetake.RestoreMel(cachedAcoustic);
+                        } else {
+                            // Full force retake — regenerate entire phrase with new noise.
+                            acousticRetakeMask = Enumerable.Repeat(true, totalFrames).ToArray();
+                            previousAcoustic = null;
+                            gtMel = null;
+                        }
+                    } else {
+                        acousticRetakeMask = DiffSingerAcousticRetake.BuildRetakeMask(
+                            cachedAcoustic, acousticConditions, totalFrames, (float)frameMs);
+                        if (acousticRetakeMask != null &&
+                            !acousticRetakeMask.Any(x => x) &&
+                            DiffSingerAcousticRetake.IsMelCompatibleWithState(
+                                cachedAcoustic, DiffSingerAcousticRetake.RestoreMel(cachedAcoustic))) {
+                            // Conditions unchanged — reuse previous mel; skip vocoder when samples exist.
+                            mel = DiffSingerAcousticRetake.RestoreMel(cachedAcoustic);
+                            previousAcoustic = cachedAcoustic;
+                            if (cachedAcoustic.rawSamples != null &&
+                                cachedAcoustic.hopSize == hopSize) {
+                                skipVocoderReuseSamples = true;
+                            }
+                        } else if (acousticRetakeMask != null &&
+                            acousticRetakeMask.Any(x => x) &&
+                            !acousticRetakeMask.All(x => x)) {
+                            previousAcoustic = cachedAcoustic;
+                            gtMel = DiffSingerAcousticRetake.RestoreMel(cachedAcoustic);
+                        }
+                    }
+                } else if (forceAcousticRetake) {
+                    acousticRetakeMask = Enumerable.Repeat(true, totalFrames).ToArray();
                 }
-                for (int b = 0; b < mel.Dimensions[0]; ++b) {
-                    for (int t = 0; t < mel.Dimensions[1]; ++t) {
-                        for (int c = 0; c < mel.Dimensions[2]; ++c) {
-                            mel[b, t, c] *= k;
+            }
+            if (mel is null) {
+                DiffSingerOnnxExtras.FillMissingInputs(acousticModel, acousticInputs, new DiffSingerOnnxFillContext {
+                    TotalFrames = totalFrames,
+                    MelBins = singer.dsConfig.num_mel_bins,
+                    HiddenSize = singer.dsConfig.hiddenSize,
+                    Tokens = tokensArr,
+                    TokensB = tokensB,
+                    BlendWeights = frameBlendWeights,
+                    BlendLength = totalFrames,
+                    GtMel = gtMel,
+                    RetakeMask = acousticRetakeMask,
+                    NoiseStage = DiffSingerNoise.StageAcoustic,
+                    NoiseSeed = noiseSeed,
+                });
+                Onnx.VerifyInputNames(acousticModel, acousticInputs);
+                var acousticCache = Preferences.Default.DiffSingerTensorCache
+                    ? new DiffSingerCache(singer.acousticHash, acousticInputs)
+                    : null;
+                var acousticOutputs = acousticCache?.Load();
+                if (acousticOutputs is null) {
+                    lock(acousticModel){
+                        if(cancellation.IsCancellationRequested) {
+                            return null;
+                        }
+                        acousticOutputs = acousticModel.Run(acousticInputs).Cast<NamedOnnxValue>().ToList();
+                    }
+                    acousticCache?.Save(acousticOutputs);
+                    phrase.AddCacheFile(acousticCache?.Filename);
+                }
+                mel = acousticOutputs.First().AsTensor<float>().Clone();
+                if (previousAcoustic != null && acousticRetakeMask != null) {
+                    var previousMel = DiffSingerAcousticRetake.RestoreMel(previousAcoustic);
+                    mel = DiffSingerAcousticRetake.HardComposeMel(previousMel, mel, acousticRetakeMask);
+                }
+            }
+            // Keep pre-transform mel for state (restore must not double-apply mel_base).
+            Tensor<float> melForState = mel.Clone();
+            float[] samples;
+            if (skipVocoderReuseSamples &&
+                previousAcoustic?.rawSamples != null) {
+                samples = (float[])previousAcoustic.rawSamples.Clone();
+            } else {
+                //mel transforms for different mel base
+                if (vocoder.mel_base != singer.dsConfig.mel_base) {
+                    float k;
+                    if (vocoder.mel_base == "e" && singer.dsConfig.mel_base == "10") {
+                        k = 2.30259f;
+                    }
+                    else if (vocoder.mel_base == "10" && singer.dsConfig.mel_base == "e") {
+                        k = 0.434294f;
+                    } else {
+                        // this should never happen
+                        throw new Exception("This should never happen");
+                    }
+                    for (int b = 0; b < mel.Dimensions[0]; ++b) {
+                        for (int t = 0; t < mel.Dimensions[1]; ++t) {
+                            for (int c = 0; c < mel.Dimensions[2]; ++c) {
+                                mel[b, t, c] *= k;
+                            }
                         }
                     }
                 }
-            }
-            //vocoder
-            //waveform = session.run(['waveform'], {'mel': mel, 'f0': f0})[0]
-            var vocoderInputs = new List<NamedOnnxValue>();
-            vocoderInputs.Add(NamedOnnxValue.CreateFromTensor("mel", mel));
-            vocoderInputs.Add(NamedOnnxValue.CreateFromTensor("f0",
-                new DenseTensor<float>(f0, new int[] { f0.Length })
-                .Reshape(new int[] { 1, f0.Length })));
-            var vocoderCache = Preferences.Default.DiffSingerTensorCache
-                ? new DiffSingerCache(vocoder.hash, vocoderInputs)
-                : null;
-            var vocoderOutputs = vocoderCache?.Load();
-            if (vocoderOutputs is null) {
-                lock(vocoder){
-                    if(cancellation.IsCancellationRequested) {
-                        return null;
+                //vocoder
+                //waveform = session.run(['waveform'], {'mel': mel, 'f0': f0})[0]
+                var vocoderInputs = new List<NamedOnnxValue>();
+                vocoderInputs.Add(NamedOnnxValue.CreateFromTensor("mel", mel));
+                vocoderInputs.Add(NamedOnnxValue.CreateFromTensor("f0",
+                    new DenseTensor<float>(f0, new int[] { f0.Length })
+                    .Reshape(new int[] { 1, f0.Length })));
+                var vocoderCache = Preferences.Default.DiffSingerTensorCache
+                    ? new DiffSingerCache(vocoder.hash, vocoderInputs)
+                    : null;
+                var vocoderOutputs = vocoderCache?.Load();
+                if (vocoderOutputs is null) {
+                    lock(vocoder){
+                        if(cancellation.IsCancellationRequested) {
+                            return null;
+                        }
+                        vocoderOutputs = vocoder.session.Run(vocoderInputs).Cast<NamedOnnxValue>().ToList();
                     }
-                    vocoderOutputs = vocoder.session.Run(vocoderInputs).Cast<NamedOnnxValue>().ToList();
+                    vocoderCache?.Save(vocoderOutputs);
+                    phrase.AddCacheFile(vocoderCache?.Filename);
                 }
-                vocoderCache?.Save(vocoderOutputs);
-                phrase.AddCacheFile(vocoderCache?.Filename);
+                Tensor<float> samplesTensor = vocoderOutputs.First().AsTensor<float>();
+                //Check the size of samplesTensor
+                int[] expectedShape = new int[] { 1, -1 };
+                if(!DiffSingerUtils.ValidateShape(samplesTensor, expectedShape)){
+                    throw new Exception($"The shape of vocoder output should be (1, length), but the actual shape is {DiffSingerUtils.ShapeString(samplesTensor)}");
+                }
+                samples = samplesTensor.ToArray();
             }
-            Tensor<float> samplesTensor = vocoderOutputs.First().AsTensor<float>();
-            //Check the size of samplesTensor
-            int[] expectedShape = new int[] { 1, -1 };
-            if(!DiffSingerUtils.ValidateShape(samplesTensor, expectedShape)){
-                throw new Exception($"The shape of vocoder output should be (1, length), but the actual shape is {DiffSingerUtils.ShapeString(samplesTensor)}");
+            // Play/export: continuous vocoder output after mel inpaint (no sample splice).
+            // Piano-roll waveform: optional HardCompose so only the retake region redraws.
+            if (previousAcoustic?.rawSamples != null &&
+                acousticRetakeMask != null &&
+                acousticRetakeMask.Any(x => x) &&
+                !acousticRetakeMask.All(x => x) &&
+                previousAcoustic.hopSize == hopSize &&
+                previousAcoustic.rawSamples.Length == samples.Length) {
+                waveformSamples = DiffSingerAcousticRetake.HardComposeSamples(
+                    previousAcoustic.rawSamples,
+                    samples,
+                    acousticRetakeMask,
+                    hopSize,
+                    DiffSingerAcousticRetake.DefaultCrossfadeSamples(hopSize, sampleRate));
             }
-            var samples = samplesTensor.ToArray();
+            if (acousticRetakeKey.HasValue) {
+                DiffSingerAcousticRetake.SetState(
+                    acousticRetakeKey.Value,
+                    DiffSingerAcousticRetake.CaptureState(
+                        acousticConditions,
+                        melForState,
+                        totalFrames,
+                        singer.dsConfig.num_mel_bins,
+                        (float)frameMs,
+                        samples,
+                        sampleRate,
+                        hopSize));
+            }
             return samples;
         }
 
@@ -603,7 +769,8 @@ namespace OpenUtau.Core.DiffSinger {
             return abbr == ENE ||
                 abbr == Format.Ustx.BREC ||
                 abbr == Format.Ustx.VOIC ||
-                abbr == Format.Ustx.TENC;
+                abbr == Format.Ustx.TENC ||
+                abbr == Format.Ustx.OPEC;
         }
 
         public static bool TryBuildAcousticF0PatchPreview(RenderPhrase phrase, out float frameMs, out float[] acousticF0Hz) {
@@ -633,6 +800,10 @@ namespace OpenUtau.Core.DiffSinger {
                 (
                     Format.Ustx.TENC, result.tension ?? Array.Empty<float>(), phrase.tension,
                     x => Math.Clamp(x, -10f, 10f) / 20f + 0.5f
+                ),
+                (
+                    Format.Ustx.OPEC, result.mouthOpening ?? Array.Empty<float>(), phrase.mouthOpening,
+                    x => Math.Clamp(x, 0f, 1f)
                 ),
             }.Select(t => {
                 var abbr = t.Item1;

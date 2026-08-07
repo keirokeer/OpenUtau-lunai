@@ -142,6 +142,11 @@
               <TextBlock Text="{DynamicResource prefs.rendering.diffsingervariancelocalpitchpatch}"/>
               <ToggleSwitch IsChecked="{Binding DiffSingerVarianceLocalPitchPatch}"/>
             </Grid>
+            <Grid Classes="prefRow" ColumnDefinitions="*,Auto" IsEnabled="{Binding DiffSingerTensorCache}"
+                  ToolTip.Tip="{DynamicResource prefs.rendering.diffsingeracousticlocalretake.hint}">
+              <TextBlock Text="{DynamicResource prefs.rendering.diffsingeracousticlocalretake}"/>
+              <ToggleSwitch IsChecked="{Binding DiffSingerAcousticLocalRetake}"/>
+            </Grid>
           </StackPanel>
         </Expander>
         <Separator Classes="workspacePanelSectionDivider"/>

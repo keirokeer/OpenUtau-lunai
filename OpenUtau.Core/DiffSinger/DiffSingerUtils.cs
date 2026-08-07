@@ -24,6 +24,7 @@ namespace OpenUtau.Core.DiffSinger {
                 {Format.Ustx.BREC, (x, y) => x + y * 12 / 100},
                 {Format.Ustx.VOIC, (x, y) => x + (y - 100) * 12 / 100},
                 {Format.Ustx.TENC, (x, y) => x + y / 20},
+                {Format.Ustx.OPEC, (x, y) => Math.Clamp(x + (y - 50f) / 100f, 0f, 1f)},
             };
 
         /// <summary>
@@ -51,10 +52,10 @@ namespace OpenUtau.Core.DiffSinger {
                 ENE => dsSinger.dsConfig.useEnergyEmbed,
                 Format.Ustx.VOIC => dsSinger.dsConfig.useVoicingEmbed,
                 Format.Ustx.TENC => dsSinger.dsConfig.useTensionEmbed,
+                Format.Ustx.OPEC => dsSinger.dsConfig.useMouthOpeningEmbed,
                 VELC => dsSinger.dsConfig.useSpeedEmbed,
                 Format.Ustx.GENC => dsSinger.dsConfig.useKeyShiftEmbed,
                 PEXP => dsSinger.getPitchPredictor()?.UseExpr == true,
-                Format.Ustx.OPEC => false,
                 _ => true,
             };
         }

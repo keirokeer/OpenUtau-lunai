@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,6 +14,12 @@ namespace OpenUtau.Core.Render {
     /// </summary>
     public class RenderResult {
         public float[] samples;
+
+        /// <summary>
+        /// Optional piano-roll waveform buffer. When set, may differ from <see cref="samples"/>
+        /// (e.g. DiffSinger display-only HardCompose). Play/export always use <see cref="samples"/>.
+        /// </summary>
+        public float[] waveformSamples;
 
         /// <summary>
         /// The length of leading samples.
