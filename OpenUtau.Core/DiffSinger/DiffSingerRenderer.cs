@@ -679,7 +679,21 @@ namespace OpenUtau.Core.DiffSinger {
                         sampleRate,
                         hopSize));
             }
+            // OpenUtau playback/export is fixed at 44.1 kHz; resample vocoder output if needed.
+            // Keep acoustic-retake cache/compose above at the vocoder native rate.
+            if (vocoder.sample_rate != 44100) {
+                samples = ResampleTo44100(samples, vocoder.sample_rate);
+                if (waveformSamples != null) {
+                    waveformSamples = ResampleTo44100(waveformSamples, vocoder.sample_rate);
+                }
+            }
             return samples;
+        }
+
+        static float[] ResampleTo44100(float[] samples, int sourceSampleRate) {
+            var signal = new NWaves.Signals.DiscreteSignal(sourceSampleRate, samples);
+            signal = NWaves.Operations.Operation.Resample(signal, 44100);
+            return signal.Samples;
         }
 
         public RenderPitchResult LoadRenderedPitch(RenderPhrase phrase) {
