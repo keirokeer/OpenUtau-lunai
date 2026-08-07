@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using OpenUtau.Api;
+using OpenUtau.Core.Format;
 using OpenUtau.Core.Ustx;
 
 namespace OpenUtau.Core {
@@ -247,6 +248,81 @@ namespace OpenUtau.Core {
 
         public override void Unexecute() {
             track.MixFx = oldMixFx?.Clone();
+        }
+    }
+
+    /// <summary>
+    /// Set or clear a single per-track expression default override (empty baseline).
+    /// </summary>
+    public class SetTrackExpressionDefaultCommand : TrackCommand {
+        readonly string abbr;
+        readonly float? newValue;
+        readonly float? oldValue;
+        public string Abbr => abbr;
+        public string Key => abbr;
+
+        public SetTrackExpressionDefaultCommand(UProject project, UTrack track, string abbr, float? newValue, float? oldValue = null) {
+            this.project = project;
+            this.track = track;
+            this.abbr = Util.ExpressionDefaultResolver.NormalizeAbbr(abbr);
+            this.newValue = newValue;
+            this.oldValue = oldValue ?? Util.ExpressionDefaultResolver.GetTrackOverride(track, this.abbr);
+        }
+
+        public override string ToString() => $"Set track expression default {abbr.ToUpperInvariant()}";
+
+        public override void Execute() {
+            Util.ExpressionDefaultResolver.ApplyTrackOverride(project, track, abbr, newValue);
+            SyncVoiceColorExpIfClr();
+        }
+
+        public override void Unexecute() {
+            Util.ExpressionDefaultResolver.ApplyTrackOverride(project, track, abbr, oldValue);
+            SyncVoiceColorExpIfClr();
+        }
+
+        void SyncVoiceColorExpIfClr() {
+            if (abbr != Format.Ustx.CLR || track.VoiceColorExp == null) {
+                return;
+            }
+            float effective = Util.ExpressionDefaultResolver.GetEffectiveDefault(project, track, abbr);
+            track.VoiceColorExp.CustomDefaultValue = Math.Clamp(
+                effective, track.VoiceColorExp.min, track.VoiceColorExp.max);
+        }
+    }
+
+    /// <summary>
+    /// Clear all per-track expression default overrides on a track.
+    /// </summary>
+    public class ClearTrackExpressionDefaultsCommand : TrackCommand {
+        readonly Dictionary<string, float> oldOverrides;
+
+        public ClearTrackExpressionDefaultsCommand(UProject project, UTrack track) {
+            this.project = project;
+            this.track = track;
+            oldOverrides = Util.ExpressionDefaultResolver.CloneOverrides(track);
+        }
+
+        public override string ToString() => "Clear track expression defaults";
+
+        public override void Execute() {
+            Util.ExpressionDefaultResolver.EnsureOverridesDict(track);
+            track.ExpressionDefaultOverrides.Clear();
+            SyncClrFromProject();
+        }
+
+        public override void Unexecute() {
+            track.ExpressionDefaultOverrides = new Dictionary<string, float>(oldOverrides);
+            SyncClrFromProject();
+        }
+
+        void SyncClrFromProject() {
+            if (track.VoiceColorExp == null) {
+                return;
+            }
+            float effective = Util.ExpressionDefaultResolver.GetEffectiveDefault(project, track, Format.Ustx.CLR);
+            track.VoiceColorExp.CustomDefaultValue = Math.Clamp(
+                effective, track.VoiceColorExp.min, track.VoiceColorExp.max);
         }
     }
 }

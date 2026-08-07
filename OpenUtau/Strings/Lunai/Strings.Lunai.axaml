@@ -5,6 +5,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
   <system:String x:Key="context.part.generateharmonies">Generate harmonies...</system:String>
+  <system:String x:Key="context.note.acousticretake">Acoustic Retake</system:String>
 
   <system:String x:Key="dialogs.about.close">Close</system:String>
   <system:String x:Key="dialogs.about.contributors.embedded">Showing the embedded contributor list.</system:String>
@@ -251,6 +252,8 @@
   <system:String x:Key="prefs.playback.pitchfollow.threshold">Semitone threshold</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.verticalposition">Note vertical position</system:String>
   <system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">DiffSinger Pitch Local Retaking</system:String>
+  <system:String x:Key="prefs.rendering.diffsingeracousticlocalretake">DiffSinger Acoustic Local Retake</system:String>
+  <system:String x:Key="prefs.rendering.diffsingeracousticlocalretake.hint">On pitch/curve edits, regenerate only the changed region (needs Tensor Cache and a bank with retake+gt_mel).</system:String>
   <system:String x:Key="prefs.rendering.diffsingershowacousticf0patchpreview">Show acoustic F0 patch preview on piano roll</system:String>
   <system:String x:Key="prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate">DiffSinger unvoiced consonant F0 interpolate (experimental)</system:String>
   <system:String x:Key="prefs.shortcut.search.watermark">Search by name or key...</system:String>
@@ -356,6 +359,9 @@
   <system:String x:Key="themeeditor.cancel">Cancel</system:String>
   <system:String x:Key="themeeditor.save">Save</system:String>
 
+  <system:String x:Key="tip.aliasbox.phoneme">Override Phoneme</system:String>
+  <system:String x:Key="tip.aliasbox.blend">Blend phoneme</system:String>
+  <system:String x:Key="tip.aliasbox.blendweight">Blend weight (0–100%)</system:String>
   <system:String x:Key="tip.notes.zoomy">Alt + scroll wheel to zoom vertically</system:String>
 
   <system:String x:Key="tracks.mixfx">Track Polish</system:String>
@@ -372,6 +378,11 @@
   <system:String x:Key="workspace.panel.close">Close panel</system:String>
   <system:String x:Key="workspace.panel.render">Render</system:String>
   <system:String x:Key="workspace.panel.expressions">Project Expressions</system:String>
+  <system:String x:Key="workspace.panel.expressions.track">Track Expressions</system:String>
+  <system:String x:Key="workspace.panel.expressions.mode.project">Project</system:String>
+  <system:String x:Key="workspace.panel.expressions.mode.track">Track</system:String>
+  <system:String x:Key="workspace.panel.expressions.track.clear">Clear all track overrides</system:String>
+  <system:String x:Key="workspace.panel.expressions.track.clear.tip">Remove all track-level defaults so this track inherits Project Expressions</system:String>
   <system:String x:Key="workspace.panel.expressions.defaultcolor">Default color</system:String>
   <system:String x:Key="workspace.panel.expressions.voicecolors">Voice colors</system:String>
   <system:String x:Key="workspace.panel.expressions.voicecolormax">Voice color max %</system:String>
@@ -380,6 +391,8 @@
   <system:String x:Key="prefs.voicecolormax.hint">Default ceiling for DiffSinger voice-color curves (0–1000). Also editable in Project Expressions.</system:String>
   <system:String x:Key="workspace.panel.expressions.parameters">Parameters</system:String>
   <system:String x:Key="workspace.panel.expressions.resettooltip">Right click to reset to the built-in default</system:String>
+  <system:String x:Key="workspace.panel.expressions.resettooltip.track">Right click to clear track override (inherit project)</system:String>
+  <system:String x:Key="workspace.panel.expressions.styles.projecthint">Singer styles always apply to Project Expressions (not track overrides).</system:String>
   <system:String x:Key="workspace.panel.expressions.openinexppanel">Open in expression panel</system:String>
   <system:String x:Key="workspace.panel.expressions.styles">Singer styles</system:String>
   <system:String x:Key="workspace.panel.expressions.styles.delete">Delete style</system:String>

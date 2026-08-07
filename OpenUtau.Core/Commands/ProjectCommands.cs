@@ -204,6 +204,10 @@ namespace OpenUtau.Core {
             }
             if (abbr == Format.Ustx.CLR) {
                 foreach (var track in project.tracks) {
+                    // Skip tracks that have an explicit track-level CLR override.
+                    if (Util.ExpressionDefaultResolver.HasTrackOverride(track, Format.Ustx.CLR)) {
+                        continue;
+                    }
                     if (track.VoiceColorExp != null) {
                         SetEffectiveDefault(
                             track.VoiceColorExp,
@@ -211,6 +215,7 @@ namespace OpenUtau.Core {
                     }
                 }
             }
+            Util.ExpressionDefaultResolver.PruneMatchingOverrides(project, new[] { abbr });
         }
 
         /// <summary>

@@ -33,6 +33,30 @@ namespace OpenUtau.App.Views {
                 .Subscribe(_ => ScheduleApplyScrollStyle());
         }
 
+        void OnProjectModePressed(object? sender, PointerPressedEventArgs e) {
+            if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) {
+                return;
+            }
+            if (Vm != null) {
+                Vm.IsTrackMode = false;
+            }
+            e.Handled = true;
+        }
+
+        void OnTrackModePressed(object? sender, PointerPressedEventArgs e) {
+            if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) {
+                return;
+            }
+            if (Vm != null && Vm.CanUseTrackMode) {
+                Vm.IsTrackMode = true;
+            }
+            e.Handled = true;
+        }
+
+        void OnClearTrackOverridesClick(object? sender, RoutedEventArgs e) {
+            Vm?.ClearAllTrackOverrides();
+        }
+
         void ScheduleApplyScrollStyle() {
             if (!WorkspaceScrollbarHelper.IsInVisualTree(this)) {
                 return;

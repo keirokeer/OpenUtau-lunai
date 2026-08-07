@@ -127,7 +127,8 @@ namespace OpenUtau.Core.Editing {
                 }
                 else{
                     var selectedTickRanges = SelectionUtils.SelectedTickRanges(part, notes);
-                    int defaultValue = (int)part.curves.First(c => c.abbr == abbr).descriptor.CustomDefaultValue;
+                    int defaultValue = ExpressionDefaultResolver.GetEffectiveDefaultInt(
+                        project, project.tracks[part.trackNo], abbr);
                     foreach(var range in selectedTickRanges){
                         docManager.ExecuteCmd(new PasteCurveCommand(project, part, Format.Ustx.PITD,
                             range.start, defaultValue,
@@ -286,7 +287,8 @@ namespace OpenUtau.Core.Editing {
                 }
                 else{
                     var selectedTickRanges = SelectionUtils.SelectedTickRanges(part, notes);
-                    int defaultValue = (int)part.curves.First(c => c.abbr == abbr).descriptor.CustomDefaultValue;
+                    int defaultValue = ExpressionDefaultResolver.GetEffectiveDefaultInt(
+                        project, project.tracks[part.trackNo], abbr);
                     foreach(var range in selectedTickRanges){
                         docManager.ExecuteCmd(new PasteCurveCommand(project, part, abbr,
                             range.start, defaultValue,

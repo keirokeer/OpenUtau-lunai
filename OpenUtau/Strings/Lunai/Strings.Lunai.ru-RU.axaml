@@ -5,6 +5,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
   <system:String x:Key="context.part.generateharmonies">Создать гармонии...</system:String>
+  <system:String x:Key="context.note.acousticretake">Ретейк акустики</system:String>
 
   <system:String x:Key="dialogs.about.close">Закрыть</system:String>
   <system:String x:Key="dialogs.about.contributors.embedded">Показан встроенный список контрибьюторов.</system:String>
@@ -251,6 +252,8 @@
   <system:String x:Key="prefs.playback.pitchfollow.threshold">Порог в полутонах</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.verticalposition">Вертикальная позиция ноты</system:String>
   <system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">Локальный пересъём питча DiffSinger</system:String>
+  <system:String x:Key="prefs.rendering.diffsingeracousticlocalretake">Локальный пересъём acoustic DiffSinger</system:String>
+  <system:String x:Key="prefs.rendering.diffsingeracousticlocalretake.hint">При правке pitch/кривых пересобирается только изменённый участок (нужны Tensor Cache и банк с retake+gt_mel).</system:String>
   <system:String x:Key="prefs.rendering.diffsingershowacousticf0patchpreview">Показывать превью F0 патча на piano roll</system:String>
   <system:String x:Key="prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate">Интерполяция F0 acoustic на глухих согласных DiffSinger (тест)</system:String>
   <system:String x:Key="prefs.shortcut.search.watermark">Поиск по названию или клавише...</system:String>
@@ -356,6 +359,9 @@
   <system:String x:Key="themeeditor.cancel">Отмена</system:String>
   <system:String x:Key="themeeditor.save">Сохранить</system:String>
 
+  <system:String x:Key="tip.aliasbox.phoneme">Заменить фонему</system:String>
+  <system:String x:Key="tip.aliasbox.blend">Фонема бленда</system:String>
+  <system:String x:Key="tip.aliasbox.blendweight">Вес бленда (0–100%)</system:String>
   <system:String x:Key="tip.notes.zoomy">Alt + колёсико для вертикального масштабирования</system:String>
 
   <system:String x:Key="tracks.mixfx">Обработка трека</system:String>
@@ -371,6 +377,11 @@
 
   <system:String x:Key="workspace.panel.close">Закрыть панель</system:String>
   <system:String x:Key="workspace.panel.expressions">Выражения проекта</system:String>
+  <system:String x:Key="workspace.panel.expressions.track">Выражения трека</system:String>
+  <system:String x:Key="workspace.panel.expressions.mode.project">Проект</system:String>
+  <system:String x:Key="workspace.panel.expressions.mode.track">Трек</system:String>
+  <system:String x:Key="workspace.panel.expressions.track.clear">Сбросить все значения трека</system:String>
+  <system:String x:Key="workspace.panel.expressions.track.clear.tip">Убрать локальные значения трека — снова действуют выражения проекта</system:String>
   <system:String x:Key="workspace.panel.expressions.defaultcolor">Оттенок по умолчанию</system:String>
   <system:String x:Key="workspace.panel.expressions.openinexppanel">Открыть на панели выражений</system:String>
   <system:String x:Key="workspace.panel.expressions.styles">Стили исполнителя</system:String>
@@ -390,6 +401,8 @@
   <system:String x:Key="workspace.panel.expressions.styles.singer">Исполнитель</system:String>
   <system:String x:Key="workspace.panel.expressions.parameters">Параметры</system:String>
   <system:String x:Key="workspace.panel.expressions.resettooltip">ПКМ — сбросить к встроенному значению по умолчанию</system:String>
+  <system:String x:Key="workspace.panel.expressions.resettooltip.track">ПКМ — убрать значение трека (наследовать проект)</system:String>
+  <system:String x:Key="workspace.panel.expressions.styles.projecthint">Стили исполнителя всегда применяются к выражениям проекта (не к значениям трека).</system:String>
   <system:String x:Key="workspace.panel.expressions.voicecolors">Оттенки голоса</system:String>
   <system:String x:Key="workspace.panel.expressions.voicecolormax">Макс. % оттенка голоса</system:String>
   <system:String x:Key="prefs.voicecolormax">Макс. % оттенка голоса</system:String>

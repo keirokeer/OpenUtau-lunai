@@ -317,6 +317,7 @@ namespace OpenUtau.Core {
         readonly int lastY;
         int[] oldXs;
         int[] oldYs;
+        int[] oldBreaks;
         public override ValidateOptions ValidateOptions
             => new ValidateOptions {
                 SkipTiming = true,
@@ -335,6 +336,7 @@ namespace OpenUtau.Core {
             var curve = part.curves.FirstOrDefault(c => c.abbr == abbr);
             oldXs = curve?.xs.ToArray();
             oldYs = curve?.ys.ToArray();
+            oldBreaks = curve?.breaks?.ToArray();
         }
         public override string ToString() => "Edit Curve";
         public override void Execute() {
@@ -346,20 +348,12 @@ namespace OpenUtau.Core {
                 }
                 int y1 = (int)Math.Clamp(y, descriptor.min, descriptor.max);
                 int lastY1 = (int)Math.Clamp(lastY, descriptor.min, descriptor.max);
-                curve.Set(x, y1, lastX, lastY1);
+                int empty = Util.ExpressionDefaultResolver.GetEffectiveDefaultInt(project, project.tracks[Part.trackNo], abbr);
+                curve.Set(x, y1, lastX, lastY1, empty);
             }
         }
         public override void Unexecute() {
-            var curve = Part.curves.FirstOrDefault(c => c.abbr == abbr);
-            if (curve == null) {
-                return;
-            }
-            curve.xs.Clear();
-            curve.ys.Clear();
-            if (oldXs != null && oldYs != null) {
-                curve.xs.AddRange(oldXs);
-                curve.ys.AddRange(oldYs);
-            }
+            CurveCommandUtil.RestoreCurvePoints(Part.curves.FirstOrDefault(c => c.abbr == abbr), oldXs, oldYs, oldBreaks);
         }
         public override bool CanMerge(IList<UCommand> commands) {
             return commands.All(c => c is SetCurveCommand);
@@ -371,9 +365,65 @@ namespace OpenUtau.Core {
             curve.Simplify();
             int[] newXs = curve?.xs.ToArray();
             int[] newYs = curve?.ys.ToArray();
+            int[] newBreaks = curve?.breaks?.ToArray();
             return new MergedSetCurveCommand(
                 last.project, last.Part, last.abbr,
-                first.oldXs, first.oldYs, newXs, newYs);
+                first.oldXs, first.oldYs, first.oldBreaks, newXs, newYs, newBreaks);
+        }
+    }
+
+    /// <summary>
+    /// RMB-erase: remove authored curve points so the range samples as CustomDefaultValue
+    /// (empty / never edited), without writing default values into the curve.
+    /// </summary>
+    public class EraseCurveCommand : ExpCommand {
+        readonly UProject project;
+        readonly string abbr;
+        readonly int x;
+        readonly int lastX;
+        int[] oldXs;
+        int[] oldYs;
+        int[] oldBreaks;
+        public override ValidateOptions ValidateOptions
+            => new ValidateOptions {
+                SkipTiming = true,
+                Part = Part,
+                SkipPhonemizer = true,
+                SkipPhoneme = true,
+            };
+        public EraseCurveCommand(UProject project, UVoicePart part, string abbr, int x, int lastX) : base(part) {
+            this.project = project;
+            this.abbr = abbr;
+            Key = abbr;
+            this.x = x;
+            this.lastX = lastX;
+            var curve = part.curves.FirstOrDefault(c => c.abbr == abbr);
+            oldXs = curve?.xs.ToArray();
+            oldYs = curve?.ys.ToArray();
+            oldBreaks = curve?.breaks?.ToArray();
+        }
+        public override string ToString() => "Erase Curve";
+        public override void Execute() {
+            var curve = Part.curves.FirstOrDefault(c => c.abbr == abbr);
+            if (curve == null) {
+                return;
+            }
+            curve.Erase(x, lastX);
+        }
+        public override void Unexecute() {
+            CurveCommandUtil.RestoreCurvePoints(Part.curves.FirstOrDefault(c => c.abbr == abbr), oldXs, oldYs, oldBreaks);
+        }
+        public override bool CanMerge(IList<UCommand> commands) {
+            return commands.All(c => c is EraseCurveCommand);
+        }
+        public override UCommand Merge(IList<UCommand> commands) {
+            var first = commands.First() as EraseCurveCommand;
+            var last = commands.Last() as EraseCurveCommand;
+            var curve = Part.curves.FirstOrDefault(c => c.abbr == abbr);
+            return new MergedSetCurveCommand(
+                last.project, last.Part, last.abbr,
+                first.oldXs, first.oldYs, first.oldBreaks,
+                curve?.xs.ToArray(), curve?.ys.ToArray(), curve?.breaks?.ToArray());
         }
     }
 
@@ -382,35 +432,35 @@ namespace OpenUtau.Core {
         readonly string abbr;
         readonly int[] oldXs;
         readonly int[] oldYs;
+        readonly int[] oldBreaks;
         readonly int[] newXs;
         readonly int[] newYs;
+        readonly int[] newBreaks;
         readonly bool setReal;
         public MergedSetCurveCommand(UProject project, UVoicePart part,
-            string abbr, int[] oldXs, int[] oldYs, int[] newXs, int[] newYs, bool setReal = false) : base(part) {
+            string abbr, int[] oldXs, int[] oldYs, int[] newXs, int[] newYs, bool setReal = false)
+            : this(project, part, abbr, oldXs, oldYs, null, newXs, newYs, null, setReal) { }
+        public MergedSetCurveCommand(UProject project, UVoicePart part,
+            string abbr, int[] oldXs, int[] oldYs, int[] oldBreaks, int[] newXs, int[] newYs, int[] newBreaks, bool setReal = false) : base(part) {
             this.project = project;
             this.abbr = abbr;
             Key = setReal ? string.Empty : abbr;
             this.oldXs = oldXs;
             this.oldYs = oldYs;
+            this.oldBreaks = oldBreaks;
             this.newXs = newXs;
             this.newYs = newYs;
+            this.newBreaks = newBreaks;
             this.setReal = setReal;
         }
         public override string ToString() => "Edit Curve";
         public override void Execute() {
-            var curve = Part.curves.FirstOrDefault(c => c.abbr == abbr);
-            if (curve == null && project.expressions.TryGetValue(abbr, out var descriptor)) {
-                curve = new UCurve(descriptor);
-                Part.curves.Add(curve);
-            }
-            GetCurveXs(curve)?.Clear();
-            GetCurveYs(curve)?.Clear();
-            if (newXs != null && newYs != null) {
-                GetCurveXs(curve)?.AddRange(newXs);
-                GetCurveYs(curve)?.AddRange(newYs);
-            }
+            Apply(newXs, newYs, newBreaks);
         }
         public override void Unexecute() {
+            Apply(oldXs, oldYs, oldBreaks);
+        }
+        private void Apply(int[] xs, int[] ys, int[] breaks) {
             var curve = Part.curves.FirstOrDefault(c => c.abbr == abbr);
             if (curve == null && project.expressions.TryGetValue(abbr, out var descriptor)) {
                 curve = new UCurve(descriptor);
@@ -418,9 +468,19 @@ namespace OpenUtau.Core {
             }
             GetCurveXs(curve)?.Clear();
             GetCurveYs(curve)?.Clear();
-            if (oldXs != null && oldYs != null) {
-                GetCurveXs(curve)?.AddRange(oldXs);
-                GetCurveYs(curve)?.AddRange(oldYs);
+            if (xs != null && ys != null) {
+                GetCurveXs(curve)?.AddRange(xs);
+                GetCurveYs(curve)?.AddRange(ys);
+            }
+            if (!setReal && curve != null) {
+                if (curve.breaks == null) {
+                    curve.breaks = new List<int>();
+                } else {
+                    curve.breaks.Clear();
+                }
+                if (breaks != null) {
+                    curve.breaks.AddRange(breaks);
+                }
             }
         }
         private List<int>? GetCurveXs(UCurve? curve) {
@@ -438,6 +498,7 @@ namespace OpenUtau.Core {
         readonly int[] ys;
         int[]? oldXs;
         int[]? oldYs;
+        int[]? oldBreaks;
         public PasteCurveCommand(UProject project, UVoicePart part, string abbr, IEnumerable<int> xs, IEnumerable<int> ys) : base(part) {
             this.project = project;
             this.abbr = abbr;
@@ -447,6 +508,7 @@ namespace OpenUtau.Core {
             var curve = part.curves.FirstOrDefault(c => c.abbr == abbr);
             oldXs = curve?.xs.ToArray();
             oldYs = curve?.ys.ToArray();
+            oldBreaks = curve?.breaks?.ToArray();
         }
         public PasteCurveCommand(UProject project, UVoicePart part, string abbr, int startX, int startY, int endX, int endY) : base(part) {
             this.project = project;
@@ -457,6 +519,7 @@ namespace OpenUtau.Core {
             var curve = part.curves.FirstOrDefault(c => c.abbr == abbr);
             oldXs = curve?.xs.ToArray();
             oldYs = curve?.ys.ToArray();
+            oldBreaks = curve?.breaks?.ToArray();
         }
         public override string ToString() => "Edit Curve";
         public override void Execute() {
@@ -470,30 +533,22 @@ namespace OpenUtau.Core {
 
                 var xs = this.xs.ToList();
                 var ys = this.ys.ToList();
+                int empty = Util.ExpressionDefaultResolver.GetEffectiveDefaultInt(project, track, abbr);
                 xs.Insert(0, xs[0] - UCurve.interval);
-                ys.Insert(0, curve.Sample(xs[0]));
+                ys.Insert(0, curve.Sample(xs[0], empty));
                 xs.Add(xs.Last() + UCurve.interval);
-                ys.Add(curve.Sample(xs.Last()));
+                ys.Add(curve.Sample(xs.Last(), empty));
                 ys = ys.Select(y => (int)Math.Clamp(y, descriptor.min, descriptor.max)).ToList();
 
-                curve.Set(xs.First(), ys.First(), xs.First(), ys.First());
-                curve.Set(xs.Last(), ys.Last(), xs.Last(), ys.Last());
+                curve.Set(xs.First(), ys.First(), xs.First(), ys.First(), empty);
+                curve.Set(xs.Last(), ys.Last(), xs.Last(), ys.Last(), empty);
                 for (int i = 0; i < xs.Count - 1; i++) {
-                    curve.Set(xs[i + 1], ys[i + 1], xs[i], ys[i]);
+                    curve.Set(xs[i + 1], ys[i + 1], xs[i], ys[i], empty);
                 }
             }
         }
         public override void Unexecute() {
-            var curve = Part.curves.FirstOrDefault(c => c.abbr == abbr);
-            if (curve == null) {
-                return;
-            }
-            curve.xs.Clear();
-            curve.ys.Clear();
-            if (oldXs != null && oldYs != null) {
-                curve.xs.AddRange(oldXs);
-                curve.ys.AddRange(oldYs);
-            }
+            CurveCommandUtil.RestoreCurvePoints(Part.curves.FirstOrDefault(c => c.abbr == abbr), oldXs, oldYs, oldBreaks);
         }
     }
 
@@ -501,6 +556,7 @@ namespace OpenUtau.Core {
         readonly string abbr;
         readonly int[] oldXs;
         readonly int[] oldYs;
+        readonly int[] oldBreaks;
         public ClearCurveCommand(UVoicePart part, string abbr) : base(part) {
             this.abbr = abbr;
             Key = abbr;
@@ -508,6 +564,7 @@ namespace OpenUtau.Core {
             if (curve != null) {
                 oldXs = curve.xs.ToArray();
                 oldYs = curve.ys.ToArray();
+                oldBreaks = curve.breaks?.ToArray();
             }
         }
         public override string ToString() => "Clear Curve";
@@ -516,15 +573,32 @@ namespace OpenUtau.Core {
             if (curve != null) {
                 curve.xs.Clear();
                 curve.ys.Clear();
+                curve.breaks?.Clear();
             }
         }
         public override void Unexecute() {
-            var curve = Part.curves.FirstOrDefault(curve => curve.abbr == abbr);
-            if (curve != null && oldXs != null && oldYs != null) {
-                curve.xs.Clear();
-                curve.xs.AddRange(oldXs);
-                curve.ys.Clear();
-                curve.ys.AddRange(oldYs);
+            CurveCommandUtil.RestoreCurvePoints(Part.curves.FirstOrDefault(curve => curve.abbr == abbr), oldXs, oldYs, oldBreaks);
+        }
+    }
+
+    static class CurveCommandUtil {
+        public static void RestoreCurvePoints(UCurve? curve, int[]? xs, int[]? ys, int[]? breaks) {
+            if (curve == null) {
+                return;
+            }
+            curve.xs.Clear();
+            curve.ys.Clear();
+            if (xs != null && ys != null) {
+                curve.xs.AddRange(xs);
+                curve.ys.AddRange(ys);
+            }
+            if (curve.breaks == null) {
+                curve.breaks = new List<int>();
+            } else {
+                curve.breaks.Clear();
+            }
+            if (breaks != null) {
+                curve.breaks.AddRange(breaks);
             }
         }
     }

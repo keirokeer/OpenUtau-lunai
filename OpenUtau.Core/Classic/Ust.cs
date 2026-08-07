@@ -8,6 +8,7 @@ using OpenUtau.Classic.Flags;
 using OpenUtau.Core;
 using OpenUtau.Core.Format;
 using OpenUtau.Core.Ustx;
+using OpenUtau.Core.Util;
 using SharpCompress;
 
 namespace OpenUtau.Classic {
@@ -269,7 +270,9 @@ namespace OpenUtau.Classic {
 
         private static void SetExpression(UProject project, UNote note, string abbr, float value) {
             var track = project.tracks.First();
-            if (track.TryGetExpDescriptor(project, abbr, out var descriptor) && descriptor.CustomDefaultValue != value) {
+            if (track.TryGetExpDescriptor(project, abbr, out _) &&
+                !ExpressionDefaultResolver.ApproximatelyEqual(
+                    ExpressionDefaultResolver.GetEffectiveDefault(project, track, abbr), value)) {
                 note.SetExpression(project, track, abbr, new float?[] { value });
             }
         }

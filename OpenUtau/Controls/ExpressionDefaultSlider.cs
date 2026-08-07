@@ -13,11 +13,11 @@ using OpenUtau.App.ViewModels;
 using ReactiveUI;
 
 namespace OpenUtau.App.Controls {
-    /// <summary>
-    /// Slider for project expression default with a white track highlight for playhead deviation.
-    /// Track layers (bottom → top): dim track → white deviation → accent fill → thumb.
-    /// </summary>
-    public class ExpressionDefaultSlider : UserControl {
+        /// <summary>
+        /// Slider for project/track expression default with a white track highlight for playhead deviation.
+        /// Track layers (bottom → top): dim track → accent fill → white deviation → thumb.
+        /// </summary>
+        public class ExpressionDefaultSlider : UserControl {
         public static readonly StyledProperty<ExpressionDefaultItem?> ItemProperty =
             AvaloniaProperty.Register<ExpressionDefaultSlider, ExpressionDefaultItem?>(nameof(Item));
 
@@ -47,19 +47,19 @@ namespace OpenUtau.App.Controls {
                 Margin = new Thickness(HorizontalInset, 0),
                 ZIndex = 0,
             };
-            deviationBand = new Border {
+            accentFill = new Border {
                 Height = TrackHeight,
                 CornerRadius = new CornerRadius(TrackHeight / 2),
-                Background = Brushes.White,
                 IsHitTestVisible = false,
                 VerticalAlignment = VerticalAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Left,
                 IsVisible = false,
                 ZIndex = 1,
             };
-            accentFill = new Border {
+            deviationBand = new Border {
                 Height = TrackHeight,
                 CornerRadius = new CornerRadius(TrackHeight / 2),
+                Background = Brushes.White,
                 IsHitTestVisible = false,
                 VerticalAlignment = VerticalAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Left,
@@ -77,8 +77,8 @@ namespace OpenUtau.App.Controls {
             };
             var root = new Grid();
             root.Children.Add(trackBg);
-            root.Children.Add(deviationBand);
             root.Children.Add(accentFill);
+            root.Children.Add(deviationBand);
             root.Children.Add(slider);
             Content = root;
 
@@ -89,6 +89,14 @@ namespace OpenUtau.App.Controls {
             SizeChanged += (_, _) => UpdateBands();
             AttachedToVisualTree += (_, _) => UpdateBands();
             ToolTip.SetTip(this, ThemeManager.GetString("workspace.panel.expressions.resettooltip"));
+            DataContextChanged += (_, _) => SyncResetTooltip();
+        }
+
+        void SyncResetTooltip() {
+            var vm = FindViewModel();
+            if (vm != null && !string.IsNullOrEmpty(vm.ResetTooltip)) {
+                ToolTip.SetTip(this, vm.ResetTooltip);
+            }
         }
 
         ExpressionDefaultsViewModel? FindViewModel() {
@@ -124,8 +132,10 @@ namespace OpenUtau.App.Controls {
                     x => x.Min,
                     x => x.Max,
                     x => x.PlayheadValue,
-                    x => x.ShowPlayheadMarker)
+                    x => x.ShowPlayheadMarker,
+                    x => x.HasTrackOverride)
                 .Subscribe(_ => Dispatcher.UIThread.Post(ApplyItemToSlider));
+            SyncResetTooltip();
             ApplyItemToSlider();
         }
 
@@ -175,7 +185,7 @@ namespace OpenUtau.App.Controls {
             }
             if (e.GetCurrentPoint(this).Properties.IsRightButtonPressed) {
                 editing = false;
-                FindViewModel()?.ResetToFactoryDefault(Item);
+                FindViewModel()?.ResetSliderDefault(Item);
                 e.Handled = true;
                 return;
             }
@@ -247,7 +257,7 @@ namespace OpenUtau.App.Controls {
 
             trackBg.Background = ResolveTrackBgBrush();
 
-            // Accent always on top of white deviation.
+            // White deviation sits above accent fill so leftward offsets stay visible.
             accentFill.Background = ResolveAccentBrush();
             accentFill.Width = Math.Max(0, trackWidth * tDefault);
             accentFill.Margin = new Thickness(HorizontalInset, 0, 0, 0);

@@ -61,8 +61,8 @@ public class SaveExpressionStyleViewModel : ViewModelBase {
     public void LoadFromPanel(
         string suggestedName,
         string singerName,
-        System.Collections.Generic.IEnumerable<ExpressionDefaultItem> parameters,
-        System.Collections.Generic.IEnumerable<ExpressionDefaultItem> voiceColors,
+        System.Collections.Generic.IEnumerable<(string Abbr, string Name, float Value)> parameters,
+        System.Collections.Generic.IEnumerable<(string Abbr, string Name, float Value)> voiceColors,
         UExpressionDescriptor? clrDescriptor,
         int selectedVoiceColorIndex,
         string[]? voiceColorOptions) {
@@ -77,7 +77,7 @@ public class SaveExpressionStyleViewModel : ViewModelBase {
             if (!DocManagerHasDescriptor(item.Abbr, out var descriptor)) {
                 continue;
             }
-            Items.Add(new ExpressionStyleValueItem(descriptor!, item.DefaultValue));
+            Items.Add(new ExpressionStyleValueItem(descriptor!, item.Value));
         }
         if (clrDescriptor != null && voiceColorOptions != null && voiceColorOptions.Length > 0) {
             Items.Add(new ExpressionStyleValueItem(
@@ -87,7 +87,7 @@ public class SaveExpressionStyleViewModel : ViewModelBase {
             if (!DocManagerHasDescriptor(item.Abbr, out var descriptor)) {
                 continue;
             }
-            Items.Add(new ExpressionStyleValueItem(descriptor!, item.DefaultValue));
+            Items.Add(new ExpressionStyleValueItem(descriptor!, item.Value));
         }
     }
 

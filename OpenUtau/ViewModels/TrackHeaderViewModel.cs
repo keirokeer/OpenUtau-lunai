@@ -768,6 +768,7 @@ namespace OpenUtau.App.ViewModels {
                     Pan = source.Pan,
                     TrackColor = source.TrackColor,
                     TrackExpressions = source.TrackExpressions.Select(exp => exp.Clone()).ToList(),
+                    ExpressionDefaultOverrides = OpenUtau.Core.Util.ExpressionDefaultResolver.CloneOverrides(source),
                 };
                 DocManager.Inst.ExecuteCmd(new AddTrackCommand(DocManager.Inst.Project, newTrack));
                 var parts = DocManager.Inst.Project.parts
@@ -807,6 +808,7 @@ namespace OpenUtau.App.ViewModels {
                     Pan = source.Pan,
                     TrackColor = source.TrackColor,
                     TrackExpressions = source.TrackExpressions.Select(exp => exp.Clone()).ToList(),
+                    ExpressionDefaultOverrides = OpenUtau.Core.Util.ExpressionDefaultResolver.CloneOverrides(source),
                 }));
             }
             DocManager.Inst.EndUndoGroup();

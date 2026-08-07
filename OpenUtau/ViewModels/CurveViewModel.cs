@@ -42,8 +42,21 @@ namespace OpenUtau.ViewModels {
 
         public void Select(UExpressionDescriptor descriptor, int startTick, int endTick, UCurve? curve) {
             selection.Clear();
-            (int x, int y) startPoint = (startTick, curve?.Sample(startTick) ?? (int)descriptor.CustomDefaultValue);
-            (int x, int y) endPoint = (endTick, curve?.Sample(endTick) ?? (int)descriptor.CustomDefaultValue);
+            int empty = (int)descriptor.CustomDefaultValue;
+            var project = DocManager.Inst.Project;
+            // Prefer the voice part that owns this curve when present.
+            UVoicePart? part = null;
+            if (curve != null) {
+                part = project.parts.OfType<UVoicePart>()
+                    .FirstOrDefault(p => p.curves.Contains(curve));
+            }
+            part ??= project.parts.OfType<UVoicePart>().FirstOrDefault();
+            if (part != null && part.trackNo >= 0 && part.trackNo < project.tracks.Count) {
+                empty = ExpressionDefaultResolver.GetEffectiveDefaultInt(
+                    project, project.tracks[part.trackNo], descriptor.abbr);
+            }
+            (int x, int y) startPoint = (startTick, curve?.Sample(startTick, empty) ?? empty);
+            (int x, int y) endPoint = (endTick, curve?.Sample(endTick, empty) ?? empty);
             var xs = new List<int>();
             var ys = new List<int>();
             if (curve != null) {

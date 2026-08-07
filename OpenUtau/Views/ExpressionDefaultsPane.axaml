@@ -10,16 +10,19 @@
   <UserControl.Styles>
     <Style Selector="TextBlock.expDefaultLabel">
       <Setter Property="TextWrapping" Value="Wrap"/>
+      <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
       <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="FontSize" Value="12"/>
     </Style>
     <Style Selector="Border.expDefaultLabelHit">
       <Setter Property="Background" Value="Transparent"/>
       <Setter Property="CornerRadius" Value="4"/>
       <Setter Property="Padding" Value="4,2"/>
       <Setter Property="Margin" Value="0,0,4,0"/>
-      <Setter Property="HorizontalAlignment" Value="Left"/>
+      <Setter Property="HorizontalAlignment" Value="Stretch"/>
       <Setter Property="Cursor" Value="Hand"/>
       <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="ClipToBounds" Value="True"/>
     </Style>
     <Style Selector="Border.expDefaultLabelHit:pointerover">
       <Setter Property="Background" Value="{DynamicResource TransportToolbarOffHoverBrush}"/>
@@ -42,6 +45,36 @@
     </Style>
     <Style Selector="StackPanel.expDefaultSectionContent">
       <Setter Property="Spacing" Value="2"/>
+    </Style>
+    <Style Selector="Border.expModeTab">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Padding" Value="2,4"/>
+      <Setter Property="Margin" Value="0,0,14,0"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="BorderThickness" Value="0,0,0,2"/>
+      <Setter Property="BorderBrush" Value="Transparent"/>
+      <Setter Property="VerticalAlignment" Value="Bottom"/>
+    </Style>
+    <Style Selector="Border.expModeTab:disabled">
+      <Setter Property="Opacity" Value="0.35"/>
+      <Setter Property="Cursor" Value="Arrow"/>
+    </Style>
+    <Style Selector="Border.expModeTab TextBlock">
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="Opacity" Value="0.5"/>
+    </Style>
+    <Style Selector="Border.expModeTab.selected">
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+    </Style>
+    <Style Selector="Border.expModeTab.selected TextBlock">
+      <Setter Property="Opacity" Value="1"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+    <Style Selector="TextBlock.expTrackSubtitle">
+      <Setter Property="Opacity" Value="0.55"/>
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="Margin" Value="2,2,0,0"/>
+      <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
     </Style>
     <Style Selector="Border.expStyleChip">
       <Setter Property="Padding" Value="7,3"/>
@@ -79,21 +112,46 @@
   <Design.DataContext>
     <vm:ExpressionDefaultsViewModel/>
   </Design.DataContext>
-  <Grid>
-    <TextBlock Text="{DynamicResource workspace.panel.expressions}" Classes="notePropsPanelTitle"
-               Height="32" Margin="16,16,40,0"
-               HorizontalAlignment="Left" VerticalAlignment="Top"/>
-    <Button x:Name="ClosePanelButton" Classes="workspacePanelClose"
-            HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,0"
-            IsVisible="False" Click="OnCloseDockedPanel"
-            ToolTip.Tip="{DynamicResource workspace.panel.close}">
-      <Path Classes="stroked"/>
-    </Button>
-    <ScrollViewer x:Name="ContentScroll" Classes="workspaceScroll workspaceDockPanelScroll"
-                  Margin="10,48,10,16"
+  <Grid RowDefinitions="Auto,*">
+    <Grid Grid.Row="0" Margin="16,12,40,8" ColumnDefinitions="*,Auto">
+      <StackPanel Grid.Column="0" Spacing="2">
+        <TextBlock Text="{Binding PanelTitle}" Classes="notePropsPanelTitle"/>
+        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+          <Border Classes="expModeTab"
+                  Classes.selected="{Binding !IsTrackMode}"
+                  PointerPressed="OnProjectModePressed">
+            <TextBlock Text="{DynamicResource workspace.panel.expressions.mode.project}"/>
+          </Border>
+          <Border x:Name="TrackModeTab"
+                  Classes="expModeTab"
+                  Classes.selected="{Binding IsTrackMode}"
+                  IsEnabled="{Binding CanUseTrackMode}"
+                  PointerPressed="OnTrackModePressed">
+            <TextBlock Text="{DynamicResource workspace.panel.expressions.mode.track}"/>
+          </Border>
+        </StackPanel>
+        <TextBlock Classes="expTrackSubtitle"
+                   Text="{Binding TrackSubtitle}"
+                   IsVisible="{Binding HasTrackSubtitle}"/>
+      </StackPanel>
+      <Button x:Name="ClosePanelButton" Grid.Column="1" Classes="workspacePanelClose"
+              HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,-8,0"
+              IsVisible="False" Click="OnCloseDockedPanel"
+              ToolTip.Tip="{DynamicResource workspace.panel.close}">
+        <Path Classes="stroked"/>
+      </Button>
+    </Grid>
+    <ScrollViewer x:Name="ContentScroll" Grid.Row="1" Classes="workspaceScroll workspaceDockPanelScroll"
+                  Margin="10,0,10,16"
                   HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto"
                   AllowAutoHide="False">
       <StackPanel Classes="workspacePanelSections" Margin="0" HorizontalAlignment="Stretch">
+        <Button HorizontalAlignment="Stretch" Margin="0,0,0,8"
+                IsVisible="{Binding IsTrackMode}"
+                IsEnabled="{Binding HasTrackOverrides}"
+                Click="OnClearTrackOverridesClick"
+                Content="{DynamicResource workspace.panel.expressions.track.clear}"
+                ToolTip.Tip="{DynamicResource workspace.panel.expressions.track.clear.tip}"/>
         <Separator Classes="workspacePanelSectionDivider"/>
         <Expander Classes="workspacePanelSectionExpander" IsExpanded="True"
                   IsVisible="{Binding HasParameters}"
@@ -106,7 +164,13 @@
                     <Border Classes="expDefaultLabelHit" Grid.Column="0"
                             ToolTip.Tip="{DynamicResource workspace.panel.expressions.openinexppanel}"
                             PointerPressed="OnParameterNamePressed">
-                      <TextBlock Classes="expDefaultLabel" Text="{Binding Name}"/>
+                      <DockPanel LastChildFill="True">
+                        <Ellipse DockPanel.Dock="Left" Width="6" Height="6"
+                                 Margin="0,4,4,0" VerticalAlignment="Top"
+                                 IsVisible="{Binding HasTrackOverride}"
+                                 Fill="{DynamicResource SystemAccentColorDark1Brush}"/>
+                        <TextBlock Classes="expDefaultLabel" Text="{Binding Name}"/>
+                      </DockPanel>
                     </Border>
                     <c:ExpressionDefaultSlider Grid.Column="1" Item="{Binding}"/>
                     <TextBlock Classes="expDefaultValue" Grid.Column="2"
@@ -146,7 +210,13 @@
                     <Border Classes="expDefaultLabelHit" Grid.Column="0"
                             ToolTip.Tip="{DynamicResource workspace.panel.expressions.openinexppanel}"
                             PointerPressed="OnParameterNamePressed">
-                      <TextBlock Classes="expDefaultLabel" Text="{Binding Name}"/>
+                      <DockPanel LastChildFill="True">
+                        <Ellipse DockPanel.Dock="Left" Width="6" Height="6"
+                                 Margin="0,4,4,0" VerticalAlignment="Top"
+                                 IsVisible="{Binding HasTrackOverride}"
+                                 Fill="{DynamicResource SystemAccentColorDark1Brush}"/>
+                        <TextBlock Classes="expDefaultLabel" Text="{Binding Name}"/>
+                      </DockPanel>
                     </Border>
                     <c:ExpressionDefaultSlider Grid.Column="1" Item="{Binding}"/>
                     <TextBlock Classes="expDefaultValue" Grid.Column="2"
@@ -162,6 +232,8 @@
         <Expander Classes="workspacePanelSectionExpander" IsExpanded="True"
                   Header="{DynamicResource workspace.panel.expressions.styles}">
           <StackPanel Classes="expDefaultSectionContent" Spacing="6">
+            <TextBlock Opacity="0.55" FontSize="11" TextWrapping="Wrap"
+                       Text="{DynamicResource workspace.panel.expressions.styles.projecthint}"/>
             <Button HorizontalAlignment="Stretch"
                     IsEnabled="{Binding CanSaveStyle}"
                     Click="OnSaveStyleClick"

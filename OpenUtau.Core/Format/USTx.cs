@@ -61,6 +61,7 @@ namespace OpenUtau.Core.Format {
             project.RegisterExpression(new UExpressionDescriptor("tone shift (curve)", SHFC, -1200, 1200, 0) { type = UExpressionType.Curve });
             project.RegisterExpression(new UExpressionDescriptor("tension (curve)", TENC, -100, 100, 0) { type = UExpressionType.Curve });
             project.RegisterExpression(new UExpressionDescriptor("voicing (curve)", VOIC, 0, 100, 100) { type = UExpressionType.Curve });
+            project.RegisterExpression(new UExpressionDescriptor("mouth opening (curve)", OPEC, 0, 100, 50) { type = UExpressionType.Curve });
             // DiffSinger curve defaults (always present; voice-color cl## synced per singer)
             project.RegisterExpression(new UExpressionDescriptor("velocity (curve)", DiffSinger.DiffSingerUtils.VELC, 0, 200, 100) { type = UExpressionType.Curve });
             project.RegisterExpression(new UExpressionDescriptor("energy (curve)", DiffSinger.DiffSingerUtils.ENE, -100, 100, 0) { type = UExpressionType.Curve });

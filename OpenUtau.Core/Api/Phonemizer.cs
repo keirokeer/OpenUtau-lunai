@@ -267,8 +267,8 @@ namespace OpenUtau.Api {
 
         public double GetParentConsonantStretchRatio() {
             if (project != null && track != null) {
-                if (track.TryGetExpDescriptor(project, Core.Format.Ustx.VEL, out var trackVEL)) {
-                    return Math.Pow(2, 1.0 - trackVEL.CustomDefaultValue / 100.0);
+                if (track.TryGetExpDescriptor(project, Core.Format.Ustx.VEL, out _)) {
+                    return Math.Pow(2, 1.0 - OpenUtau.Core.Util.ExpressionDefaultResolver.GetEffectiveDefault(project, track, Core.Format.Ustx.VEL) / 100.0);
                 }
             }
             return 1;
@@ -276,8 +276,8 @@ namespace OpenUtau.Api {
 
         public int GetParentToneShift() {
             if (project != null && track != null) {
-                if (track.TryGetExpDescriptor(project, Core.Format.Ustx.SHFT, out var trackTS)) {
-                    return (int)trackTS.CustomDefaultValue;
+                if (track.TryGetExpDescriptor(project, Core.Format.Ustx.SHFT, out _)) {
+                    return (int)OpenUtau.Core.Util.ExpressionDefaultResolver.GetEffectiveDefault(project, track, Core.Format.Ustx.SHFT);
                 }
             }
             return 0;
@@ -285,9 +285,10 @@ namespace OpenUtau.Api {
 
         public int? GetParentAlternate() {
             if (project != null && track != null) {
-                if (track.TryGetExpDescriptor(project, Core.Format.Ustx.ALT, out var trackAlt)) {
-                    if (trackAlt.CustomDefaultValue != 0) {
-                        return (int)trackAlt.CustomDefaultValue;
+                if (track.TryGetExpDescriptor(project, Core.Format.Ustx.ALT, out _)) {
+                    float value = OpenUtau.Core.Util.ExpressionDefaultResolver.GetEffectiveDefault(project, track, Core.Format.Ustx.ALT);
+                    if (value != 0) {
+                        return (int)value;
                     }
                 }
             }
@@ -296,8 +297,12 @@ namespace OpenUtau.Api {
 
         public string GetParentVoiceColor() {
             if (project != null && track != null) {
-                if (track.TryGetExpDescriptor(project, Core.Format.Ustx.CLR, out var trackCLR)) {
-                    return track.VoiceColorExp.options[(int)trackCLR.CustomDefaultValue];
+                if (track.TryGetExpDescriptor(project, Core.Format.Ustx.CLR, out _) &&
+                    track.VoiceColorExp?.options != null) {
+                    int index = (int)OpenUtau.Core.Util.ExpressionDefaultResolver.GetEffectiveDefault(project, track, Core.Format.Ustx.CLR);
+                    if (index >= 0 && index < track.VoiceColorExp.options.Length) {
+                        return track.VoiceColorExp.options[index];
+                    }
                 }
             }
             return string.Empty;

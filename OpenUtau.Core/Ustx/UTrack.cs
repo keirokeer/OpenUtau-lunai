@@ -100,6 +100,11 @@ namespace OpenUtau.Core.Ustx {
         public double Pan { set; get; }
 
         public List<UExpressionDescriptor> TrackExpressions { get; set; } = new List<UExpressionDescriptor>();
+        /// <summary>
+        /// Per-track empty-baseline overrides (abbr → value). Missing key inherits project CustomDefaultValue.
+        /// Independent of TrackExpressions (full descriptor overrides).
+        /// </summary>
+        public Dictionary<string, float> ExpressionDefaultOverrides { get; set; } = new Dictionary<string, float>();
         [YamlIgnore] public UExpressionDescriptor VoiceColorExp { set; get; }
         public string[] VoiceColorNames { get; set; } = new string[] { "" };
 

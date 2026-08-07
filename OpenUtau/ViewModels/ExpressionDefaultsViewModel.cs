@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using DynamicData.Binding;
@@ -19,22 +20,23 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public float DefaultValue { get; set; }
         [Reactive] public float PlayheadValue { get; set; }
         [Reactive] public bool ShowPlayheadMarker { get; set; }
+        [Reactive] public bool HasTrackOverride { get; set; }
 
         public ExpressionDefaultItem(UExpressionDescriptor descriptor) {
             Abbr = descriptor.abbr;
             Name = ExpressionSuggestionSync.GetPanelDisplayName(descriptor);
             Min = descriptor.min;
             Max = descriptor.max;
-            DefaultValue = SetExpressionCustomDefaultCommand.GetEffectiveDefault(descriptor);
+            DefaultValue = descriptor.CustomDefaultValue;
             PlayheadValue = DefaultValue;
             ShowPlayheadMarker = false;
+            HasTrackOverride = false;
         }
 
         public void SyncFromDescriptor(UExpressionDescriptor descriptor) {
             Name = ExpressionSuggestionSync.GetPanelDisplayName(descriptor);
             Min = descriptor.min;
             Max = descriptor.max;
-            DefaultValue = SetExpressionCustomDefaultCommand.GetEffectiveDefault(descriptor);
         }
     }
 
@@ -70,21 +72,31 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public bool CanSaveStyle { get; private set; }
         [Reactive] public int SelectedVoiceColorIndex { get; set; }
         [Reactive] public string VoiceColorCurveMaxText { get; set; } = "100";
+        [Reactive] public bool IsTrackMode { get; set; }
+        [Reactive] public bool CanUseTrackMode { get; private set; }
+        [Reactive] public bool HasTrackOverrides { get; private set; }
+        [Reactive] public string PanelTitle { get; private set; } = string.Empty;
+        [Reactive] public string TrackSubtitle { get; private set; } = string.Empty;
+        [Reactive] public bool HasTrackSubtitle { get; private set; }
+        [Reactive] public string ResetTooltip { get; private set; } = string.Empty;
 
         UVoicePart? part;
         int trackNo = -1;
         bool applyingSlider;
         bool applyingVoiceColor;
         bool applyingVoiceColorMax;
+        bool applyingMode;
         string? pendingAbbr;
         float pendingOldValue;
         float pendingNewValue;
+        float? pendingOldTrackOverride;
 
         public ExpressionDefaultsViewModel() {
             DocManager.Inst.AddSubscriber(this);
             applyingVoiceColorMax = true;
             VoiceColorCurveMaxText = Preferences.GetVoiceColorCurveMax().ToString();
             applyingVoiceColorMax = false;
+            UpdateChrome();
             this.WhenAnyValue(vm => vm.SelectedVoiceColorIndex)
                 .Subscribe(index => {
                     if (!applyingVoiceColor) {
@@ -93,9 +105,38 @@ namespace OpenUtau.App.ViewModels {
                 });
             this.WhenAnyValue(vm => vm.VoiceColorCurveMaxText)
                 .Subscribe(_ => OnVoiceColorCurveMaxTextChanged());
+            this.WhenAnyValue(vm => vm.IsTrackMode)
+                .Subscribe(_ => {
+                    if (applyingMode) {
+                        return;
+                    }
+                    if (pendingAbbr != null) {
+                        CommitPendingEdit();
+                    }
+                    UpdateChrome();
+                    RefreshList();
+                    RefreshPlayheadValues();
+                });
             RefreshList();
             RefreshStyles();
             RefreshPlayheadValues();
+        }
+
+        void UpdateChrome() {
+            if (IsTrackMode && CanUseTrackMode) {
+                PanelTitle = ThemeManager.GetString("workspace.panel.expressions.track");
+                ResetTooltip = ThemeManager.GetString("workspace.panel.expressions.resettooltip.track");
+            } else {
+                PanelTitle = ThemeManager.GetString("workspace.panel.expressions");
+                ResetTooltip = ThemeManager.GetString("workspace.panel.expressions.resettooltip");
+            }
+            var project = DocManager.Inst.Project;
+            if (trackNo >= 0 && trackNo < project.tracks.Count) {
+                TrackSubtitle = project.tracks[trackNo].TrackName ?? string.Empty;
+            } else {
+                TrackSubtitle = string.Empty;
+            }
+            HasTrackSubtitle = IsTrackMode && CanUseTrackMode && !string.IsNullOrEmpty(TrackSubtitle);
         }
 
         void OnVoiceColorCurveMaxTextChanged() {
@@ -126,7 +167,14 @@ namespace OpenUtau.App.ViewModels {
         public void AttachPart(UVoicePart? voicePart) {
             part = voicePart;
             trackNo = voicePart?.trackNo ?? -1;
+            CanUseTrackMode = trackNo >= 0;
+            if (!CanUseTrackMode && IsTrackMode) {
+                applyingMode = true;
+                IsTrackMode = false;
+                applyingMode = false;
+            }
             SyncSuggestionsForOpenTrack();
+            UpdateChrome();
             RefreshList();
             RefreshPlayheadValues();
         }
@@ -138,6 +186,16 @@ namespace OpenUtau.App.ViewModels {
                     return string.Empty;
                 }
                 return project.tracks[trackNo].Singer?.Name?.Trim() ?? string.Empty;
+            }
+        }
+
+        UTrack? CurrentTrack {
+            get {
+                var project = DocManager.Inst.Project;
+                if (trackNo < 0 || trackNo >= project.tracks.Count) {
+                    return null;
+                }
+                return project.tracks[trackNo];
             }
         }
 
@@ -160,13 +218,21 @@ namespace OpenUtau.App.ViewModels {
                 clr = project.tracks[trackNo].VoiceColorExp;
                 options = clr!.options;
             }
+            // Styles always snapshot project-layer defaults (not track overrides).
             dialogVm.LoadFromPanel(
                 suggestedName: string.Empty,
                 singerName: CurrentSingerDisplayName,
-                parameters: ParameterItems,
-                voiceColors: VoiceColorItems,
+                parameters: ParameterItems.Select(i => (
+                    i.Abbr,
+                    i.Name,
+                    ExpressionDefaultResolver.GetProjectDefault(project, i.Abbr))),
+                voiceColors: VoiceColorItems.Select(i => (
+                    i.Abbr,
+                    i.Name,
+                    ExpressionDefaultResolver.GetProjectDefault(project, i.Abbr))),
                 clrDescriptor: clr,
-                selectedVoiceColorIndex: SelectedVoiceColorIndex,
+                selectedVoiceColorIndex: (int)Math.Round(
+                    ExpressionDefaultResolver.GetProjectDefault(project, Ustx.CLR)),
                 voiceColorOptions: options);
         }
 
@@ -190,7 +256,7 @@ namespace OpenUtau.App.ViewModels {
                 ExpressionSuggestionSync.UpsertSuggested(project, project.tracks[trackNo]);
             }
 
-            var changes = new System.Collections.Generic.List<(string abbr, float newValue, float oldValue)>();
+            var changes = new List<(string abbr, float newValue, float oldValue)>();
             foreach (var pair in style.Values) {
                 var abbr = pair.Key;
                 UExpressionDescriptor? descriptor = null;
@@ -205,7 +271,7 @@ namespace OpenUtau.App.ViewModels {
                 float min = descriptor!.min;
                 float max = descriptor.max;
                 float newValue = max < min ? pair.Value : Math.Clamp(pair.Value, min, max);
-                float oldValue = SetExpressionCustomDefaultCommand.GetEffectiveDefault(descriptor);
+                float oldValue = ExpressionDefaultResolver.GetProjectDefault(project, descriptor.abbr);
                 if (Math.Abs(oldValue - newValue) < 0.0001f) {
                     continue;
                 }
@@ -235,17 +301,36 @@ namespace OpenUtau.App.ViewModels {
             return true;
         }
 
+        public void ClearAllTrackOverrides() {
+            var track = CurrentTrack;
+            if (track == null || track.ExpressionDefaultOverrides == null ||
+                track.ExpressionDefaultOverrides.Count == 0) {
+                return;
+            }
+            if (pendingAbbr != null) {
+                CommitPendingEdit();
+            }
+            DocManager.Inst.StartUndoGroup();
+            DocManager.Inst.ExecuteCmd(new ClearTrackExpressionDefaultsCommand(DocManager.Inst.Project, track));
+            DocManager.Inst.EndUndoGroup();
+            MessageBus.Current.SendMessage(new NotesRefreshEvent());
+            RefreshList();
+            RefreshPlayheadValues();
+        }
+
         public void BeginEdit(ExpressionDefaultItem item) {
             if (pendingAbbr != null && pendingAbbr != item.Abbr) {
                 CommitPendingEdit();
             }
-            // PointerPressed can arrive after the first Value change; keep the original baseline.
             if (pendingAbbr == item.Abbr) {
                 return;
             }
             pendingAbbr = item.Abbr;
             pendingOldValue = item.DefaultValue;
             pendingNewValue = item.DefaultValue;
+            pendingOldTrackOverride = CurrentTrack == null
+                ? null
+                : ExpressionDefaultResolver.GetTrackOverride(CurrentTrack, item.Abbr);
         }
 
         public void PreviewEdit(ExpressionDefaultItem item, float value) {
@@ -264,25 +349,53 @@ namespace OpenUtau.App.ViewModels {
         }
 
         /// <summary>
-        /// Reset project default back to the built-in / singer-suggested factory default.
+        /// Project mode: reset to factory. Track mode: clear track override (inherit project).
         /// </summary>
-        public void ResetToFactoryDefault(ExpressionDefaultItem item) {
+        public void ResetSliderDefault(ExpressionDefaultItem item) {
             if (item == null) {
                 return;
             }
             if (pendingAbbr != null) {
                 CommitPendingEdit();
             }
+            if (IsTrackMode && CanUseTrackMode) {
+                ResetTrackOverride(item);
+            } else {
+                ResetToFactoryDefault(item);
+            }
+        }
+
+        void ResetTrackOverride(ExpressionDefaultItem item) {
+            var track = CurrentTrack;
+            var project = DocManager.Inst.Project;
+            if (track == null || !ExpressionDefaultResolver.HasTrackOverride(track, item.Abbr)) {
+                return;
+            }
+            float? oldOverride = ExpressionDefaultResolver.GetTrackOverride(track, item.Abbr);
+            float projectValue = ExpressionDefaultResolver.GetProjectDefault(project, item.Abbr);
+            applyingSlider = true;
+            item.DefaultValue = projectValue;
+            item.HasTrackOverride = false;
+            applyingSlider = false;
+            DocManager.Inst.StartUndoGroup();
+            DocManager.Inst.ExecuteCmd(new SetTrackExpressionDefaultCommand(
+                project, track, item.Abbr, null, oldOverride));
+            DocManager.Inst.EndUndoGroup();
+            MessageBus.Current.SendMessage(new NotesRefreshEvent());
+            RefreshList();
+            RefreshPlayheadValues();
+        }
+
+        void ResetToFactoryDefault(ExpressionDefaultItem item) {
             var project = DocManager.Inst.Project;
             if (!project.expressions.TryGetValue(item.Abbr, out var descriptor)) {
                 return;
             }
-            // Refresh factory defaultValue from singer suggestions when available.
             if (trackNo >= 0 && trackNo < project.tracks.Count) {
                 ExpressionSuggestionSync.UpsertSuggested(project, project.tracks[trackNo]);
             }
             float factory = SetExpressionCustomDefaultCommand.GetFactoryDefault(descriptor);
-            float current = SetExpressionCustomDefaultCommand.GetEffectiveDefault(descriptor);
+            float current = ExpressionDefaultResolver.GetProjectDefault(project, item.Abbr);
             if (Math.Abs(current - factory) < 0.0001f) {
                 return;
             }
@@ -298,17 +411,32 @@ namespace OpenUtau.App.ViewModels {
 
         void ApplyLiveDefault(string abbr, float value) {
             var project = DocManager.Inst.Project;
+            var track = CurrentTrack;
+            if (IsTrackMode && track != null) {
+                ExpressionDefaultResolver.ApplyTrackOverride(project, track, abbr, value);
+                if (string.Equals(abbr, Ustx.CLR, StringComparison.OrdinalIgnoreCase) &&
+                    track.VoiceColorExp != null) {
+                    float effective = ExpressionDefaultResolver.GetEffectiveDefault(project, track, abbr);
+                    track.VoiceColorExp.CustomDefaultValue = Math.Clamp(
+                        effective, track.VoiceColorExp.min, track.VoiceColorExp.max);
+                }
+                MessageBus.Current.SendMessage(new NotesRefreshEvent());
+                return;
+            }
             if (!project.expressions.TryGetValue(abbr, out var descriptor)) {
                 return;
             }
             SetExpressionCustomDefaultCommand.SetEffectiveDefault(descriptor, value);
             if (string.Equals(abbr, Ustx.CLR, StringComparison.OrdinalIgnoreCase)) {
-                foreach (var track in project.tracks) {
-                    if (track.VoiceColorExp != null) {
-                        float min = track.VoiceColorExp.min;
-                        float max = track.VoiceColorExp.max;
+                foreach (var t in project.tracks) {
+                    if (ExpressionDefaultResolver.HasTrackOverride(t, Ustx.CLR)) {
+                        continue;
+                    }
+                    if (t.VoiceColorExp != null) {
+                        float min = t.VoiceColorExp.min;
+                        float max = t.VoiceColorExp.max;
                         float clamped = max < min ? value : Math.Clamp(value, min, max);
-                        SetExpressionCustomDefaultCommand.SetEffectiveDefault(track.VoiceColorExp, clamped);
+                        SetExpressionCustomDefaultCommand.SetEffectiveDefault(t.VoiceColorExp, clamped);
                     }
                 }
             }
@@ -322,11 +450,23 @@ namespace OpenUtau.App.ViewModels {
             var abbr = pendingAbbr;
             var oldValue = pendingOldValue;
             var newValue = pendingNewValue;
+            var oldTrackOverride = pendingOldTrackOverride;
             pendingAbbr = null;
+            pendingOldTrackOverride = null;
             if (Math.Abs(oldValue - newValue) < 0.0001f) {
                 return;
             }
             var project = DocManager.Inst.Project;
+            var track = CurrentTrack;
+            if (IsTrackMode && track != null) {
+                DocManager.Inst.StartUndoGroup();
+                DocManager.Inst.ExecuteCmd(new SetTrackExpressionDefaultCommand(
+                    project, track, abbr, newValue, oldTrackOverride));
+                DocManager.Inst.EndUndoGroup();
+                MessageBus.Current.SendMessage(new NotesRefreshEvent());
+                RefreshList();
+                return;
+            }
             if (!project.expressions.ContainsKey(abbr)) {
                 return;
             }
@@ -334,6 +474,7 @@ namespace OpenUtau.App.ViewModels {
             DocManager.Inst.ExecuteCmd(new SetExpressionCustomDefaultCommand(project, abbr, newValue, oldValue));
             DocManager.Inst.EndUndoGroup();
             MessageBus.Current.SendMessage(new NotesRefreshEvent());
+            RefreshList();
         }
 
         void CommitDefaultVoiceColor(int index) {
@@ -345,14 +486,27 @@ namespace OpenUtau.App.ViewModels {
             if (track.VoiceColorExp == null || index < 0 || index > track.VoiceColorExp.max) {
                 return;
             }
-            float current = SetExpressionCustomDefaultCommand.GetEffectiveDefault(track.VoiceColorExp);
-            if (Math.Abs(current - index) < 0.0001f) {
-                return;
+            if (IsTrackMode) {
+                float? oldOverride = ExpressionDefaultResolver.GetTrackOverride(track, Ustx.CLR);
+                float current = ExpressionDefaultResolver.GetEffectiveDefault(project, track, Ustx.CLR);
+                if (Math.Abs(current - index) < 0.0001f) {
+                    return;
+                }
+                DocManager.Inst.StartUndoGroup();
+                DocManager.Inst.ExecuteCmd(new SetTrackExpressionDefaultCommand(
+                    project, track, Ustx.CLR, index, oldOverride));
+                DocManager.Inst.EndUndoGroup();
+            } else {
+                float current = ExpressionDefaultResolver.GetProjectDefault(project, Ustx.CLR);
+                if (Math.Abs(current - index) < 0.0001f) {
+                    return;
+                }
+                DocManager.Inst.StartUndoGroup();
+                DocManager.Inst.ExecuteCmd(new SetExpressionCustomDefaultCommand(project, Ustx.CLR, index, current));
+                DocManager.Inst.EndUndoGroup();
             }
-            DocManager.Inst.StartUndoGroup();
-            DocManager.Inst.ExecuteCmd(new SetExpressionCustomDefaultCommand(project, Ustx.CLR, index, current));
-            DocManager.Inst.EndUndoGroup();
             MessageBus.Current.SendMessage(new NotesRefreshEvent());
+            RefreshList();
         }
 
         public void SyncSuggestionsForOpenTrack() {
@@ -368,6 +522,7 @@ namespace OpenUtau.App.ViewModels {
         void RefreshList() {
             SyncVoiceColorCurveMaxTextFromPrefs();
             RefreshExpressionLists();
+            UpdateChrome();
         }
 
         void RefreshExpressionLists() {
@@ -380,6 +535,7 @@ namespace OpenUtau.App.ViewModels {
                 HasVoiceColors = false;
                 ShowDefaultVoiceColorPicker = false;
                 CanSaveStyle = false;
+                HasTrackOverrides = false;
                 return;
             }
             var track = project.tracks[trackNo];
@@ -387,17 +543,21 @@ namespace OpenUtau.App.ViewModels {
             RebuildItemList(VoiceColorItems, ExpressionSuggestionSync.GetPanelVoiceColorDescriptors(project, track));
             HasParameters = ParameterItems.Count > 0;
             HasVoiceColors = VoiceColorItems.Count > 0;
+            HasTrackOverrides = track.ExpressionDefaultOverrides != null &&
+                track.ExpressionDefaultOverrides.Count > 0;
 
             VoiceColorOptions.Clear();
             applyingVoiceColor = true;
-            // Reset so Avalonia ComboBox rebinds when the effective index is still 0 after Clear.
             SelectedVoiceColorIndex = -1;
             if (track.VoiceColorExp?.options != null && track.VoiceColorExp.options.Length > 0) {
                 foreach (var option in track.VoiceColorExp.options) {
                     VoiceColorOptions.Add(option);
                 }
                 ShowDefaultVoiceColorPicker = true;
-                int index = (int)Math.Round(SetExpressionCustomDefaultCommand.GetEffectiveDefault(track.VoiceColorExp));
+                float clrValue = IsTrackMode
+                    ? ExpressionDefaultResolver.GetEffectiveDefault(project, track, Ustx.CLR)
+                    : ExpressionDefaultResolver.GetProjectDefault(project, Ustx.CLR);
+                int index = (int)Math.Round(clrValue);
                 SelectedVoiceColorIndex = Math.Clamp(index, 0, track.VoiceColorExp.options.Length - 1);
                 HasVoiceColors = true;
             } else {
@@ -408,18 +568,26 @@ namespace OpenUtau.App.ViewModels {
             CanSaveStyle = HasParameters || HasVoiceColors;
         }
 
-        static void RebuildItemList(
+        void RebuildItemList(
             ObservableCollectionExtended<ExpressionDefaultItem> target,
-            System.Collections.Generic.List<UExpressionDescriptor> descriptors) {
+            List<UExpressionDescriptor> descriptors) {
+            var project = DocManager.Inst.Project;
+            var track = CurrentTrack;
             var byAbbr = target.ToDictionary(i => i.Abbr, StringComparer.OrdinalIgnoreCase);
             target.Clear();
             foreach (var descriptor in descriptors) {
+                ExpressionDefaultItem item;
                 if (byAbbr.TryGetValue(descriptor.abbr, out var existing)) {
                     existing.SyncFromDescriptor(descriptor);
-                    target.Add(existing);
+                    item = existing;
                 } else {
-                    target.Add(new ExpressionDefaultItem(descriptor));
+                    item = new ExpressionDefaultItem(descriptor);
                 }
+                item.HasTrackOverride = ExpressionDefaultResolver.HasTrackOverride(track, descriptor.abbr);
+                item.DefaultValue = IsTrackMode && track != null
+                    ? ExpressionDefaultResolver.GetEffectiveDefault(project, track, descriptor.abbr)
+                    : ExpressionDefaultResolver.GetProjectDefault(project, descriptor.abbr);
+                target.Add(item);
             }
         }
 
@@ -451,14 +619,15 @@ namespace OpenUtau.App.ViewModels {
                     item.ShowPlayheadMarker = false;
                     continue;
                 }
-                float baseline = SetExpressionCustomDefaultCommand.GetEffectiveDefault(descriptor);
+                float baseline = ExpressionDefaultResolver.GetEffectiveDefault(project, track, item.Abbr);
                 float value = baseline;
                 bool hasOverride = false;
                 if (descriptor.type == UExpressionType.Curve) {
                     var curve = part.curves?.FirstOrDefault(c =>
                         string.Equals(c.abbr, item.Abbr, StringComparison.OrdinalIgnoreCase));
                     if (curve != null && curve.descriptor != null && inPart && curve.xs.Count > 0) {
-                        value = curve.Sample(localTick);
+                        int empty = ExpressionDefaultResolver.GetEffectiveDefaultInt(project, track, item.Abbr);
+                        value = curve.Sample(localTick, empty);
                         hasOverride = Math.Abs(value - baseline) > 0.0001f;
                     }
                 } else if (descriptor.type == UExpressionType.Numerical && phoneme != null) {
@@ -481,6 +650,10 @@ namespace OpenUtau.App.ViewModels {
             if (cmd is LoadProjectNotification) {
                 part = null;
                 trackNo = -1;
+                CanUseTrackMode = false;
+                applyingMode = true;
+                IsTrackMode = false;
+                applyingMode = false;
                 ParameterItems.Clear();
                 VoiceColorItems.Clear();
                 VoiceColorOptions.Clear();
@@ -488,6 +661,8 @@ namespace OpenUtau.App.ViewModels {
                 HasVoiceColors = false;
                 ShowDefaultVoiceColorPicker = false;
                 CanSaveStyle = false;
+                HasTrackOverrides = false;
+                UpdateChrome();
                 return;
             }
             if (cmd is TrackChangeSingerCommand changeSinger) {
@@ -513,8 +688,11 @@ namespace OpenUtau.App.ViewModels {
                 RefreshPlayheadValues();
                 return;
             }
-            if (cmd is SetExpressionCustomDefaultCommand setDefault && !applyingSlider) {
-                applyingVoiceColor = string.Equals(setDefault.Abbr, Ustx.CLR, StringComparison.OrdinalIgnoreCase);
+            if ((cmd is SetExpressionCustomDefaultCommand ||
+                 cmd is SetTrackExpressionDefaultCommand ||
+                 cmd is ClearTrackExpressionDefaultsCommand) && !applyingSlider) {
+                applyingVoiceColor = cmd is SetExpressionCustomDefaultCommand setDefault &&
+                    string.Equals(setDefault.Abbr, Ustx.CLR, StringComparison.OrdinalIgnoreCase);
                 RefreshList();
                 applyingVoiceColor = false;
                 RefreshPlayheadValues();
@@ -522,6 +700,7 @@ namespace OpenUtau.App.ViewModels {
             }
             if (cmd is SetPlayPosTickNotification ||
                 cmd is SetCurveCommand ||
+                cmd is EraseCurveCommand ||
                 cmd is SetNotesSameExpressionCommand ||
                 cmd is PhonemizedNotification) {
                 RefreshPlayheadValues();

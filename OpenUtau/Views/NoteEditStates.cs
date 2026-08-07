@@ -861,7 +861,8 @@ namespace OpenUtau.App.Views {
             } else {
                 ResetCurveExp(pointer, point);
             }
-            valueTip.UpdateValueTip(descriptor.CustomDefaultValue.ToString());
+            valueTip.UpdateValueTip("\"\"");
+            lastPoint = point;
         }
         private void ResetPhonemeExp(IPointer pointer, Point point) {
             var notesVm = vm.NotesViewModel;
@@ -891,9 +892,8 @@ namespace OpenUtau.App.Views {
             int lastX = notesVm.PointToTick(lastPoint);
             int x = notesVm.PointToTick(point);
             if (descriptor != null && notesVm.Part != null) {
-                DocManager.Inst.ExecuteCmd(new SetCurveCommand(
-                    notesVm.Project, notesVm.Part, notesVm.PrimaryKey,
-                    x, (int)descriptor.CustomDefaultValue, lastX, (int)descriptor.CustomDefaultValue));
+                DocManager.Inst.ExecuteCmd(new EraseCurveCommand(
+                    notesVm.Project, notesVm.Part, notesVm.PrimaryKey, x, lastX));
             }
         }
     }

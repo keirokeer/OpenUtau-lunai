@@ -12,6 +12,11 @@ namespace OpenUtau.Core.Ustx {
         [YamlIgnore] public UExpressionDescriptor descriptor;
         public List<int> xs = new List<int>();
         public List<int> ys = new List<int>();
+        /// <summary>
+        /// Tick positions that break linear interpolation. Sample returns CustomDefaultValue
+        /// across a break (same as an unedited gap). Used when RMB-erasing curve regions.
+        /// </summary>
+        public List<int> breaks = new List<int>();
         [YamlIgnore] public List<int> realXs = new List<int>();
         [YamlIgnore] public List<int> realYs = new List<int>();
         public string abbr;
@@ -34,6 +39,7 @@ namespace OpenUtau.Core.Ustx {
             return new UCurve(descriptor) {
                 xs = xs.ToList(),
                 ys = ys.ToList(),
+                breaks = breaks?.ToList() ?? new List<int>(),
             };
         }
 
@@ -55,15 +61,34 @@ namespace OpenUtau.Core.Ustx {
         }
 
         public int Sample(int x) {
+            return Sample(x, descriptor != null ? (int)descriptor.CustomDefaultValue : 0);
+        }
+
+        public int Sample(int x, int emptyValue) {
             int idx = xs.BinarySearch(x);
             if (idx >= 0) {
                 return ys[idx];
             }
             idx = ~idx;
             if (idx > 0 && idx < xs.Count) {
+                if (HasBreakBetween(xs[idx - 1], xs[idx])) {
+                    return emptyValue;
+                }
                 return (int)Math.Round(MusicMath.Linear(xs[idx - 1], xs[idx], ys[idx - 1], ys[idx], x));
             }
-            return (int)descriptor.CustomDefaultValue;
+            return emptyValue;
+        }
+
+        public bool HasBreakBetween(int x0, int x1) {
+            if (breaks == null || breaks.Count == 0 || x0 >= x1) {
+                return false;
+            }
+            // A break at tick t severs interpolation for any open interval covering t.
+            int lo = breaks.BinarySearch(x0 + 1);
+            if (lo < 0) {
+                lo = ~lo;
+            }
+            return lo < breaks.Count && breaks[lo] < x1;
         }
 
         private void Insert(int x, int y) {
@@ -78,24 +103,80 @@ namespace OpenUtau.Core.Ustx {
         }
 
         public void Set(int x, int y, int lastX, int lastY) {
+            int empty = descriptor != null ? (int)descriptor.CustomDefaultValue : 0;
+            Set(x, y, lastX, lastY, empty);
+        }
+
+        public void Set(int x, int y, int lastX, int lastY, int emptyValue) {
             x = (int)Math.Round((float)x / interval) * interval;
             lastX = (int)Math.Round((float)lastX / interval) * interval;
+            int minX = Math.Min(x, lastX);
+            int maxX = Math.Max(x, lastX);
+            RemoveBreaksBetween(minX, maxX);
             if (x == lastX) {
-                int leftY = Sample(x - interval);
-                int rightY = Sample(x + interval);
+                int leftY = Sample(x - interval, emptyValue);
+                int rightY = Sample(x + interval, emptyValue);
                 Insert(x - interval, leftY);
                 Insert(x, y);
                 Insert(x + interval, rightY);
             } else if (x < lastX) {
-                int leftY = Sample(x - interval);
+                int leftY = Sample(x - interval, emptyValue);
                 DeleteBetweenExclusive(x, lastX);
                 Insert(x - interval, leftY);
                 Insert(x, y);
             } else {
-                int rightY = Sample(x + interval);
+                int rightY = Sample(x + interval, emptyValue);
                 DeleteBetweenExclusive(lastX, x);
                 Insert(x, y);
                 Insert(x + interval, rightY);
+            }
+        }
+
+        /// <summary>
+        /// Remove authored points in [x, lastX] so the range behaves like never edited
+        /// (Sample → CustomDefaultValue). Preserves shape on both sides via interpolation breaks.
+        /// </summary>
+        public void Erase(int x, int lastX) {
+            x = (int)Math.Round((float)x / interval) * interval;
+            lastX = (int)Math.Round((float)lastX / interval) * interval;
+            if (x > lastX) {
+                (x, lastX) = (lastX, x);
+            }
+            DeleteBetweenInclusive(x, lastX);
+            if (xs.Count == 0) {
+                breaks?.Clear();
+                return;
+            }
+            AddBreak(x);
+            if (lastX != x) {
+                AddBreak(lastX);
+            }
+        }
+
+        private void AddBreak(int x) {
+            if (breaks == null) {
+                breaks = new List<int>();
+            }
+            int idx = breaks.BinarySearch(x);
+            if (idx < 0) {
+                breaks.Insert(~idx, x);
+            }
+        }
+
+        private void RemoveBreaksBetween(int x0, int x1) {
+            if (breaks == null || breaks.Count == 0 || x0 > x1) {
+                return;
+            }
+            int li = breaks.BinarySearch(x0);
+            if (li < 0) {
+                li = ~li;
+            }
+            int ri = breaks.BinarySearch(x1);
+            if (ri < 0) {
+                ri = ~ri - 1;
+            }
+            if (ri >= li) {
+                breaks.RemoveRange(li, ri - li + 1);
             }
         }
 
@@ -110,6 +191,21 @@ namespace OpenUtau.Core.Ustx {
             if (ri >= 0) {
                 ri--;
             } else {
+                ri = ~ri - 1;
+            }
+            if (ri >= li) {
+                xs.RemoveRange(li, ri - li + 1);
+                ys.RemoveRange(li, ri - li + 1);
+            }
+        }
+
+        private void DeleteBetweenInclusive(int x1, int x2) {
+            int li = xs.BinarySearch(x1);
+            if (li < 0) {
+                li = ~li;
+            }
+            int ri = xs.BinarySearch(x2);
+            if (ri < 0) {
                 ri = ~ri - 1;
             }
             if (ri >= li) {
@@ -175,6 +271,11 @@ namespace OpenUtau.Core.Ustx {
                         zipped.Sort((a, b) => a.x.CompareTo(b.x));
                         existing.xs = zipped.Select(z => z.x).ToList();
                         existing.ys = zipped.Select(z => z.y).ToList();
+                        existing.breaks = (existing.breaks ?? new List<int>())
+                            .Concat(curve.breaks ?? Enumerable.Empty<int>())
+                            .Distinct()
+                            .OrderBy(b => b)
+                            .ToList();
                     }
                 }
             }

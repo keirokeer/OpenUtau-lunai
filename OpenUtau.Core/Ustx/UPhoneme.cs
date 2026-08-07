@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
+using OpenUtau.Core.Util;
 using YamlDotNet.Serialization;
 
 namespace OpenUtau.Core.Ustx {
@@ -13,6 +14,10 @@ namespace OpenUtau.Core.Ustx {
 
         public int position { get; set; }
         public string phoneme { get; set; }
+        /// <summary>Optional second phoneme for DiffSinger embedding blend (banks with tokens_b).</summary>
+        public string? blendPhoneme { get; set; }
+        /// <summary>Blend strength 0–100 toward <see cref="blendPhoneme"/>; 0 or null = off.</summary>
+        public int blendWeight { get; set; }
         public string phonemeMapped { get; private set; }
         public UEnvelope envelope { get; private set; } = new UEnvelope();
         public UOto oto { get; private set; }
@@ -216,7 +221,7 @@ namespace OpenUtau.Core.Ustx {
                 if (phonemizerExp != null) {
                     return Tuple.Create(phonemizerExp.value, false);
                 } else {
-                    return Tuple.Create(descriptor.CustomDefaultValue, false);
+                    return Tuple.Create(ExpressionDefaultResolver.GetEffectiveDefault(project, track, abbr), false);
                 }
             }
         }
@@ -294,6 +299,10 @@ namespace OpenUtau.Core.Ustx {
     public class UPhonemeOverride {
         public int index;
         public string? phoneme;
+        /// <summary>Secondary phoneme for DiffSinger phoneme blend (YAML: blend_phoneme).</summary>
+        public string? blendPhoneme;
+        /// <summary>0–100 blend toward blendPhoneme (YAML: blend_weight). Null or 0 = off.</summary>
+        public int? blendWeight;
         public int? offset;
         public float? preutterDelta;
         public float? overlapDelta;
@@ -301,13 +310,18 @@ namespace OpenUtau.Core.Ustx {
         public float? releaseTimeDelta;
 
         [YamlIgnore]
-        public bool IsEmpty => string.IsNullOrWhiteSpace(phoneme) && !offset.HasValue
+        public bool IsEmpty => string.IsNullOrWhiteSpace(phoneme)
+            && string.IsNullOrWhiteSpace(blendPhoneme)
+            && (!blendWeight.HasValue || blendWeight.Value == 0)
+            && !offset.HasValue
             && !preutterDelta.HasValue && !overlapDelta.HasValue && !attackTimeDelta.HasValue && !releaseTimeDelta.HasValue;
 
         public UPhonemeOverride Clone() {
             return new UPhonemeOverride() {
                 index = index,
                 phoneme = phoneme,
+                blendPhoneme = blendPhoneme,
+                blendWeight = blendWeight,
                 offset = offset,
                 preutterDelta = preutterDelta,
                 overlapDelta = overlapDelta,

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using OpenUtau.Core.Ustx;
+using OpenUtau.Core.Util;
 
 namespace OpenUtau.Core.Editing {
     public static class HarmonyGenerator {
@@ -29,6 +30,7 @@ namespace OpenUtau.Core.Editing {
                     Pan = sourceTrack.Pan,
                     TrackColor = sourceTrack.TrackColor,
                     TrackExpressions = sourceTrack.TrackExpressions.Select(exp => exp.Clone()).ToList(),
+                    ExpressionDefaultOverrides = ExpressionDefaultResolver.CloneOverrides(sourceTrack),
                 };
                 DocManager.Inst.ExecuteCmd(new AddTrackCommand(project, track));
                 var part = (UVoicePart)sourcePart.Clone();

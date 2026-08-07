@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -53,6 +53,10 @@ namespace OpenUtau.Core.Render {
         public readonly double leadingMs;
 
         public readonly string phoneme;
+        /// <summary>Optional DiffSinger blend target phoneme; null/empty = off.</summary>
+        public readonly string? blendPhoneme;
+        /// <summary>0–100 blend toward <see cref="blendPhoneme"/>; 0 = off.</summary>
+        public readonly int blendWeight;
         public readonly int tone;
         public readonly int noteIndex;
         public readonly double tempo;
@@ -89,6 +93,10 @@ namespace OpenUtau.Core.Render {
             leading = Math.Max(0, project.timeAxis.TicksBetweenMsPos(positionMs - leadingMs, positionMs));
 
             this.phoneme = phoneme.phoneme;
+            blendPhoneme = string.IsNullOrWhiteSpace(phoneme.blendPhoneme)
+                ? null
+                : phoneme.blendPhoneme.Trim();
+            blendWeight = Math.Clamp(phoneme.blendWeight, 0, 100);
             tone = note.tone;
             tempos = project.timeAxis.TemposBetweenTicks(part.position + phoneme.position - leading, part.position + phoneme.End);
             UTempo[] noteTempos = project.timeAxis.TemposBetweenTicks(part.position + phoneme.position, part.position + phoneme.End);
@@ -137,6 +145,8 @@ namespace OpenUtau.Core.Render {
                     writer.Write(adjustedTempo);
                     writer.Write(duration);
                     writer.Write(phoneme ?? string.Empty);
+                    writer.Write(blendPhoneme ?? string.Empty);
+                    writer.Write(blendWeight);
                     writer.Write(tone);
 
                     writer.Write(resampler ?? string.Empty);
@@ -186,6 +196,7 @@ namespace OpenUtau.Core.Render {
         public readonly float[] breathiness;
         public readonly float[] toneShift;
         public readonly float[] tension;
+        public readonly float[] mouthOpening;
         public readonly float[] voicing;
         public readonly Tuple<string, float[]>[] curves;//custom curves defined by renderer
         public readonly ulong preEffectHash;
@@ -410,8 +421,9 @@ namespace OpenUtau.Core.Render {
             pitchesBeforeDeviation = pitches.ToArray();
             var pitchCurve = part.curves.FirstOrDefault(c => c.abbr == Format.Ustx.PITD);
             if (pitchCurve != null && !pitchCurve.IsEmpty) {
+                int pitdEmpty = GetCurveEmptyValue(project, part, Format.Ustx.PITD);
                 for (int i = 0; i < pitches.Length; ++i) {
-                    pitches[i] += pitchCurve.Sample(pitchStart + i * pitchInterval);
+                    pitches[i] += pitchCurve.Sample(pitchStart + i * pitchInterval, pitdEmpty);
                 }
             }
 
@@ -433,13 +445,15 @@ namespace OpenUtau.Core.Render {
                 if (curve.abbr == Format.Ustx.DYN) {
                     convert = ((x, c) => x == c.descriptor.min ? 0 : (float)MusicMath.DecibelToLinear(x * 0.1));
                 }
-                var curveSampled = SampleCurve(curve, pitchStart, pitches.Length, convert);
+                int emptyValue = GetCurveEmptyValue(project, part, curve.abbr);
+                var curveSampled = SampleCurve(curve, pitchStart, pitches.Length, emptyValue, convert);
                 switch (curve.abbr) {
                     case Format.Ustx.PITD: break;
                     case Format.Ustx.DYN : dynamics = curveSampled; break;
                     case Format.Ustx.SHFC: toneShift = curveSampled; break;
                     case Format.Ustx.GENC: gender = curveSampled; break;
                     case Format.Ustx.TENC: tension = curveSampled; break;
+                    case Format.Ustx.OPEC: mouthOpening = curveSampled; break;
                     case Format.Ustx.BREC: breathiness = curveSampled; break;
                     case Format.Ustx.VOIC: voicing = curveSampled; break;
                     default:
@@ -470,11 +484,19 @@ namespace OpenUtau.Core.Render {
             hash = Hash(true);
         }
 
-        private static float[] SampleCurve(UCurve curve, int start, int length, Func<float, UCurve, float> convert) {
+        private static int GetCurveEmptyValue(UProject project, UVoicePart part, string abbr) {
+            UTrack? track = null;
+            if (part.trackNo >= 0 && part.trackNo < project.tracks.Count) {
+                track = project.tracks[part.trackNo];
+            }
+            return Util.ExpressionDefaultResolver.GetEffectiveDefaultInt(project, track, abbr);
+        }
+
+        private static float[] SampleCurve(UCurve curve, int start, int length, int emptyValue, Func<float, UCurve, float> convert) {
             const int interval = 5;
             var result = new float[length];
             for (int i = 0; i < length; ++i) {
-                result[i] = convert(curve.Sample(start + i * interval), curve);
+                result[i] = convert(curve.Sample(start + i * interval, emptyValue), curve);
             }
             return result;
         }
@@ -484,7 +506,9 @@ namespace OpenUtau.Core.Render {
             if (curve == null) {
                 return null;
             }
-            return SampleCurve(curve, start, length, convert);
+            // Legacy overload without project — use descriptor CustomDefaultValue.
+            int empty = curve.descriptor != null ? (int)curve.descriptor.CustomDefaultValue : 0;
+            return SampleCurve(curve, start, length, empty, convert);
         }
 
         private ulong Hash(bool postEffect) {
@@ -498,7 +522,7 @@ namespace OpenUtau.Core.Render {
                         writer.Write(phone.hash);
                     }
                     if (postEffect) {
-                        foreach (var array in new float[][] { pitches, dynamics, gender, breathiness, toneShift, tension, voicing }) {
+                        foreach (var array in new float[][] { pitches, dynamics, gender, breathiness, toneShift, tension, mouthOpening, voicing }) {
                             if (array == null) {
                                 writer.Write("null");
                             } else {
