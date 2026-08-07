@@ -254,6 +254,8 @@ namespace OpenUtau.Core.Ustx {
                 foreach (var phoneme in phonemes) {
                     phoneme.position = phoneme.rawPosition;
                     phoneme.phoneme = phoneme.rawPhoneme;
+                    phoneme.blendPhoneme = null;
+                    phoneme.blendWeight = 0;
                     phoneme.preutterDelta = null;
                     phoneme.overlapDelta = null;
                     phoneme.attackTimeDelta = null;
@@ -266,6 +268,10 @@ namespace OpenUtau.Core.Ustx {
                     if (o != null) {
                         phoneme.position += o.offset ?? 0;
                         phoneme.phoneme = !string.IsNullOrWhiteSpace(o.phoneme) ? o.phoneme : phoneme.rawPhoneme;
+                        phoneme.blendPhoneme = string.IsNullOrWhiteSpace(o.blendPhoneme) ? null : o.blendPhoneme.Trim();
+                        phoneme.blendWeight = o.blendWeight.HasValue
+                            ? Math.Clamp(o.blendWeight.Value, 0, 100)
+                            : 0;
                         phoneme.preutterDelta = o.preutterDelta;
                         phoneme.overlapDelta = o.overlapDelta;
                         phoneme.attackTimeDelta = o.attackTimeDelta;

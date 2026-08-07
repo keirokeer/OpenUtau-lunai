@@ -75,6 +75,21 @@ namespace OpenUtau.App.Controls {
             }
             return ("", phonemeText);
         }
+
+        public static bool HasActiveBlend(UPhoneme phoneme) {
+            return phoneme != null
+                && !string.IsNullOrWhiteSpace(phoneme.blendPhoneme)
+                && phoneme.blendWeight > 0;
+        }
+
+        /// <summary>Phoneme-only display text (lang tag stripped), e.g. ja/sh → sh.</summary>
+        public static string DisplayPhonemeOnly(string? phonemeText, string? langCode) {
+            if (string.IsNullOrWhiteSpace(phonemeText)) {
+                return string.Empty;
+            }
+            return SplitTagAndPhoneme(phonemeText.Trim(), langCode).phonemeOnly;
+        }
+
         //Calculates the position of a phoneme alias on a piano roll view, 
         //considering factors like tick width, phoneme text, and text layout. 
         //It returns the x-coordinate and text y-coordinate of the alias

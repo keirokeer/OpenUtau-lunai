@@ -25,15 +25,38 @@
           BorderThickness="1"
           BorderBrush="{DynamicResource WorkspaceCanvasBrush}"
           Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
-    <Grid RowDefinitions="22,Auto,Auto" HorizontalAlignment="Stretch">
+    <Grid RowDefinitions="22,Auto,Auto,Auto,Auto" HorizontalAlignment="Stretch">
       <TextBlock Classes="tips" Grid.Row="0" HorizontalAlignment="Left" Text="{DynamicResource tip.lyricbox.prev}" IsVisible="{Binding !IsAliasBox, Mode=OneWay}"/>
       <TextBlock Classes="tips" Grid.Row="0" HorizontalAlignment="Right" Text="{DynamicResource tip.lyricbox.next}" IsVisible="{Binding !IsAliasBox, Mode=OneWay}"/>
-      <TextBlock Classes="tips" Grid.Row="0" HorizontalAlignment="Center" Text="{DynamicResource tip.aliasbox}" IsVisible="{Binding IsAliasBox, Mode=OneWay}"/>
+      <TextBlock Classes="tips" Grid.Row="0" HorizontalAlignment="Center" Text="{DynamicResource tip.aliasbox}" IsVisible="{Binding ShowAliasOverrideTip, Mode=OneWay}"/>
+      <TextBlock Classes="tips" Grid.Row="0" HorizontalAlignment="Center" Text="{DynamicResource tip.aliasbox.phoneme}" IsVisible="{Binding ShowPhonemeOverrideTip, Mode=OneWay}"/>
       <ac:WorkspacePanelTextBox Name="PART_Box" Grid.Row="1" Classes="workspacePanelTextBox" Margin="0"
                Text="{Binding Text}" Focusable="True"
                GotFocus="Box_GotFocus" LostFocus="Box_LostFocus" KeyDown="Box_KeyDown"/>
-      <Border Grid.Row="2" Margin="0,4,0,0">
-        <ListBox Name="PART_Suggestions" Classes="lyricBoxSuggestions" Grid.Row="2" MaxHeight="240"
+      <StackPanel Grid.Row="2" Margin="0,6,0,0" Spacing="4"
+                  IsVisible="{Binding ShowPhonemeBlend, Mode=OneWay}">
+        <Separator Margin="0,2,0,4" Height="1"
+                   Background="{DynamicResource WorkspaceCanvasBrush}"/>
+        <TextBlock Classes="tips" HorizontalAlignment="Center" Text="{DynamicResource tip.aliasbox.blend}"/>
+        <ac:WorkspacePanelTextBox Name="PART_BlendBox" Classes="workspacePanelTextBox" Margin="0"
+                 Text="{Binding BlendText}" Focusable="True"
+                 GotFocus="BlendBox_GotFocus" LostFocus="BlendBox_LostFocus" KeyDown="Box_KeyDown"/>
+        <!-- Equal side columns keep the slider track visually centered despite the % label. -->
+        <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,2,0,0">
+          <TextBlock Grid.Column="0" Width="48" IsHitTestVisible="False" Opacity="0"
+                     VerticalAlignment="Center" HorizontalAlignment="Right"
+                     Text="{Binding BlendWeight, StringFormat={}{0}%}"/>
+          <Slider Name="PART_BlendWeight" Grid.Column="1" Minimum="0" Maximum="100" TickFrequency="1"
+                  IsSnapToTickEnabled="True" Value="{Binding BlendWeight}"
+                  HorizontalAlignment="Stretch" KeyDown="Box_KeyDown"
+                  ToolTip.Tip="{DynamicResource tip.aliasbox.blendweight}"/>
+          <TextBlock Grid.Column="2" Width="48" VerticalAlignment="Center"
+                     HorizontalAlignment="Left"
+                     Text="{Binding BlendWeight, StringFormat={}{0}%}"/>
+        </Grid>
+      </StackPanel>
+      <Border Grid.Row="3" Margin="0,4,0,0">
+        <ListBox Name="PART_Suggestions" Classes="lyricBoxSuggestions" MaxHeight="240"
                  VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
                  BorderThickness="0" Background="Transparent"
                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
@@ -53,6 +76,9 @@
           </ListBox.ItemTemplate>
         </ListBox>
       </Border>
+      <Button Name="PART_Save" Grid.Row="4" Margin="0,8,0,0" HorizontalAlignment="Stretch"
+              Classes="workspacePanelButton" Content="{DynamicResource button.save}"
+              Click="Save_Click" KeyDown="Box_KeyDown"/>
     </Grid>
   </Border>
 </UserControl>

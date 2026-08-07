@@ -270,14 +270,32 @@ namespace OpenUtau.App.Controls {
                                     }
                                 }
                             }
-                            // Phoneme only inside bar, vertically centered
+                            // Phoneme only inside bar, vertically centered.
+                            // With active blend: primary on first line, blend target on second (e.g. sh / s).
                             if (!string.IsNullOrEmpty(phonemeOnlyText)) {
                                 var barRect = new Rect(xLeft, barY, barWidth, barHeight);
                                 using (context.PushClip(barRect)) {
                                     var phonemeLayout = TextLayoutCache.Get(phonemeOnlyText, brush, fontSize, bold);
-                                    double phonemeY = barY + (barHeight - phonemeLayout.Height) / 2;
+                                    TextLayout? blendLayout = null;
+                                    if (PhonemeUIRender.HasActiveBlend(phoneme)) {
+                                        string blendOnly = PhonemeUIRender.DisplayPhonemeOnly(
+                                            phoneme.blendPhoneme, langCode);
+                                        if (!string.IsNullOrEmpty(blendOnly)) {
+                                            blendLayout = TextLayoutCache.Get(blendOnly, brush, fontSize, false);
+                                        }
+                                    }
+                                    const double lineGap = 0;
+                                    double totalHeight = phonemeLayout.Height
+                                        + (blendLayout != null ? lineGap + blendLayout.Height : 0);
+                                    double phonemeY = barY + (barHeight - totalHeight) / 2;
                                     using (context.PushTransform(Matrix.CreateTranslation(xLeft + 2, phonemeY))) {
                                         phonemeLayout.Draw(context, new Point());
+                                    }
+                                    if (blendLayout != null) {
+                                        double blendY = phonemeY + phonemeLayout.Height + lineGap;
+                                        using (context.PushTransform(Matrix.CreateTranslation(xLeft + 2, blendY))) {
+                                            blendLayout.Draw(context, new Point());
+                                        }
                                     }
                                 }
                             }

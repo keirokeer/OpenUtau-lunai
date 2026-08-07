@@ -16,6 +16,7 @@ namespace OpenUtau.App.Controls {
     public partial class LyricBox : UserControl {
         private LyricBoxViewModel viewModel;
         private TextBox box;
+        private TextBox? blendBox;
         private ListBox listBox;
         private DispatcherTimer? focusTimer;
         private int scrollStyleApplyGeneration;
@@ -24,6 +25,7 @@ namespace OpenUtau.App.Controls {
             InitializeComponent();
             DataContext = viewModel = new LyricBoxViewModel();
             box = PART_Box;
+            blendBox = PART_BlendBox;
             listBox = PART_Suggestions;
             IsVisible = false;
             AttachedToVisualTree += (_, _) => ScheduleApplyScrollStyle();
@@ -60,6 +62,7 @@ namespace OpenUtau.App.Controls {
         }
 
         private void Box_GotFocus(object? sender, GotFocusEventArgs e) {
+            viewModel.SuggestionFromBlend = false;
             box.SelectAll();
         }
 
@@ -67,23 +70,36 @@ namespace OpenUtau.App.Controls {
             box.CaretIndex = 0;
         }
 
+        private void BlendBox_GotFocus(object? sender, GotFocusEventArgs e) {
+            viewModel.SuggestionFromBlend = true;
+            if (blendBox != null) {
+                blendBox.SelectAll();
+            }
+        }
+
+        private void BlendBox_LostFocus(object? sender, RoutedEventArgs e) {
+            if (blendBox != null) {
+                blendBox.CaretIndex = 0;
+            }
+        }
+
         private void ListBox_KeyDown(object? sender, KeyEventArgs e) {
             switch (e.Key) {
                 case Key.Enter:
                     if (listBox.SelectedItem is LyricBoxViewModel.SuggestionItem item) {
-                        box.Text = item.Alias;
+                        viewModel.ApplySuggestion(item.Alias);
                     }
                     EndEdit(true);
                     e.Handled = true;
                     break;
                 case Key.Escape:
-                    EndEdit();
+                    EndEdit(false);
                     e.Handled = true;
                     break;
                 case Key.Tab:
                     if (!viewModel.IsAliasBox) {
                         if (listBox.SelectedItem is LyricBoxViewModel.SuggestionItem item1) {
-                            box.Text = item1.Alias;
+                            viewModel.ApplySuggestion(item1.Alias);
                         }
                         OnTab(e.KeyModifiers);
                     }
@@ -134,7 +150,7 @@ namespace OpenUtau.App.Controls {
                     e.Handled = true;
                     break;
                 case Key.Escape:
-                    EndEdit();
+                    EndEdit(false);
                     e.Handled = true;
                     break;
                 case Key.Tab:
@@ -152,16 +168,20 @@ namespace OpenUtau.App.Controls {
                     e.Handled = true;
                     break;
                 case Key.Left:
-                    if (box.SelectionStart < box.SelectionEnd)
-                        box.SelectionEnd = box.SelectionStart;
+                    if (sender is TextBox tbLeft && tbLeft.SelectionStart < tbLeft.SelectionEnd)
+                        tbLeft.SelectionEnd = tbLeft.SelectionStart;
                     break;
                 case Key.Right:
-                    if (box.SelectionStart > box.SelectionEnd)
-                        box.SelectionEnd = box.SelectionStart;
+                    if (sender is TextBox tbRight && tbRight.SelectionStart > tbRight.SelectionEnd)
+                        tbRight.SelectionEnd = tbRight.SelectionStart;
                     break;
                 default:
                     break;
             }
+        }
+
+        private void Save_Click(object? sender, RoutedEventArgs e) {
+            EndEdit(true);
         }
 
         private void OnTab(KeyModifiers keyModifiers) {
@@ -182,7 +202,7 @@ namespace OpenUtau.App.Controls {
 
         public void ListBox_PointerPressed(object sender, PointerPressedEventArgs args) {
             if (sender is Control { DataContext: LyricBoxViewModel.SuggestionItem item }) {
-                box.Text = item.Alias;
+                viewModel.ApplySuggestion(item.Alias);
             }
             EndEdit(true);
         }
@@ -201,6 +221,15 @@ namespace OpenUtau.App.Controls {
             viewModel.EditPhonemeTagOnly = editTagOnly;
             viewModel.EditPhonemePhonemeOnly = editPhonemeOnly;
             viewModel.PhonemeOtherPart = otherPart ?? string.Empty;
+            viewModel.SuggestionFromBlend = false;
+            if (noteOrPhoneme is LyricBoxPhoneme lyricPhoneme) {
+                var ph = lyricPhoneme.Unwrap();
+                viewModel.BlendText = ph.blendPhoneme ?? string.Empty;
+                viewModel.BlendWeight = Math.Clamp(ph.blendWeight, 0, 100);
+            } else {
+                viewModel.BlendText = string.Empty;
+                viewModel.BlendWeight = 0;
+            }
             viewModel.IsVisible = true;
             box.SelectAll();
             ScheduleApplyScrollStyle();
@@ -220,14 +249,29 @@ namespace OpenUtau.App.Controls {
             }
         }
 
+        /// <summary>
+        /// Closes the lyric/phoneme editor.
+        /// Pass true to commit (Save / Enter). Default discards (click outside / Escape).
+        /// </summary>
         public void EndEdit(bool commit = false) {
+            if (!viewModel.IsVisible) {
+                return;
+            }
             if (commit) {
+                // Sync TextBox text before commit in case binding hasn't flushed yet.
+                viewModel.Text = box.Text;
+                if (blendBox != null) {
+                    viewModel.BlendText = blendBox.Text;
+                }
                 viewModel.Commit();
             }
             viewModel.Part = null;
             viewModel.NoteOrPhoneme = null;
             viewModel.IsVisible = false;
             viewModel.Text = string.Empty;
+            viewModel.BlendText = string.Empty;
+            viewModel.BlendWeight = 0;
+            viewModel.SuggestionFromBlend = false;
             viewModel.EditPhonemeTagOnly = false;
             viewModel.EditPhonemePhonemeOnly = false;
             viewModel.PhonemeOtherPart = null;

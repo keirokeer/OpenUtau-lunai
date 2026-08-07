@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using OpenUtau.Core.Ustx;
@@ -713,5 +713,58 @@ namespace OpenUtau.Core {
             o.phoneme = string.IsNullOrWhiteSpace(oldAlias) ? null : oldAlias;
         }
         public override string ToString() => "Change phoneme alias";
+    }
+
+    public class ChangePhonemeBlendCommand : NoteCommand {
+        readonly UNote note;
+        readonly int index;
+        readonly string? oldBlendPhoneme;
+        readonly int? oldBlendWeight;
+        readonly string? newBlendPhoneme;
+        readonly int? newBlendWeight;
+
+        public override ValidateOptions ValidateOptions => new ValidateOptions {
+            SkipTiming = true,
+            Part = Part,
+        };
+
+        public ChangePhonemeBlendCommand(
+            UVoicePart part,
+            UNote note,
+            int index,
+            string? blendPhoneme,
+            int? blendWeight) : base(part, note) {
+            this.note = note;
+            this.index = index;
+            var o = this.note.GetPhonemeOverride(index);
+            oldBlendPhoneme = o.blendPhoneme;
+            oldBlendWeight = o.blendWeight;
+            newBlendPhoneme = string.IsNullOrWhiteSpace(blendPhoneme) ? null : blendPhoneme.Trim();
+            newBlendWeight = blendWeight.HasValue
+                ? Math.Clamp(blendWeight.Value, 0, 100)
+                : null;
+            if (newBlendWeight == 0) {
+                newBlendWeight = null;
+            }
+            if (newBlendPhoneme == null) {
+                newBlendWeight = null;
+            }
+        }
+
+        public override void Execute() {
+            Apply(newBlendPhoneme, newBlendWeight);
+        }
+
+        public override void Unexecute() {
+            Apply(oldBlendPhoneme, oldBlendWeight);
+        }
+
+        void Apply(string? blendPhoneme, int? blendWeight) {
+            var o = note.GetPhonemeOverride(index);
+            o.blendPhoneme = blendPhoneme;
+            o.blendWeight = blendWeight;
+        }
+
+        public override string ToString() => "Change phoneme blend";
     }
 }
