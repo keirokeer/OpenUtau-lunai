@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -239,7 +239,10 @@ namespace OpenUtau.Core.Render {
             foreach (var request in requests) {
                 PhraseWaveformCache.RemoveStaleForTrack(
                     request.trackNo,
-                    request.phrases.Select(phrase => phrase.hash));
+                    request.phrases.Select(phrase => {
+                        var layout = phrase.renderer.Layout(phrase);
+                        return (phrase.hash, layout.positionMs - layout.leadingMs);
+                    }));
                 SeedRequestFromCache(request);
                 request.part.SetRenderMixComplete(request.sources.All(source => source.HasSamples));
                 request.part.SetMix(request.mix);
@@ -277,12 +280,15 @@ namespace OpenUtau.Core.Render {
                 request.part.SetMix(request.mix);
                 if (result.samples != null) {
                     var layout = phrase.renderer.Layout(phrase);
-                    PhraseWaveformCache.Put(
+                    bool waveformChanged = PhraseWaveformCache.Put(
                         request.trackNo,
                         phrase.hash,
                         layout.positionMs - layout.leadingMs,
-                        result.samples);
-                    DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
+                        result.samples,
+                        result.waveformSamples);
+                    if (waveformChanged) {
+                        DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
+                    }
                 }
                 DocManager.Inst.ExecuteCmd(new PhraseRenderedNotification(request.part, phrase, result, request.trackNo));
                 if (!realCurvesPublished) {

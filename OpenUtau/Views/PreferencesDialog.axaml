@@ -368,6 +368,10 @@
             <TextBlock Text="{DynamicResource prefs.rendering.diffsingervariancelocalpitchpatch}" HorizontalAlignment="Left" />
             <ToggleSwitch IsChecked="{Binding DiffSingerVarianceLocalPitchPatch}" IsEnabled="{Binding DiffSingerTensorCache}" />
           </Grid>
+          <Grid Margin="0,5,0,0" ToolTip.Tip="{DynamicResource prefs.rendering.diffsingeracousticlocalretake.hint}">
+            <TextBlock Text="{DynamicResource prefs.rendering.diffsingeracousticlocalretake}" HorizontalAlignment="Left" />
+            <ToggleSwitch IsChecked="{Binding DiffSingerAcousticLocalRetake}" IsEnabled="{Binding DiffSingerTensorCache}" />
+          </Grid>
           <Grid Margin="0,5,0,0">
             <TextBlock Text="{DynamicResource prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate}" HorizontalAlignment="Left" />
             <ToggleSwitch IsChecked="{Binding DiffSingerUnvoicedConsonantAcousticF0Interpolate}" />

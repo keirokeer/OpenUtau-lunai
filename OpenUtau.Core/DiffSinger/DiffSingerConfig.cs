@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using YamlDotNet.Serialization;
 
@@ -27,6 +27,9 @@ namespace OpenUtau.Core.DiffSinger {
         public bool useBreathinessEmbed = false;
         public bool useVoicingEmbed = false;
         public bool useTensionEmbed = false;
+        public bool useMouthOpeningEmbed = false;
+        /// <summary>Acoustic model supports soft retake via ONNX inputs retake + gt_mel.</summary>
+        public bool useAcousticRetake = false;
         public AugmentationArgs augmentationArgs;
         public bool useContinuousAcceleration = false;
         public bool use_lang_id = false;
@@ -56,6 +59,7 @@ namespace OpenUtau.Core.DiffSinger {
         public bool predict_breathiness = true;
         public bool predict_voicing = false;
         public bool predict_tension = false;
+        public bool predict_mouth_opening = false;
         public bool use_expr = false;
         public bool use_note_rest = false;
         public int sample_rate = 44100;

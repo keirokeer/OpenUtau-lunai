@@ -31,6 +31,7 @@ namespace OpenUtau.Core.DiffSinger {
         public double[]? breathiness = null;
         public double[]? voicing = null;
         public double[]? tension = null;
+        public double[]? mouth_opening = null;
 
         public DiffSingerScript(RenderPhrase phrase, DsScriptExportOptions options) {
             float headMs = DiffSingerUtils.GetHeadMs(phrase);
@@ -167,6 +168,13 @@ namespace OpenUtau.Core.DiffSinger {
                             Format.Ustx.TENC,
                             frameMs, totalFrames, headFrames, tailFrames);
                     }
+                    if (varianceResult.mouthOpening != null) {
+                        mouth_opening = ComputeVarianceCurve(
+                            phrase, varianceResult.mouthOpening, varianceResult,
+                            phrase.mouthOpening,
+                            Format.Ustx.OPEC,
+                            frameMs, totalFrames, headFrames, tailFrames);
+                    }
                 }
             }
 
@@ -230,6 +238,8 @@ namespace OpenUtau.Core.DiffSinger {
         public string? voicing = null;
         public string? tension_timestep = null;
         public string? tension = null;
+        public string? mouth_opening_timestep = null;
+        public string? mouth_opening = null;
 
         static string FormatMsAsSeconds(double ms) {
             return (ms / 1000).ToString("G9", CultureInfo.InvariantCulture);
@@ -286,6 +296,11 @@ namespace OpenUtau.Core.DiffSinger {
             if (script.tension != null) {
                 tension_timestep = f0_timestep;
                 tension = String.Join(" ", script.tension.Select(FormatValue));
+            }
+
+            if (script.mouth_opening != null) {
+                mouth_opening_timestep = f0_timestep;
+                mouth_opening = String.Join(" ", script.mouth_opening.Select(FormatValue));
             }
         }
     }

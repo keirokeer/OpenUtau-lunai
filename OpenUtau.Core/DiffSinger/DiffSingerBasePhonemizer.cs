@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -389,6 +389,12 @@ namespace OpenUtau.Core.DiffSinger
                     .Reshape(new int[] { 1, langIdByPhone.Length });
                 linguisticInputs.Add(NamedOnnxValue.CreateFromTensor("languages", langIdTensor));
             }
+            DiffSingerOnnxExtras.FillMissingInputs(linguisticModel, linguisticInputs, new DiffSingerOnnxFillContext {
+                Tokens = tokens,
+                BlendLength = tokens.Length,
+                HiddenSize = dsConfig.hiddenSize,
+                MelBins = dsConfig.num_mel_bins,
+            });
             Onnx.VerifyInputNames(linguisticModel, linguisticInputs);
             var linguisticCache = Preferences.Default.DiffSingerTensorCache
                 ? new DiffSingerCache(linguisticHash, linguisticInputs)
@@ -427,6 +433,12 @@ namespace OpenUtau.Core.DiffSinger
                 var spkEmbedTensor = speakerEmbedManager.PhraseSpeakerEmbedByPhone(speakersByPhone);
                 durationInputs.Add(NamedOnnxValue.CreateFromTensor("spk_embed", spkEmbedTensor));
             }
+            DiffSingerOnnxExtras.FillMissingInputs(durationModel, durationInputs, new DiffSingerOnnxFillContext {
+                Tokens = tokens,
+                EncoderOut = encoder_out,
+                HiddenSize = dsConfig.hiddenSize,
+                MelBins = dsConfig.num_mel_bins,
+            });
             Onnx.VerifyInputNames(durationModel, durationInputs);
             var durationCache = Preferences.Default.DiffSingerTensorCache
                 ? new DiffSingerCache(durationHash, durationInputs)

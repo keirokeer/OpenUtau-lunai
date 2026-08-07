@@ -1600,6 +1600,18 @@ namespace OpenUtau.App.Controls {
                             Header = ThemeManager.GetString("context.note.clearcache"),
                             Command = ViewModel.ClearPhraseCacheCommand,
                         });
+                        var part = ViewModel.NotesViewModel.Part;
+                        if (part != null &&
+                            part.trackNo >= 0 &&
+                            part.trackNo < DocManager.Inst.Project.tracks.Count &&
+                            OpenUtau.Core.DiffSinger.DiffSingerAcousticRetakeApi.Supports(
+                                DocManager.Inst.Project.tracks[part.trackNo].Singer)) {
+                            ViewModel.NotesContextMenuItems.Add(new MenuItemViewModel() {
+                                Header = ThemeManager.GetString("context.note.acousticretake"),
+                                Command = noteBatchEditCommand,
+                                CommandParameter = new AcousticRetakeNotes(),
+                            });
+                        }
                         shouldOpenNotesContextMenu = true;
                         return;
                     }

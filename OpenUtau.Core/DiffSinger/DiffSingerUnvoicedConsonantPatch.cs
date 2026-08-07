@@ -5,6 +5,16 @@ using OpenUtau.Core.Render;
 using OpenUtau.Core.Util;
 
 namespace OpenUtau.Core.DiffSinger {
+    readonly struct UnvoicedFrameRange {
+        public readonly int start;
+        public readonly int end;
+
+        public UnvoicedFrameRange(int start, int end) {
+            this.start = start;
+            this.end = end;
+        }
+    }
+
     /// <summary>
     /// Smooths acoustic-model F0 on unvoiced consonants before diffusion render.
     /// Target phonemes come from the voicebank dsunvoiced.yaml file.
@@ -64,9 +74,9 @@ namespace OpenUtau.Core.DiffSinger {
             ApplyInterpolation(f0, ranges, frameMs);
         }
 
-        static void ApplyInterpolation(float[] f0, IReadOnlyList<VariancePatchRange> ranges, float frameMs) {
+        static void ApplyInterpolation(float[] f0, IReadOnlyList<UnvoicedFrameRange> ranges, float frameMs) {
             int crossfadeFrames = Math.Clamp((int)Math.Round(CrossfadeMs / frameMs), 1, 20);
-            var weights = DiffSingerVariancePatch.BuildWeights(f0.Length, ranges, crossfadeFrames);
+            var weights = BuildWeights(f0.Length, ranges, crossfadeFrames);
             foreach (var range in ranges) {
                 int left = range.start - 1;
                 int right = range.end;
@@ -85,11 +95,11 @@ namespace OpenUtau.Core.DiffSinger {
             }
         }
 
-        internal static List<VariancePatchRange> FindTargetPhoneRanges(
+        internal static List<UnvoicedFrameRange> FindTargetPhoneRanges(
             IReadOnlyList<string> phonemes,
             IReadOnlyList<int> durations,
             IReadOnlySet<string> targetPhonemes) {
-            var ranges = new List<VariancePatchRange>();
+            var ranges = new List<UnvoicedFrameRange>();
             if (phonemes.Count == 0 || durations.Count < phonemes.Count + 2 || targetPhonemes.Count == 0) {
                 return ranges;
             }
@@ -103,14 +113,38 @@ namespace OpenUtau.Core.DiffSinger {
                         runStart = start;
                     }
                 } else if (runStart >= 0) {
-                    ranges.Add(new VariancePatchRange(runStart, start));
+                    ranges.Add(new UnvoicedFrameRange(runStart, start));
                     runStart = -1;
                 }
             }
             if (runStart >= 0) {
-                ranges.Add(new VariancePatchRange(runStart, frame));
+                ranges.Add(new UnvoicedFrameRange(runStart, frame));
             }
             return ranges;
+        }
+
+        static float[] BuildWeights(int length, IReadOnlyList<UnvoicedFrameRange> ranges, int crossfadeFrames) {
+            var weights = new float[length];
+            foreach (var range in ranges) {
+                int start = Math.Clamp(range.start, 0, length);
+                int end = Math.Clamp(range.end, start, length);
+                for (int i = start; i < end; ++i) {
+                    weights[i] = 1f;
+                }
+                int leftStart = Math.Max(0, start - crossfadeFrames);
+                int leftLength = start - leftStart;
+                for (int i = leftStart; i < start; ++i) {
+                    float weight = (float)(i - leftStart + 1) / (leftLength + 1);
+                    weights[i] = Math.Max(weights[i], weight);
+                }
+                int rightEnd = Math.Min(length, end + crossfadeFrames);
+                int rightLength = rightEnd - end;
+                for (int i = end; i < rightEnd; ++i) {
+                    float weight = 1f - (float)(i - end + 1) / (rightLength + 1);
+                    weights[i] = Math.Max(weights[i], weight);
+                }
+            }
+            return weights;
         }
     }
 }

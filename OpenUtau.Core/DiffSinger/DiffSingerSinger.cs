@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -223,6 +223,28 @@ namespace OpenUtau.Core.DiffSinger {
                 acousticSession = Onnx.getInferenceSession(acousticBytes, OnnxRunnerChoice.Default);
             }
             return acousticSession;
+        }
+
+        public bool SupportsAcousticRetake =>
+            DiffSingerAcousticRetake.Supports(getAcousticSession(), dsConfig);
+
+        public bool SupportsPhonemeBlend {
+            get {
+                try {
+                    return DiffSingerPhonemeBlend.Supports(getAcousticSession());
+                } catch (Exception e) {
+                    Log.Warning(e, "Failed to detect phoneme blend support for {Singer}", Name);
+                    return false;
+                }
+            }
+        }
+
+        public bool TryPhonemeTokenize(string phoneme, out int token) {
+            token = 0;
+            if (phonemeTokens == null || phonemeTokens.Count == 0) {
+                return false;
+            }
+            return phonemeTokens.TryGetValue(phoneme, out token);
         }
 
         public DsVocoder getVocoder() {

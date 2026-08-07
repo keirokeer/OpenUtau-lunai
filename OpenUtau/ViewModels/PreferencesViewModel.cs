@@ -183,6 +183,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public double DiffSingerDepth { get; set; }
         [Reactive] public bool DiffSingerTensorCache { get; set; }
         [Reactive] public bool DiffSingerVarianceLocalPitchPatch { get; set; }
+        [Reactive] public bool DiffSingerAcousticLocalRetake { get; set; }
         [Reactive] public bool DiffSingerUnvoicedConsonantAcousticF0Interpolate { get; set; }
         [Reactive] public bool DiffSingerShowAcousticF0PatchPreview { get; set; }
         [Reactive] public bool DiffSingerLangCodeHide { get; set; }
@@ -563,6 +564,7 @@ namespace OpenUtau.App.ViewModels {
             DiffSingerStepsPitch = Preferences.Default.DiffSingerStepsPitch;
             DiffSingerTensorCache = Preferences.Default.DiffSingerTensorCache;
             DiffSingerVarianceLocalPitchPatch = Preferences.Default.DiffSingerVarianceLocalPitchPatch;
+            DiffSingerAcousticLocalRetake = Preferences.Default.DiffSingerAcousticLocalRetake;
             DiffSingerUnvoicedConsonantAcousticF0Interpolate = Preferences.Default.DiffSingerUnvoicedConsonantAcousticF0Interpolate;
             DiffSingerShowAcousticF0PatchPreview = Preferences.Default.DiffSingerShowAcousticF0PatchPreview;
             DiffSingerLangCodeHide = Preferences.Default.DiffSingerLangCodeHide;
@@ -1008,6 +1010,11 @@ namespace OpenUtau.App.ViewModels {
             this.WhenAnyValue(vm => vm.DiffSingerVarianceLocalPitchPatch)
                 .Subscribe(useLocalPatch => {
                     Preferences.Default.DiffSingerVarianceLocalPitchPatch = useLocalPatch;
+                    Preferences.Save();
+                });
+            this.WhenAnyValue(vm => vm.DiffSingerAcousticLocalRetake)
+                .Subscribe(useLocalRetake => {
+                    Preferences.Default.DiffSingerAcousticLocalRetake = useLocalRetake;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.DiffSingerUnvoicedConsonantAcousticF0Interpolate)

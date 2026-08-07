@@ -27,6 +27,7 @@ namespace OpenUtau.Core.DiffSinger {
 
         static bool IsCurveEditCommand(UCommand command) {
             return command is SetCurveCommand ||
+                command is EraseCurveCommand ||
                 command is MergedSetCurveCommand ||
                 command is PasteCurveCommand ||
                 command is ClearCurveCommand;

@@ -131,6 +131,12 @@ namespace OpenUtau.Core.DiffSinger
                 .ToArray();
             var ph_dur = DiffSingerUtils.PaddedPhoneDurations(phrase, frameMs, headFrames, tailFrames);
             int totalFrames = ph_dur.Sum();
+            Func<string, int?> tryBlendToken = p =>
+                phonemeTokens.TryGetValue(p, out int tok) ? tok : null;
+            var tokensB = DiffSingerPhonemeBlend.BuildTokensB(tokens, phrase.phones, tryBlendToken);
+            var tokenBlendWeights = DiffSingerPhonemeBlend.BuildTokenBlendWeights(
+                tokens, phrase.phones, tryBlendToken);
+            var frameBlendWeights = DiffSingerPhonemeBlend.ExpandToFrames(tokenBlendWeights, ph_dur);
             linguisticInputs.Add(NamedOnnxValue.CreateFromTensor("tokens",
                 new DenseTensor<Int64>(tokens, new int[] { tokens.Length }, false)
                 .Reshape(new int[] { 1, tokens.Length })));
@@ -163,6 +169,15 @@ namespace OpenUtau.Core.DiffSinger
                 linguisticInputs.Add(NamedOnnxValue.CreateFromTensor("languages", langIdTensor));
             }
 
+            DiffSingerOnnxExtras.FillMissingInputs(linguisticModel, linguisticInputs, new DiffSingerOnnxFillContext {
+                TotalFrames = totalFrames,
+                MelBins = dsConfig.num_mel_bins,
+                HiddenSize = dsConfig.hiddenSize,
+                Tokens = tokens,
+                TokensB = tokensB,
+                BlendWeights = tokenBlendWeights,
+                BlendLength = tokens.Length,
+            });
             Onnx.VerifyInputNames(linguisticModel, linguisticInputs);
             var linguisticCache = Preferences.Default.DiffSingerTensorCache
                 ? new DiffSingerCache(linguisticHash, linguisticInputs)
@@ -337,6 +352,18 @@ namespace OpenUtau.Core.DiffSinger
                 .Reshape(new int[] { 1, note_rest.Count })));
             }
 
+            DiffSingerOnnxExtras.FillMissingInputs(pitchModel, pitchInputs, new DiffSingerOnnxFillContext {
+                TotalFrames = totalFrames,
+                MelBins = dsConfig.num_mel_bins,
+                HiddenSize = dsConfig.hiddenSize,
+                Tokens = tokens,
+                TokensB = tokensB,
+                BlendWeights = frameBlendWeights,
+                BlendLength = totalFrames,
+                EncoderOut = encoder_out,
+                NoiseStage = DiffSingerNoise.StagePitch,
+                NoiseSeed = unchecked((uint)(phrase.hash & 0xFFFFFFFFUL)) | 1u,
+            });
             Onnx.VerifyInputNames(pitchModel, pitchInputs);
             var pitchOutputs = pitchModel.Run(pitchInputs);
             var pitch_out = pitchOutputs.First().AsTensor<float>().ToArray();

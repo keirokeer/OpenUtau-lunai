@@ -894,4 +894,37 @@ namespace OpenUtau.Core.Editing {
             });
         }
     }
+
+    /// <summary>
+    /// Explicit DiffSinger acoustic retake for selected notes (retake + gt_mel banks only).
+    /// </summary>
+    public class AcousticRetakeNotes : BatchEdit {
+        public string Name => "context.note.acousticretake";
+
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+            var track = project.tracks[part.trackNo];
+            if (!DiffSinger.DiffSingerAcousticRetake.Supports(track.Singer)) {
+                return;
+            }
+            var notes = selectedNotes.Count > 0 ? selectedNotes : part.notes.ToList();
+            if (notes.Count == 0) {
+                return;
+            }
+            var positions = notes.Select(n => n.position + part.position).ToHashSet();
+            var phrases = part.renderPhrases
+                .Where(phrase => phrase.notes.Any(n => positions.Contains(phrase.position + n.position)))
+                .ToArray();
+            if (phrases.Length == 0) {
+                return;
+            }
+            DiffSinger.DiffSingerAcousticRetake.QueueForceRetake(
+                phrases.Select(p => (p.position, p.end)),
+                positions);
+            foreach (var phrase in phrases) {
+                phrase.DeleteCacheFiles();
+                PhraseWaveformCache.Remove(phrase.hash);
+            }
+            docManager.ExecuteCmd(new PreRenderNotification());
+        }
+    }
 }

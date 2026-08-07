@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Avalonia;
@@ -189,7 +189,7 @@ namespace OpenUtau.App.Controls {
                     continue;
                 }
                 double phraseStartMs = cacheItem.PosMs;
-                float[] phraseSamples = cacheItem.Samples;
+                float[] phraseSamples = cacheItem.WaveformSamples;
                 int phraseStartSampleIdx = (int)((phraseStartMs - leftMs) * 44100 / 1000);
                 int startJ = Math.Max(0, -phraseStartSampleIdx);
                 int endJ = Math.Min(phraseSamples.Length, (sampleCount / 2) - phraseStartSampleIdx);
