@@ -1460,7 +1460,14 @@ namespace OpenUtau.App.Views {
                 WorkspaceTracksGrid.RowDefinitions[2].Height = new GridLength(1, GridUnitType.Star);
                 return;
             }
-            if (!viewModel.ShowPianoRoll || !workspaceTracksHeightInitialized) {
+            // Detached / hidden piano roll: expand tracks to fill leftover space.
+            // Leaving the previous absolute tracks height would leave empty area (#14).
+            if (!viewModel.ShowPianoRoll) {
+                WorkspaceTracksGrid.RowDefinitions[0].Height = new GridLength(1, GridUnitType.Star);
+                WorkspaceTracksGrid.RowDefinitions[2].Height = new GridLength(0);
+                return;
+            }
+            if (!workspaceTracksHeightInitialized) {
                 return;
             }
             WorkspaceTracksGrid.RowDefinitions[0].Height =
@@ -1506,6 +1513,7 @@ namespace OpenUtau.App.Views {
                 viewModel.ShowPianoRoll = true;
                 Preferences.Default.DetachPianoRoll = false;
             } else {
+                SaveTracksPanelHeightFromGrid();
                 PianoRollContainer.Content = null;
                 viewModel.ShowPianoRoll = false;
                 if (pianoRollWindow == null) {
@@ -1516,6 +1524,7 @@ namespace OpenUtau.App.Views {
             }
             Preferences.Save();
             pianoRoll?.NotifyDetachedLayoutChanged();
+            NotifyWorkspaceLayoutChanged();
         }
 
         public void EnterTikTokMode() {
