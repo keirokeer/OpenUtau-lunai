@@ -203,6 +203,19 @@ jobs:
           Copy-Item $portable.FullName "OpenUtau-Lunai-$rid.zip" -Force
           Remove-Item $setup.FullName -Force
           Remove-Item $portable.FullName -Force
+          # assets.*.json still lists Setup/Portable by Velopack names; rewrite to match what we ship in Releases/.
+          Get-ChildItem $outDir -Filter 'assets.*.json' | ForEach-Object {
+            $assets = @(Get-ChildItem $outDir -File | ForEach-Object {
+              $type = if ($_.Name -like '*-full.nupkg') { 'Full' }
+                      elseif ($_.Name -like '*-delta.nupkg') { 'Delta' }
+                      else { $null }
+              if ($type) {
+                [ordered]@{ RelativeFileName = $_.Name; Type = $type }
+              }
+            })
+            ($assets | ConvertTo-Json -Compress -AsArray) | Set-Content -Path $_.FullName -Encoding utf8NoBOM
+            Write-Host "Updated $($_.Name): $((Get-Content $_.FullName -Raw))"
+          }
 
       # macOS specific
       - name: Create macOS DMG
