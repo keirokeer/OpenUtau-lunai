@@ -114,8 +114,9 @@ namespace OpenUtau.Core.DiffSinger
             var singer = phrase.singer;
             var hiddenSize = dsConfig.hiddenSize;
             var speakerEmbeds = getSpeakerEmbeds();
-            // Per-frame mix origin follows CLR / phoneme suffix (same as pre–voice-color-max).
-            // Voice-color curves then deviate from that base with linear mix (supports >100%).
+            // Per-frame CLR / phoneme suffix is always weight 1.0 ("100%").
+            // Voice-color curves add on top; then weights are normalized to a convex mix.
+            // Example: CLR=A and cl_B=100% → A:B = 1:1 (not pure B).
             var headDefaultSpk = getSpeakerIndexBySuffix(phrase.phones[0].suffix);
             var tailDefaultSpk = getSpeakerIndexBySuffix(phrase.phones[^1].suffix);
             var defaultSpkByFrame = Enumerable.Repeat(headDefaultSpk, headFrames).ToList();
@@ -135,22 +136,39 @@ namespace OpenUtau.Core.DiffSinger
                 }
             }
 
-            // Linear embed mix: dest = base(CLR) + Σ amount_i * (spk_i − base).
-            // Supports voice-color amounts above 100% (amount > 1) without normalizing them away.
+            int speakerCount = dsConfig.speakers.Count;
             var result = new float[totalFrames * hiddenSize];
+            var weights = new float[speakerCount];
             for (int frameId = 0; frameId < totalFrames; frameId++) {
-                int baseSpkId = defaultSpkByFrame[frameId];
-                var baseEmbed = speakerEmbeds[":", baseSpkId].ToArray<float>();
+                Array.Clear(weights, 0, speakerCount);
+                int clrSpkId = defaultSpkByFrame[frameId];
+                weights[clrSpkId] = 1f;
+                for (int spk = 0; spk < speakerCount; spk++) {
+                    weights[spk] += (float)spkCurves[frameId, spk];
+                }
+
+                float weightSum = 0f;
+                for (int spk = 0; spk < speakerCount; spk++) {
+                    if (weights[spk] < 0f) {
+                        weights[spk] = 0f;
+                    }
+                    weightSum += weights[spk];
+                }
+                if (weightSum < 1e-8f) {
+                    weights[clrSpkId] = 1f;
+                    weightSum = 1f;
+                }
+
                 var dest = result.AsSpan(frameId * hiddenSize, hiddenSize);
-                baseEmbed.CopyTo(dest);
-                for (int spk = 0; spk < dsConfig.speakers.Count; spk++) {
-                    float amount = (float)spkCurves[frameId, spk];
-                    if (Math.Abs(amount) < 1e-8f) {
+                dest.Clear();
+                for (int spk = 0; spk < speakerCount; spk++) {
+                    float w = weights[spk] / weightSum;
+                    if (w < 1e-8f) {
                         continue;
                     }
-                    var target = speakerEmbeds[":", spk].ToArray<float>();
+                    var embed = speakerEmbeds[":", spk].ToArray<float>();
                     for (int j = 0; j < dest.Length; j++) {
-                        dest[j] += amount * (target[j] - baseEmbed[j]);
+                        dest[j] += w * embed[j];
                     }
                 }
             }
