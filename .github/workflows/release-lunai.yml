@@ -106,8 +106,9 @@ jobs:
         run: chmod +x bin/${{ matrix.arch.name }}/OpenUtau-Lunai
 
       # Create packages (BEFORE installer creation to include DirectML)
+      # Windows portable comes from Velopack (self-updating); Linux keeps a plain zip.
       - name: Create portable package
-        if: matrix.arch.os != 'osx'
+        if: matrix.arch.os == 'linux'
         run: |
           cd bin/${{ matrix.arch.name }}
           7z a ../../OpenUtau-Lunai-${{ matrix.arch.name }}.zip *
@@ -189,17 +190,19 @@ jobs:
             --icon "OpenUtau/Assets/open-utau.ico" `
             --channel $channel `
             --framework $vcredist `
-            --noPortable `
             --outputDir $outDir
           if ($LASTEXITCODE -ne 0) { throw "vpk pack failed" }
 
           Get-ChildItem $outDir | ForEach-Object { Write-Host "Velopack asset: $($_.Name)" }
           $setup = Get-ChildItem $outDir -Filter '*Setup*.exe' | Select-Object -First 1
           if (-not $setup) { throw "Velopack Setup.exe not found in $outDir" }
-          # Single user-facing Setup name; keep Releases/ for nupkg + feed metadata only.
+          $portable = Get-ChildItem $outDir -Filter '*Portable*.zip' | Select-Object -First 1
+          if (-not $portable) { throw "Velopack Portable.zip not found in $outDir" }
+          # Stable download names; keep Releases/ for nupkg + feed metadata only (no duplicates).
           Copy-Item $setup.FullName "OpenUtau-Lunai-$rid-Setup.exe" -Force
+          Copy-Item $portable.FullName "OpenUtau-Lunai-$rid.zip" -Force
           Remove-Item $setup.FullName -Force
-          Get-ChildItem $outDir -Filter '*Portable*.zip' -ErrorAction SilentlyContinue | Remove-Item -Force
+          Remove-Item $portable.FullName -Force
 
       # macOS specific
       - name: Create macOS DMG
@@ -271,7 +274,7 @@ jobs:
             [Setup 64-bit](${{ env.REPO_URL }}/releases/download/${{ inputs.version }}/OpenUtau-Lunai-win-x64-Setup.exe)  
             [Setup 32-bit](${{ env.REPO_URL }}/releases/download/${{ inputs.version }}/OpenUtau-Lunai-win-x86-Setup.exe)  
             [Setup ARM64](${{ env.REPO_URL }}/releases/download/${{ inputs.version }}/OpenUtau-Lunai-win-arm64-Setup.exe)  
-            [Portable ZIP (no in-app updates) 64-bit](${{ env.REPO_URL }}/releases/download/${{ inputs.version }}/OpenUtau-Lunai-win-x64.zip)
+            [Portable ZIP (self-updating) 64-bit](${{ env.REPO_URL }}/releases/download/${{ inputs.version }}/OpenUtau-Lunai-win-x64.zip)
 
             **Migrating from older NSIS installs:** install the new Setup once. After that, use Help → Check for Update inside the app.
 
