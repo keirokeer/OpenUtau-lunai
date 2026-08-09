@@ -408,7 +408,9 @@ namespace OpenUtau.Core {
             if (curve == null) {
                 return;
             }
-            curve.Erase(x, lastX);
+            int empty = Util.ExpressionDefaultResolver.GetEffectiveDefaultInt(
+                project, project.tracks[Part.trackNo], abbr);
+            curve.Erase(x, lastX, empty);
         }
         public override void Unexecute() {
             CurveCommandUtil.RestoreCurvePoints(Part.curves.FirstOrDefault(c => c.abbr == abbr), oldXs, oldYs, oldBreaks);

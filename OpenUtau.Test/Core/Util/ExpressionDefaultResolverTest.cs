@@ -60,6 +60,28 @@ namespace OpenUtau.Core {
             curve.Erase(50, 150);
             Assert.Equal(55, curve.Sample(100, 55));
             Assert.Equal(10, curve.Sample(100));
+            // Authored peaks outside the erase drag must remain.
+            Assert.Equal(80, curve.Sample(0, 55));
+            Assert.Equal(80, curve.Sample(200, 55));
+        }
+
+        [Fact]
+        public void CurveEraseDoesNotWipeFlatPlateauOutsideDrag() {
+            var descriptor = new UExpressionDescriptor("tension", UstxFmt.TENC, -100, 100, 0) {
+                type = UExpressionType.Curve,
+                CustomDefaultValue = 0,
+            };
+            var curve = new UCurve(descriptor);
+            // Dense flat plateau of 61s across a long range (same as simplified equal neighbors).
+            for (int t = 0; t <= 400; t += UCurve.interval) {
+                curve.Set(t, 61, t, 61);
+            }
+            curve.Erase(100, 150, emptyValue: 0);
+
+            Assert.Equal(0, curve.Sample(120, 0));
+            Assert.Equal(61, curve.Sample(50, 0));
+            Assert.Equal(61, curve.Sample(200, 0));
+            Assert.Equal(61, curve.Sample(350, 0));
         }
 
         [Fact]

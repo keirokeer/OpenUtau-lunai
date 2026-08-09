@@ -133,23 +133,51 @@ namespace OpenUtau.Core.Ustx {
         }
 
         /// <summary>
-        /// Remove authored points in [x, lastX] so the range behaves like never edited
-        /// (Sample → CustomDefaultValue). Preserves shape on both sides via interpolation breaks.
+        /// Remove authored points in [x, lastX] so that range samples as empty
+        /// (Sample → emptyValue), without writing default values into the curve.
+        /// Re-anchors neighbors so a flat plateau is not wiped outside the drag.
         /// </summary>
         public void Erase(int x, int lastX) {
+            int empty = descriptor != null ? (int)descriptor.CustomDefaultValue : 0;
+            Erase(x, lastX, empty);
+        }
+
+        public void Erase(int x, int lastX, int emptyValue) {
             x = (int)Math.Round((float)x / interval) * interval;
             lastX = (int)Math.Round((float)lastX / interval) * interval;
             if (x > lastX) {
                 (x, lastX) = (lastX, x);
             }
+            // Capture values just outside the erased range before deleting points.
+            bool keepLeft = xs.Count > 0 && xs[0] < x;
+            bool keepRight = xs.Count > 0 && xs[xs.Count - 1] > lastX;
+            int leftAnchorX = x - interval;
+            int rightAnchorX = lastX + interval;
+            int leftY = keepLeft ? Sample(leftAnchorX, emptyValue) : emptyValue;
+            int rightY = keepRight ? Sample(rightAnchorX, emptyValue) : emptyValue;
+
             DeleteBetweenInclusive(x, lastX);
             if (xs.Count == 0) {
                 breaks?.Clear();
                 return;
             }
-            AddBreak(x);
-            if (lastX != x) {
-                AddBreak(lastX);
+
+            // Re-anchor so Sample left/right of the hole keeps prior shape.
+            // Breaks only apply when both sides remain (a hole in the middle).
+            if (keepLeft) {
+                Insert(leftAnchorX, leftY);
+            }
+            if (keepRight) {
+                Insert(rightAnchorX, rightY);
+            }
+            if (keepLeft && keepRight) {
+                AddBreak(x);
+                if (lastX != x) {
+                    AddBreak(lastX);
+                }
+            } else {
+                // Truncating one end: drop breaks that fell inside the deleted range.
+                RemoveBreaksBetween(x, lastX);
             }
         }
 
@@ -217,12 +245,28 @@ namespace OpenUtau.Core.Ustx {
             if (xs == null || xs.Count < 3) {
                 return;
             }
-            int first = 0;
-            int last = xs.Count - 1;
-            var toKeep = new List<int>() { first, last };
+            var anchors = new SortedSet<int> { 0, xs.Count - 1 };
+            // Keep endpoints that bound an erase-break so Simplify cannot reopen the hole.
+            if (breaks != null) {
+                foreach (int b in breaks) {
+                    int pos = xs.BinarySearch(b);
+                    int left = pos >= 0 ? pos - 1 : ~pos - 1;
+                    int right = pos >= 0 ? pos + 1 : ~pos;
+                    if (left >= 0) {
+                        anchors.Add(left);
+                    }
+                    if (right < xs.Count) {
+                        anchors.Add(right);
+                    }
+                }
+            }
             double tolerance = Math.Min(5, (descriptor.max - descriptor.min) * 0.005);
-            Simplify(first, last, tolerance, toKeep);
-            toKeep.Sort();
+            var toKeep = new List<int>(anchors);
+            var segments = anchors.ToList();
+            for (int i = 0; i < segments.Count - 1; i++) {
+                Simplify(segments[i], segments[i + 1], tolerance, toKeep);
+            }
+            toKeep = toKeep.Distinct().OrderBy(i => i).ToList();
             var newXs = new List<int>();
             var newYs = new List<int>();
             foreach (int index in toKeep) {
