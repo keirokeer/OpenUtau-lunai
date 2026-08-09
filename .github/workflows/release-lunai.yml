@@ -189,15 +189,17 @@ jobs:
             --icon "OpenUtau/Assets/open-utau.ico" `
             --channel $channel `
             --framework $vcredist `
+            --noPortable `
             --outputDir $outDir
           if ($LASTEXITCODE -ne 0) { throw "vpk pack failed" }
 
           Get-ChildItem $outDir | ForEach-Object { Write-Host "Velopack asset: $($_.Name)" }
           $setup = Get-ChildItem $outDir -Filter '*Setup*.exe' | Select-Object -First 1
           if (-not $setup) { throw "Velopack Setup.exe not found in $outDir" }
+          # Single user-facing Setup name; keep Releases/ for nupkg + feed metadata only.
           Copy-Item $setup.FullName "OpenUtau-Lunai-$rid-Setup.exe" -Force
-          # Stable download name used in release notes / migration from NSIS .exe
-          Copy-Item $setup.FullName "OpenUtau-Lunai-$rid.exe" -Force
+          Remove-Item $setup.FullName -Force
+          Get-ChildItem $outDir -Filter '*Portable*.zip' -ErrorAction SilentlyContinue | Remove-Item -Force
 
       # macOS specific
       - name: Create macOS DMG
@@ -237,7 +239,6 @@ jobs:
         with:
           name: artifacts-${{ matrix.arch.name }}
           path: |
-            OpenUtau-Lunai-${{ matrix.arch.name }}.exe
             OpenUtau-Lunai-${{ matrix.arch.name }}-Setup.exe
             OpenUtau-Lunai-${{ matrix.arch.name }}.zip
             OpenUtau-Lunai-${{ matrix.arch.name }}.dmg
@@ -256,7 +257,6 @@ jobs:
           prerelease: ${{ inputs.beta }}
           draft: ${{ inputs.draft }}
           files: |
-            OpenUtau-Lunai-${{ matrix.arch.name }}.exe
             OpenUtau-Lunai-${{ matrix.arch.name }}-Setup.exe
             OpenUtau-Lunai-${{ matrix.arch.name }}.zip
             OpenUtau-Lunai-${{ matrix.arch.name }}.dmg
