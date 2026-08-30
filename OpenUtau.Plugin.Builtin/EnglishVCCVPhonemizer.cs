@@ -659,7 +659,12 @@ namespace OpenUtau.Plugin.Builtin {
                                 if (vcVowels.ContainsKey(prevV) && phonemes.Count < i + 1) {
                                     parsingCC = $"{vcVowels[prevV]}{cc[i]}";
                                 }
-                                if (HasOto($"{cc[i + 1]} {cc[i + 2]}", syllable.vowelTone)) {
+                                if (i + 2 < cc.Length) {
+                                    if (HasOto($"{cc[i + 1]} {cc[i + 2]}", syllable.vowelTone)) {
+                                        parsingCC = $"{cc[i]}{cc[i + 1]}-";
+                                    }
+                                }
+                                if (basePhoneme == $"{cc[i + 1]}{v}") {
                                     parsingCC = $"{cc[i]}{cc[i + 1]}-";
                                 }
                                 if (!HasOto(parsingCC, syllable.vowelTone)) {
