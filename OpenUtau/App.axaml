@@ -29,6 +29,7 @@
       <ResourceInclude x:Key="strings-zh-CN" Source="/Strings/Strings.zh-CN.axaml"/>
       <ResourceInclude x:Key="strings-zh-TW" Source="/Strings/Strings.zh-TW.axaml"/>
       <ResourceInclude x:Key="strings-th-TH" Source="/Strings/Strings.th-TH.axaml"/>
+      <ResourceInclude x:Key="strings-tr-TR" Source="/Strings/Strings.tr-TR.axaml"/>
       <!-- Lunai overlays: merged after upstream locales in App.SetLanguage -->
       <ResourceInclude x:Key="lunai-strings-en-US" Source="/Strings/Lunai/Strings.Lunai.axaml"/>
       <ResourceInclude x:Key="lunai-strings-ar-SA" Source="/Strings/Lunai/Strings.Lunai.ar-SA.axaml"/>
@@ -52,7 +53,6 @@
       <ResourceInclude x:Key="lunai-strings-vi-VN" Source="/Strings/Lunai/Strings.Lunai.vi-VN.axaml"/>
       <ResourceInclude x:Key="lunai-strings-zh-CN" Source="/Strings/Lunai/Strings.Lunai.zh-CN.axaml"/>
       <ResourceInclude x:Key="lunai-strings-zh-TW" Source="/Strings/Lunai/Strings.Lunai.zh-TW.axaml"/>
-
       <ResourceInclude x:Key="themes-dark" Source="/Colors/DarkTheme.axaml"/>
       <ResourceInclude x:Key="themes-light" Source="/Colors/LightTheme.axaml"/>
       <ResourceInclude x:Key="themes-custom" Source="/Colors/CustomTheme.axaml"/>
