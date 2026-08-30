@@ -105,6 +105,7 @@ namespace OpenUtau.App.ViewModels {
                         PanelControlPressed = true;
                         SetNoteParams("PortamentoLength", portamentoPreset.PortamentoLength);
                         SetNoteParams("PortamentoStart", portamentoPreset.PortamentoStart);
+                        SetNoteParams("PortamentoPoints", portamentoPreset.PitchPoints);
                         PanelControlPressed = false;
                         DocManager.Inst.EndUndoGroup();
                     }
@@ -517,11 +518,11 @@ namespace OpenUtau.App.ViewModels {
                     if (string.IsNullOrEmpty(newOverride)) {
                         newOverride = null;
                     }
-                    
+
                     DocManager.Inst.StartUndoGroup("command.property.edit");
                     foreach (UNote note in selectedNotes) {
                         if (note.PhonemizerOverride != newOverride) {
-                            DocManager.Inst.ExecuteCmd(new ChangeNotePhonemizerCommand(Part, note, newOverride)); 
+                            DocManager.Inst.ExecuteCmd(new ChangeNotePhonemizerCommand(Part, note, newOverride));
                         }
                     }
                     DocManager.Inst.EndUndoGroup();
@@ -589,6 +590,15 @@ namespace OpenUtau.App.ViewModels {
                             foreach (var pitchPoint in note.pitch.data) {
                                 DocManager.Inst.ExecuteCmd(new MovePitchPointCommand(Part, pitchPoint, deltaX, 0));
                             }
+                        }
+                    }
+                } else if (tag == "PortamentoPoints") {
+                    foreach (var note in selectedNotes) {
+                        if (obj is List<PitchPoint> list) {
+                            if (list.Count < 2) {
+                                return;
+                            }
+                            DocManager.Inst.ExecuteCmd(new SetPitchPointsCommand(Part, note, new UPitch() { data = list }));
                         }
                     }
                 } else if (tag == "PitchCurveShape") {
@@ -748,7 +758,16 @@ namespace OpenUtau.App.ViewModels {
             if (string.IsNullOrEmpty(name)) {
                 return;
             }
-            NotePresets.Default.PortamentoPresets.Add(new NotePresets.PortamentoPreset(name, (int)PortamentoLength, (int)PortamentoStart));
+            var note = selectedNotes.FirstOrDefault();
+            if (note != null) {
+                if (note.pitch.data.Count > 2) {
+                    NotePresets.Default.PortamentoPresets.Add(new NotePresets.PortamentoPreset(name, note.pitch.data));
+                } else {
+                    NotePresets.Default.PortamentoPresets.Add(new NotePresets.PortamentoPreset(name, (int)PortamentoLength, (int)PortamentoStart));
+                }
+            } else {
+                NotePresets.Default.PortamentoPresets.Add(new NotePresets.PortamentoPreset(name, (int)PortamentoLength, (int)PortamentoStart));
+            }
             NotePresets.Save();
             PortamentoPresets = new ObservableCollection<NotePresets.PortamentoPreset>(NotePresets.Default.PortamentoPresets);
         }
