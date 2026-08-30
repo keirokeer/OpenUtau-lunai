@@ -666,7 +666,6 @@ namespace OpenUtau.App.Views {
                     });
 
                     dialog = new SingersDialog() { DataContext = vm };
-                    dialog.Show();
                 }
                 if (dialog.Position.Y < 0) {
                     dialog.Position = dialog.Position.WithY(0);
@@ -677,8 +676,16 @@ namespace OpenUtau.App.Views {
                 LoadingWindow.EndLoading();
             }
             if (dialog != null) {
-                dialog.Activate();
+                ShowToolWindow(dialog);
             }
+        }
+
+        private static void ShowToolWindow(Window window) {
+            if (window.WindowState == WindowState.Minimized) {
+                window.WindowState = WindowState.Normal;
+            }
+            window.Show();
+            window.Activate();
         }
 
         async void OnMenuInstallSinger(object sender, RoutedEventArgs args) {
@@ -808,7 +815,7 @@ namespace OpenUtau.App.Views {
             if (window == null) {
                 window = new DebugWindow();
             }
-            window.Show();
+            ShowToolWindow(window);
         }
 
         void OnMenuPhoneticAssistant(object sender, RoutedEventArgs args) {
@@ -820,7 +827,7 @@ namespace OpenUtau.App.Views {
             if (window == null) {
                 window = new PhoneticAssistant();
             }
-            window.Show();
+            ShowToolWindow(window);
         }
 
         void OnMenuCheckUpdate(object sender, RoutedEventArgs args) {
