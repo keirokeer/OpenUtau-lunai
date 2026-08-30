@@ -282,6 +282,11 @@ namespace OpenUtau.Core.Util {
             public int WorldlineR = 0;
             public string OnnxRunner = string.Empty;
             public int OnnxGpu = 0;
+            /// <summary>
+            /// GAME MIDI extractor backend preference: "onnx" (default) or "ggml".
+            /// Affects which inference engine Game uses; see GameBackendFactory.
+            /// </summary>
+            public string GameBackend = "onnx";
             public double DiffSingerDepth = 1.0;
             public int DiffSingerSteps = 20;
             public int DiffSingerStepsVariance = 20;

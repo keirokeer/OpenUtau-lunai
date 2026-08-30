@@ -306,6 +306,8 @@
             <c:WorkspacePanelComboBox Classes="workspacePanelCombo" ItemsSource="{Binding OnnxGpuOptions}" SelectedItem="{Binding OnnxGpu}"/>
             <TextBlock Classes="restart"/>
           </StackPanel>
+          <TextBlock Text="{DynamicResource prefs.rendering.gamebackend}" Margin="0,10,0,0" FontWeight="Bold"/>
+          <c:WorkspacePanelComboBox Classes="workspacePanelCombo" ItemsSource="{Binding GameBackendOptions}" SelectedItem="{Binding GameBackend}"/>
         </StackPanel>
 
         <!-- Appearance -->

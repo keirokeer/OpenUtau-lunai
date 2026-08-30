@@ -135,6 +135,10 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public GpuInfo OnnxGpu { get; set; }
         [Reactive] public bool ShowOnnxGpu { get; set; }
 
+        // GAME backend (onnx / ggml)
+        public List<string> GameBackendOptions { get; } = new() { "ONNX", "GGML" };
+        [Reactive] public string GameBackend { get; set; }
+
         // Appearance
         [Reactive] public string ThemeName { get; set; }
         /// <summary>-100 cold … 0 … +100 warm. Stored as Preferences.ThemeTemperature.</summary>
@@ -564,6 +568,11 @@ namespace OpenUtau.App.ViewModels {
             OnnxGpuOptions = Onnx.getGpuInfo();
             OnnxGpu = OnnxGpuOptions.FirstOrDefault(x => x.deviceId == Preferences.Default.OnnxGpu, OnnxGpuOptions[0]);
             ShowOnnxGpu = OnnxRunner == "DirectML";
+            // GAME backend: ONNX is the default, GGML is available when installed.
+            GameBackend = Preferences.Default.GameBackend switch {
+                "ggml" => "GGML",
+                _ => "ONNX",
+            };
             DiffSingerDepth = Preferences.Default.DiffSingerDepth * 100;
             DiffSingerSteps = Preferences.Default.DiffSingerSteps;
             DiffSingerStepsVariance = Preferences.Default.DiffSingerStepsVariance;
@@ -988,6 +997,11 @@ namespace OpenUtau.App.ViewModels {
             this.WhenAnyValue(vm => vm.OnnxGpu)
                 .Subscribe(index => {
                     Preferences.Default.OnnxGpu = index.deviceId;
+                    Preferences.Save();
+                });
+            this.WhenAnyValue(vm => vm.GameBackend)
+                .Subscribe(index => {
+                    Preferences.Default.GameBackend = index == "GGML" ? "ggml" : "onnx";
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.RememberMid)
