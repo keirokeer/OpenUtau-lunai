@@ -34,9 +34,7 @@ jobs:
       matrix:
         arch:
           - { name: win-x64, rid: win-x64, arch: x64, os: win, runs-on: windows-latest }
-          - { name: win-x86, rid: win-x86, arch: x86, os: win, runs-on: windows-latest }
           - { name: win-arm64, rid: win-arm64, arch: arm64, os: win, runs-on: windows-latest }
-          - { name: osx-x64, rid: osx-x64, arch: x64, os: osx, runs-on: macos-15-intel }
           - { name: osx-arm64, rid: osx-arm64, arch: arm64, os: osx, runs-on: macos-15-intel }
           - { name: linux-x64, rid: linux-x64, arch: x64, os: linux, runs-on: ubuntu-latest, linuxarch: x86_64 }
           - { name: linux-arm64, rid: linux-arm64, arch: arm64, os: linux, runs-on: ubuntu-latest, linuxarch: aarch64 }
@@ -285,14 +283,12 @@ jobs:
 
             **Windows (Velopack — recommended)**  
             [Setup 64-bit](${{ env.REPO_URL }}/releases/download/${{ inputs.version }}/OpenUtau-Lunai-win-x64-Setup.exe)  
-            [Setup 32-bit](${{ env.REPO_URL }}/releases/download/${{ inputs.version }}/OpenUtau-Lunai-win-x86-Setup.exe)  
             [Setup ARM64](${{ env.REPO_URL }}/releases/download/${{ inputs.version }}/OpenUtau-Lunai-win-arm64-Setup.exe)  
             [Portable ZIP (self-updating) 64-bit](${{ env.REPO_URL }}/releases/download/${{ inputs.version }}/OpenUtau-Lunai-win-x64.zip)
 
             **Migrating from older NSIS installs:** install the new Setup once. After that, use Help → Check for Update inside the app.
 
             **macOS**  
-            [Intel Mac (.dmg)](${{ env.REPO_URL }}/releases/download/${{ inputs.version }}/OpenUtau-Lunai-osx-x64.dmg)  
             [Apple Silicon (.dmg)](${{ env.REPO_URL }}/releases/download/${{ inputs.version }}/OpenUtau-Lunai-osx-arm64.dmg)
 
             **Linux**  

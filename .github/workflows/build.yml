@@ -21,8 +21,8 @@ on:
 
 # DEPRECATED: Windows packaging here still uses NSIS + NetSparkle appcasts.
 # The app now uses Velopack (see .github/workflows/release-lunai.yml).
-# Do not publish releases from this workflow вЂ” users would get an installer
-# that cannot update via Help в†’ Check for Update.
+# Do not publish releases from this workflow -- users would get an installer
+# that cannot update via Help -> Check for Update.
 env:
   release-name: ${{ inputs.version }}${{ inputs.beta && ' Beta' || '' }}
 
