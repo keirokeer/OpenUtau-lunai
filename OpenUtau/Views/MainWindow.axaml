@@ -411,7 +411,8 @@
                               TrackHeight="{Binding TrackHeight}"
                               TrackOffset="{Binding TrackOffset}"
                               Items="{Binding Tracks}"
-                              PointerWheelChanged="MainPagePointerWheelChanged"/>
+                              PointerWheelChanged="MainPagePointerWheelChanged"
+                              Cursor="Arrow"/>
           <c:TrackBackground Grid.Row="1" Grid.Column="1" Margin="0" IsHitTestVisible="False"
                             Background="{DynamicResource SystemRegionBrush}"
                             Foreground="{DynamicResource TrackBackgroundAltBrush}"
