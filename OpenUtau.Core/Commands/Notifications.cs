@@ -246,7 +246,14 @@ namespace OpenUtau.Core {
     }
 
     public class PreRenderNotification : UNotification {
-        public override string ToString() => $"Pre-render notification.";
+        public readonly int focusTick;
+
+        public PreRenderNotification(UPart part = null, int focusTick = -1) {
+            this.part = part;
+            this.focusTick = focusTick;
+        }
+
+        public override string ToString() => "Pre-render notification.";
     }
 
     public class PartRenderedNotification : UNotification {

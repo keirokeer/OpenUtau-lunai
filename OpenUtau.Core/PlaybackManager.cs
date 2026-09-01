@@ -258,6 +258,8 @@ namespace OpenUtau.Core {
         bool pausedWithMix;
         int playbackRenderGeneration;
         bool playbackMixDirty;
+        UVoicePart preRenderFocusPart;
+        int preRenderFocusTick = -1;
 
         // Loop playback state
         private int loopStartTick = 0;
@@ -606,7 +608,10 @@ namespace OpenUtau.Core {
 
         void SchedulePreRender() {
             Log.Information("SchedulePreRender");
-            var engine = new RenderEngine(DocManager.Inst.Project);
+            var engine = new RenderEngine(
+                DocManager.Inst.Project,
+                focusPart: preRenderFocusPart,
+                focusTick: preRenderFocusTick);
             engine.PreRenderProject(ref preRenderCancellation);
         }
 
@@ -645,9 +650,25 @@ namespace OpenUtau.Core {
                 StopPlayback();
                 renderCancellation?.Cancel();
                 playbackRenderGeneration++;
+                preRenderFocusPart = null;
+                preRenderFocusTick = -1;
                 DocManager.Inst.ExecuteCmd(new SetPlayPosTickNotification(0));
-            } else if (cmd is PreRenderNotification) {
+            } else if (cmd is LoadPartNotification loadPart) {
+                preRenderFocusPart = loadPart.part as UVoicePart;
+                preRenderFocusTick = loadPart.tick;
+            } else if (cmd is FocusNoteNotification focusNote) {
+                preRenderFocusPart = focusNote.part as UVoicePart;
+                preRenderFocusTick = focusNote.part?.position + focusNote.note.position ?? preRenderFocusTick;
+            } else if (cmd is SetPlayPosTickNotification setPlayPosTick) {
+                preRenderFocusTick = setPlayPosTick.playPosTick;
+            } else if (cmd is PreRenderNotification preRender) {
                 InvalidatePlaybackForProjectChange();
+                if (preRender.part is UVoicePart voicePart) {
+                    preRenderFocusPart = voicePart;
+                }
+                if (preRender.focusTick >= 0) {
+                    preRenderFocusTick = preRender.focusTick;
+                }
             }
             if (cmd is PreRenderNotification || cmd is LoadProjectNotification) {
                 if (Util.Preferences.Default.PreRender) {
