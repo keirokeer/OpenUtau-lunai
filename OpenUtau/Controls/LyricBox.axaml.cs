@@ -87,7 +87,7 @@ namespace OpenUtau.App.Controls {
             switch (e.Key) {
                 case Key.Enter:
                     if (listBox.SelectedItem is LyricBoxViewModel.SuggestionItem item) {
-                        viewModel.ApplySuggestion(item.Alias);
+                        ApplySuggestionToBoxes(item.Alias);
                     }
                     EndEdit(true);
                     e.Handled = true;
@@ -99,7 +99,7 @@ namespace OpenUtau.App.Controls {
                 case Key.Tab:
                     if (!viewModel.IsAliasBox) {
                         if (listBox.SelectedItem is LyricBoxViewModel.SuggestionItem item1) {
-                            viewModel.ApplySuggestion(item1.Alias);
+                            ApplySuggestionToBoxes(item1.Alias);
                         }
                         OnTab(e.KeyModifiers);
                     }
@@ -184,6 +184,21 @@ namespace OpenUtau.App.Controls {
             EndEdit(true);
         }
 
+        /// <summary>
+        /// Apply a suggestion into both the ViewModel and the focused TextBox.
+        /// EndEdit(true) re-reads TextBox.Text, so ViewModel-only updates would be overwritten.
+        /// </summary>
+        void ApplySuggestionToBoxes(string alias) {
+            viewModel.ApplySuggestion(alias);
+            if (viewModel.SuggestionFromBlend) {
+                if (blendBox != null) {
+                    blendBox.Text = alias;
+                }
+            } else {
+                box.Text = alias;
+            }
+        }
+
         private void OnTab(KeyModifiers keyModifiers) {
             UVoicePart? part = viewModel.Part;
             UNote? tabTo = null;
@@ -202,7 +217,7 @@ namespace OpenUtau.App.Controls {
 
         public void ListBox_PointerPressed(object sender, PointerPressedEventArgs args) {
             if (sender is Control { DataContext: LyricBoxViewModel.SuggestionItem item }) {
-                viewModel.ApplySuggestion(item.Alias);
+                ApplySuggestionToBoxes(item.Alias);
             }
             EndEdit(true);
         }

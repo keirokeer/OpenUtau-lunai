@@ -78,6 +78,7 @@
       </Border>
       <Button Name="PART_Save" Grid.Row="4" Margin="0,8,0,0" HorizontalAlignment="Stretch"
               Classes="workspacePanelButton" Content="{DynamicResource button.save}"
+              IsVisible="{Binding IsAliasBox, Mode=OneWay}"
               Click="Save_Click" KeyDown="Box_KeyDown"/>
     </Grid>
   </Border>
