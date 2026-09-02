@@ -255,6 +255,9 @@
   <system:String x:Key="prefs.rendering.diffsingeracousticlocalretake">Локальный пересъём acoustic DiffSinger</system:String>
   <system:String x:Key="prefs.rendering.diffsingeracousticlocalretake.hint">При правке pitch/кривых пересобирается только изменённый участок (нужны Tensor Cache и банк с retake+gt_mel).</system:String>
   <system:String x:Key="prefs.rendering.diffsingershowacousticf0patchpreview">Показывать превью F0 патча на piano roll</system:String>
+  <system:String x:Key="prefs.diffsinger.phonemevarianceremap">Open Mouth и Tension с учётом фонем</system:String>
+  <system:String x:Key="prefs.diffsinger.phonemevarianceremap.hint">Ремап Open Mouth и Tension по фонемам при рендере. Превью effective-кривой на панели параметров — в debug.</system:String>
+  <system:String x:Key="prefs.diffsinger.showphonemevarianceremappreview">Показывать превью phoneme remap на панели параметров</system:String>
   <system:String x:Key="prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate">Интерполяция F0 acoustic на глухих согласных DiffSinger (тест)</system:String>
   <system:String x:Key="prefs.shortcut.search.watermark">Поиск по названию или клавише...</system:String>
   <system:String x:Key="prefs.shortcut.tooltip">ЛКМ — изменить. ПКМ — сбросить.</system:String>

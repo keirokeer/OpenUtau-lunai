@@ -372,6 +372,10 @@
             <TextBlock Text="{DynamicResource prefs.rendering.diffsingeracousticlocalretake}" HorizontalAlignment="Left" />
             <ToggleSwitch IsChecked="{Binding DiffSingerAcousticLocalRetake}" IsEnabled="{Binding DiffSingerTensorCache}" />
           </Grid>
+          <Grid Margin="0,5,0,0" ToolTip.Tip="{DynamicResource prefs.diffsinger.phonemevarianceremap.hint}">
+            <TextBlock Text="{DynamicResource prefs.diffsinger.phonemevarianceremap}" HorizontalAlignment="Left" />
+            <ToggleSwitch IsChecked="{Binding DiffSingerPhonemeVarianceRemap}" />
+          </Grid>
           <Grid Margin="0,5,0,0">
             <TextBlock Text="{DynamicResource prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate}" HorizontalAlignment="Left" />
             <ToggleSwitch IsChecked="{Binding DiffSingerUnvoicedConsonantAcousticF0Interpolate}" />
@@ -388,6 +392,10 @@
           <Grid Margin="0,5,0,0">
             <TextBlock Text="{DynamicResource prefs.diffsinger.renderphraseboundaries}" HorizontalAlignment="Left" />
             <ToggleSwitch IsChecked="{Binding DiffSingerShowRenderPhraseBoundaries}" />
+          </Grid>
+          <Grid Margin="0,5,0,0" IsEnabled="{Binding DiffSingerPhonemeVarianceRemap}">
+            <TextBlock Text="{DynamicResource prefs.diffsinger.showphonemevarianceremappreview}" HorizontalAlignment="Left" />
+            <ToggleSwitch IsChecked="{Binding DiffSingerShowPhonemeVarianceRemapPreview}" />
           </Grid>
           <Grid Margin="0,5,0,0" ColumnDefinitions="*,Auto">
             <TextBlock Text="{DynamicResource prefs.voicecolormax.default}" VerticalAlignment="Center"

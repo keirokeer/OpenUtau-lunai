@@ -185,14 +185,17 @@ namespace OpenUtau.Core.DiffSinger {
                 RenderPhrase phrase, float[] predicted, VarianceResult varianceResult,
                 float[] userCurve, string abbr,
                 double frameMs, int totalFrames, int headFrames, int tailFrames) {
+            double defaultValue = abbr == Format.Ustx.OPEC ? 50 : 0;
             var resampled = DiffSingerUtils.ResamplePaddedCurve(
                 predicted, totalFrames,
                 varianceResult.headFrames, varianceResult.tailFrames,
                 headFrames, tailFrames,
                 varianceResult.frameMs, (float)frameMs);
             var userSampled = DiffSingerUtils.SampleCurve(
-                phrase, userCurve, 0, frameMs, totalFrames, headFrames, tailFrames,
+                phrase, userCurve, defaultValue, frameMs, totalFrames, headFrames, tailFrames,
                 x => x).Select(x => (float)x).ToArray();
+            userSampled = PhonemeVarianceRemap.ApplyIfEnabled(
+                phrase, userSampled, abbr, (float)frameMs, headFrames, tailFrames);
             var deltaFunc = DiffSingerUtils.VarianceDeltaFunctions[abbr];
             return resampled.Zip(userSampled, deltaFunc)
                 .Select(x => (double)x).ToArray();

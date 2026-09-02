@@ -453,7 +453,9 @@ namespace OpenUtau.Core.DiffSinger {
                 if(singer.dsConfig.useTensionEmbed){
                     var userTension = DiffSingerUtils.SampleCurve(phrase, phrase.tension,
                         0, frameMs, totalFrames, headFrames, tailFrames,
-                        x => x).Select(x => (float) x);
+                        x => x).Select(x => (float) x).ToArray();
+                    userTension = PhonemeVarianceRemap.ApplyIfEnabled(
+                        phrase, userTension, Format.Ustx.TENC, (float)frameMs, headFrames, tailFrames);
                     if (varianceResult.tension == null) {
                         throw new KeyNotFoundException(
                             "The parameter \"tension\" required by acoustic model is not found in variance predictions.");
@@ -472,7 +474,9 @@ namespace OpenUtau.Core.DiffSinger {
                 if(singer.dsConfig.useMouthOpeningEmbed){
                     var userMouthOpening = DiffSingerUtils.SampleCurve(phrase, phrase.mouthOpening,
                         50, frameMs, totalFrames, headFrames, tailFrames,
-                        x => x).Select(x => (float) x);
+                        x => x).Select(x => (float) x).ToArray();
+                    userMouthOpening = PhonemeVarianceRemap.ApplyIfEnabled(
+                        phrase, userMouthOpening, Format.Ustx.OPEC, (float)frameMs, headFrames, tailFrames);
                     if (varianceResult.mouthOpening == null) {
                         throw new KeyNotFoundException(
                             "The parameter \"mouth_opening\" required by acoustic model is not found in variance predictions.");
@@ -830,10 +834,16 @@ namespace OpenUtau.Core.DiffSinger {
                     };
                 }
                 var deltaCurve = DiffSingerUtils.SampleCurve(
-                    phrase, t.Item3, 0, frameMs, realCurve.Length,
+                    phrase, t.Item3,
+                    abbr == Format.Ustx.OPEC ? 50 : 0,
+                    frameMs, realCurve.Length,
                     headFrames, tailFrames, x => x)
                     .Select(x => (float)x)
                     .ToArray();
+                if (abbr == Format.Ustx.TENC || abbr == Format.Ustx.OPEC) {
+                    deltaCurve = PhonemeVarianceRemap.ApplyIfEnabled(
+                        phrase, deltaCurve, abbr, frameMs, headFrames, tailFrames);
+                }
                 var normFunc = t.Item4;
                 return new RenderRealCurveResult {
                     abbr = abbr,

@@ -186,11 +186,13 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public bool DiffSingerAcousticLocalRetake { get; set; }
         [Reactive] public bool DiffSingerUnvoicedConsonantAcousticF0Interpolate { get; set; }
         [Reactive] public bool DiffSingerShowAcousticF0PatchPreview { get; set; }
+        [Reactive] public bool DiffSingerPhonemeVarianceRemap { get; set; }
         [Reactive] public bool DiffSingerLangCodeHide { get; set; }
         [Reactive] public bool DiffSingerPhonemePanelMode { get; set; }
         [Reactive] public bool DiffSingerPhonemePanelAuto { get; set; }
         [Reactive] public bool DiffSingerLocalRetaking { get; set; }
         [Reactive] public bool DiffSingerShowRenderPhraseBoundaries { get; set; }
+        [Reactive] public bool DiffSingerShowPhonemeVarianceRemapPreview { get; set; }
 
         // Advanced
         [Reactive] public bool RememberMid { get; set; }
@@ -567,11 +569,13 @@ namespace OpenUtau.App.ViewModels {
             DiffSingerAcousticLocalRetake = Preferences.Default.DiffSingerAcousticLocalRetake;
             DiffSingerUnvoicedConsonantAcousticF0Interpolate = Preferences.Default.DiffSingerUnvoicedConsonantAcousticF0Interpolate;
             DiffSingerShowAcousticF0PatchPreview = Preferences.Default.DiffSingerShowAcousticF0PatchPreview;
+            DiffSingerPhonemeVarianceRemap = Preferences.Default.DiffSingerPhonemeVarianceRemap;
             DiffSingerLangCodeHide = Preferences.Default.DiffSingerLangCodeHide;
             DiffSingerPhonemePanelMode = Preferences.Default.DiffSingerPhonemePanelMode;
             DiffSingerPhonemePanelAuto = Preferences.Default.DiffSingerPhonemePanelAuto;
             DiffSingerLocalRetaking = Preferences.Default.DiffSingerLocalRetaking;
             DiffSingerShowRenderPhraseBoundaries = Preferences.Default.DiffSingerShowRenderPhraseBoundaries;
+            DiffSingerShowPhonemeVarianceRemapPreview = Preferences.Default.DiffSingerShowPhonemeVarianceRemapPreview;
             SkipRenderingMutedTracks = Preferences.Default.SkipRenderingMutedTracks;
             ThemeName = Preferences.Default.ThemeName;
             ThemeColorTemperature = Preferences.Default.ThemeTemperature;
@@ -1027,6 +1031,11 @@ namespace OpenUtau.App.ViewModels {
                     Preferences.Default.DiffSingerShowAcousticF0PatchPreview = show;
                     Preferences.Save();
                 });
+            this.WhenAnyValue(vm => vm.DiffSingerPhonemeVarianceRemap)
+                .Subscribe(enabled => {
+                    Preferences.Default.DiffSingerPhonemeVarianceRemap = enabled;
+                    Preferences.Save();
+                });
             this.WhenAnyValue(vm => vm.DiffSingerLangCodeHide)
                 .Subscribe(useCache => {
                     Preferences.Default.DiffSingerLangCodeHide = useCache;
@@ -1041,6 +1050,12 @@ namespace OpenUtau.App.ViewModels {
             this.WhenAnyValue(vm => vm.DiffSingerShowRenderPhraseBoundaries)
                 .Subscribe(showBoundaries => {
                     Preferences.Default.DiffSingerShowRenderPhraseBoundaries = showBoundaries;
+                    Preferences.Save();
+                    MessageBus.Current.SendMessage(new NotesRefreshEvent());
+                });
+            this.WhenAnyValue(vm => vm.DiffSingerShowPhonemeVarianceRemapPreview)
+                .Subscribe(showPreview => {
+                    Preferences.Default.DiffSingerShowPhonemeVarianceRemapPreview = showPreview;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new NotesRefreshEvent());
                 });

@@ -157,6 +157,9 @@ namespace OpenUtau.Core.Util {
                     && !jo.ContainsKey(nameof(SerializablePreferences.UseModernPlayhead))) {
                     Default.UseModernPlayhead = !jo["UseClassicPlaybackLine"]!.Value<bool>();
                 }
+                if (!jo.ContainsKey(nameof(SerializablePreferences.DiffSingerShowPhonemeVarianceRemapPreview))) {
+                    Default.DiffSingerShowPhonemeVarianceRemapPreview = false;
+                }
             } catch {
                 // ignore migration errors
             }
@@ -281,11 +284,13 @@ namespace OpenUtau.Core.Util {
             public bool DiffSingerAcousticLocalRetake = true;
             public bool DiffSingerUnvoicedConsonantAcousticF0Interpolate = true;
             public bool DiffSingerShowAcousticF0PatchPreview = false;
+            public bool DiffSingerPhonemeVarianceRemap = true;
             public bool DiffSingerLangCodeHide = false;
             public bool DiffSingerPhonemePanelMode = true;
             public bool DiffSingerPhonemePanelAuto = true;
             public bool DiffSingerLocalRetaking = true;
             public bool DiffSingerShowRenderPhraseBoundaries = false;
+            public bool DiffSingerShowPhonemeVarianceRemapPreview = false;
             public bool SkipRenderingMutedTracks = false;
             public string Language = string.Empty;
             public string? SortingOrder = null;

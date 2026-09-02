@@ -154,6 +154,11 @@
         <Expander Classes="workspacePanelSectionExpander" IsExpanded="True"
                   Header="{DynamicResource prefs.diffsinger.section.pitch}">
           <StackPanel Classes="diffSingerSectionContent">
+            <Grid Classes="prefRow" ColumnDefinitions="*,Auto"
+                  ToolTip.Tip="{DynamicResource prefs.diffsinger.phonemevarianceremap.hint}">
+              <TextBlock Text="{DynamicResource prefs.diffsinger.phonemevarianceremap}"/>
+              <ToggleSwitch IsChecked="{Binding DiffSingerPhonemeVarianceRemap}"/>
+            </Grid>
             <Grid Classes="prefRow" ColumnDefinitions="*,Auto">
               <TextBlock Text="{DynamicResource prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate}"/>
               <ToggleSwitch IsChecked="{Binding DiffSingerUnvoicedConsonantAcousticF0Interpolate}"/>
@@ -177,6 +182,11 @@
             <Grid Classes="prefRow" ColumnDefinitions="*,Auto">
               <TextBlock Text="{DynamicResource prefs.diffsinger.renderphraseboundaries}"/>
               <ToggleSwitch IsChecked="{Binding DiffSingerShowRenderPhraseBoundaries}"/>
+            </Grid>
+            <Grid Classes="prefRow" ColumnDefinitions="*,Auto"
+                  IsEnabled="{Binding DiffSingerPhonemeVarianceRemap}">
+              <TextBlock Text="{DynamicResource prefs.diffsinger.showphonemevarianceremappreview}"/>
+              <ToggleSwitch IsChecked="{Binding DiffSingerShowPhonemeVarianceRemapPreview}"/>
             </Grid>
           </StackPanel>
         </Expander>

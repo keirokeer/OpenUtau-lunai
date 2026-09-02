@@ -7,6 +7,9 @@ using Avalonia.Media;
 using OpenUtau.App.ViewModels;
 using OpenUtau.App;
 using OpenUtau.Core;
+using OpenUtau.Core.DiffSinger;
+using OpenUtau.Core.Format;
+using OpenUtau.Core.Render;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using OpenUtau.ViewModels;
@@ -231,6 +234,7 @@ namespace OpenUtau.App.Controls {
                 if (ShowRealCurve && curve != null) {
                     DrawRealCurveGeometry(context, viewModel, curve, lTick, rTick);
                 }
+                DrawPhonemeRemapCurveGeometry(context, viewModel, descriptor, curve, baseline, lTick, rTick);
                 return;
             }
             foreach (var phoneme in Part.phonemes) {
@@ -298,6 +302,66 @@ namespace OpenUtau.App.Controls {
 
         private void DrawBackgroundForHitTest(DrawingContext context) {
             context.DrawRectangle(Brushes.Transparent, null, Bounds.WithX(0).WithY(0));
+        }
+
+        private static readonly IPen PhonemeRemapPreviewPen = new Pen(Brushes.White, 2);
+
+        void DrawPhonemeRemapCurveGeometry(
+            DrawingContext context,
+            NotesViewModel viewModel,
+            UExpressionDescriptor descriptor,
+            UCurve? curve,
+            float baseline,
+            int lTick,
+            int rTick) {
+            if (!Preferences.Default.DiffSingerShowPhonemeVarianceRemapPreview) {
+                return;
+            }
+            if (descriptor.abbr != Ustx.OPEC && descriptor.abbr != Ustx.TENC) {
+                return;
+            }
+            if (Part == null) {
+                return;
+            }
+            var project = DocManager.Inst.Project;
+            var track = project.tracks[Part.trackNo];
+            if (!DiffSingerUtils.IsExpressionAvailable(track.Singer, descriptor.abbr)) {
+                return;
+            }
+            RenderPhrase[] phrases;
+            lock (Part) {
+                phrases = Part.renderPhrases.ToArray();
+            }
+            foreach (var phrase in phrases) {
+                if (phrase.position - Part.position > rTick || phrase.end - Part.position < lTick) {
+                    continue;
+                }
+                float[]? phraseUserCurve = descriptor.abbr switch {
+                    Ustx.TENC => phrase.tension,
+                    Ustx.OPEC => phrase.mouthOpening,
+                    _ => null,
+                };
+                if (!PhonemeVarianceRemapPreview.TryBuildEffectiveCurve(
+                    phrase, Part.position, descriptor.abbr, phraseUserCurve, baseline,
+                    out float[] ticks, out float[] values)) {
+                    continue;
+                }
+                var points = new List<Point>();
+                for (int i = 0; i < ticks.Length; ++i) {
+                    int tick = (int)Math.Round(ticks[i]);
+                    if (tick < lTick || tick > rTick) {
+                        continue;
+                    }
+                    float value = values[i];
+                    double x = viewModel.TickToneToPoint(tick, 0).X;
+                    double y = Bounds.Height - Bounds.Height * (value - descriptor.min) / (descriptor.max - descriptor.min);
+                    points.Add(new Point(x, y));
+                }
+                if (points.Count < 2) {
+                    continue;
+                }
+                context.DrawGeometry(null, PhonemeRemapPreviewPen, new PolylineGeometry(points.ToArray(), false));
+            }
         }
 
         void DrawRealCurveGeometry(
