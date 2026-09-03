@@ -519,6 +519,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="pianoroll.toggle.expressions">View Expressions (L)</system:String>
   <system:String x:Key="pianoroll.toggle.finalpitch">View Final Pitch to Render (R)</system:String>
   <system:String x:Key="pianoroll.toggle.noteparams">View Note Parameters (\)</system:String>
+  <system:String x:Key="pianoroll.toggle.hidepianoroll">Hide Piano Roll</system:String>
   <system:String x:Key="pianoroll.toggle.overwritepitch">Toggle Overwrite Pitch Mode</system:String>
   <system:String x:Key="pianoroll.toggle.phoneme">View Phonemes (O)</system:String>
   <system:String x:Key="pianoroll.toggle.phonemizer">View Phonemizer Tags</system:String>
@@ -594,6 +595,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.appearance.diffsingerlangcodehide">Hide language prefix from phoneme editor</system:String>
   <system:String x:Key="prefs.appearance.lang">Language</system:String>
   <system:String x:Key="prefs.appearance.showghostnotes">Show other tracks' notes on piano roll</system:String>
+  <system:String x:Key="prefs.appearance.detachpianoroll">Show piano roll in separate window</system:String>
   <system:String x:Key="prefs.appearance.showicon">Show icon on piano roll</system:String>
   <system:String x:Key="prefs.appearance.showportrait">Show portrait on piano roll</system:String>
   <system:String x:Key="prefs.appearance.sortorder">Singer name display language</system:String>

@@ -148,8 +148,8 @@ namespace OpenUtau.App.ViewModels {
 
             this.WhenAnyValue(vm => vm.ShowPianoRoll)
                 .Subscribe(x => {
-                    PianoRollMaxHeight = x ? double.PositiveInfinity : 0;
-                    PianoRollMinHeight = x ? ViewConstants.PianoRollMinHeight : 0;
+                    PianoRollMaxHeight = x ? double.PositiveInfinity : 0.01;
+                    PianoRollMinHeight = x ? ViewConstants.PianoRollMinHeight : 0.01;
                     if (!x && PianoRollFullscreen) {
                         PianoRollFullscreen = false;
                     }

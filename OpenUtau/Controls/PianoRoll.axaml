@@ -643,6 +643,18 @@
               </Grid>
             </Grid>
           </ToggleButton>
+          <Button Classes="sideToolbarToggle" Margin="0" Padding="0"
+                  VerticalAlignment="Center"
+                  Click="OnHidePianoRoll"
+                  IsVisible="{Binding HideMenuItemVisible}"
+                  ToolTip.Tip="{DynamicResource pianoroll.toggle.hidepianoroll}">
+            <Grid Classes="toolbarIconHostSide">
+              <Grid Classes="toolbarIconHostSideLayout">
+                <Path Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}" StrokeThickness="1.5"
+                      Data="M 5 5 L 19 19 M 19 5 L 5 19"/>
+              </Grid>
+            </Grid>
+          </Button>
           </StackPanel>
         </Border>
       </Grid>

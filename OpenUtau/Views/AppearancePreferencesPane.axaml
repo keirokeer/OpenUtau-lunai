@@ -230,6 +230,14 @@
 
             <Grid Classes="prefRow" ColumnDefinitions="*,Auto">
 
+              <TextBlock Text="{DynamicResource prefs.appearance.detachpianoroll}"/>
+
+              <ToggleSwitch IsChecked="{Binding DetachPianoRoll}"/>
+
+            </Grid>
+
+            <Grid Classes="prefRow" ColumnDefinitions="*,Auto">
+
               <TextBlock Text="{DynamicResource prefs.appearance.shownoteborder}"/>
 
               <ToggleSwitch IsChecked="{Binding ShowNoteBorder}"/>

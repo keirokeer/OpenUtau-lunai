@@ -529,6 +529,7 @@ namespace OpenUtau.App.Controls {
                 return;
             }
             ViewModel.RaisePropertyChanged(nameof(ViewModel.PianoRollDetached));
+            ViewModel.RaisePropertyChanged(nameof(ViewModel.HideMenuItemVisible));
             ViewModel.RaisePropertyChanged(nameof(ViewModel.PianoRollFullscreen));
             ViewModel.RaisePropertyChanged(nameof(ViewModel.UsesExpandedPianoRollLayout));
             ViewModel.RaisePropertyChanged(nameof(ViewModel.IsSidePanelVisible));
@@ -946,6 +947,10 @@ namespace OpenUtau.App.Controls {
         }
 
         void OnMenuHidePianoRoll(object sender, RoutedEventArgs args) {
+            OnHidePianoRoll(sender, args);
+        }
+
+        void OnHidePianoRoll(object sender, RoutedEventArgs args) {
             if (RootWindow.DataContext is MainWindowViewModel mwvm) {
                 mwvm.ShowPianoRoll = false;
             } else {

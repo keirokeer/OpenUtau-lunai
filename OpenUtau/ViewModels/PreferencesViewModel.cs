@@ -149,6 +149,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public bool ShowPortrait { get; set; }
         [Reactive] public bool ShowIcon { get; set; }
         [Reactive] public bool ShowGhostNotes { get; set; }
+        [Reactive] public bool DetachPianoRoll { get; set; }
         [Reactive] public bool ShowNoteBorder { get; set; }
         [Reactive] public double NoteBorderThickness { get; set; }
         [Reactive] public bool SolidTickGridLines { get; set; }
@@ -596,6 +597,7 @@ namespace OpenUtau.App.ViewModels {
             ShowPortrait = Preferences.Default.ShowPortrait;
             ShowIcon = Preferences.Default.ShowIcon;
             ShowGhostNotes = Preferences.Default.ShowGhostNotes;
+            DetachPianoRoll = Preferences.Default.DetachPianoRoll;
             ShowNoteBorder = Preferences.Default.ShowNoteBorder;
             NoteBorderThickness = Math.Clamp(Preferences.Default.NoteBorderThickness, 0.5, 4);
             SolidTickGridLines = Preferences.Default.SolidTickGridLines;
@@ -860,6 +862,16 @@ namespace OpenUtau.App.ViewModels {
                     Preferences.Default.ShowGhostNotes = showGhostNotes;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("Part"));
+                });
+            this.WhenAnyValue(vm => vm.DetachPianoRoll)
+                .ObserveOn(RxApp.MainThreadScheduler)
+                .Subscribe(detachPianoRoll => {
+                    if (Preferences.Default.DetachPianoRoll == detachPianoRoll) {
+                        return;
+                    }
+                    Preferences.Default.DetachPianoRoll = detachPianoRoll;
+                    Preferences.Save();
+                    MessageBus.Current.SendMessage(new PianorollRefreshEvent("Attachment"));
                 });
             this.WhenAnyValue(vm => vm.ShowNoteBorder)
                 .ObserveOn(RxApp.MainThreadScheduler)

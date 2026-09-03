@@ -133,6 +133,12 @@ namespace OpenUtau.App.Views {
 
             MessageBus.Current.Listen<ScrollbarsStyleChangedEvent>()
                 .Subscribe(_ => ScheduleApplyTracksScrollStyle());
+            MessageBus.Current.Listen<PianorollRefreshEvent>()
+                .Subscribe(e => {
+                    if (e.refreshItem == "Attachment") {
+                        ApplyPianoRollAttachment(Preferences.Default.DetachPianoRoll);
+                    }
+                });
             Loaded += (_, _) => ScheduleApplyTracksScrollStyle();
             Opened += (_, _) => ScheduleApplyTracksScrollStyle();
             viewModel.WhenAnyValue(vm => vm.Page)
@@ -1518,13 +1524,21 @@ namespace OpenUtau.App.Views {
         }
 
         public void SetPianoRollAttachment() {
+            ApplyPianoRollAttachment(!Preferences.Default.DetachPianoRoll);
+        }
+
+        public void ApplyPianoRollAttachment(bool detach) {
             if (pianoRoll == null) {
                 return;
             }
             if (viewModel.PianoRollFullscreen) {
                 SetPianoRollFullscreen(false);
             }
-            if (Preferences.Default.DetachPianoRoll) {
+            bool visuallyDetached = PianoRollContainer.Content == null && pianoRollWindow != null;
+            if (Preferences.Default.DetachPianoRoll == detach && visuallyDetached == detach) {
+                return;
+            }
+            if (!detach) {
                 pianoRollWindow?.ForceClose();
                 pianoRollWindow = null;
                 PianoRollContainer.Content = pianoRoll;
