@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
@@ -28,6 +29,12 @@ namespace OpenUtau.App.Controls {
             blendBox = PART_BlendBox;
             listBox = PART_Suggestions;
             IsVisible = false;
+            // ListBoxItem handles PointerPressed on the bubble route, so template/XAML
+            // handlers never run. Tunnel on the ListBox so LMB pick applies like Enter.
+            listBox.AddHandler(
+                InputElement.PointerPressedEvent,
+                Suggestions_PointerPressed,
+                RoutingStrategies.Tunnel);
             AttachedToVisualTree += (_, _) => ScheduleApplyScrollStyle();
             Loaded += (_, _) => ScheduleApplyScrollStyle();
             DetachedFromVisualTree += (_, _) => scrollStyleApplyGeneration++;
@@ -215,11 +222,18 @@ namespace OpenUtau.App.Controls {
             }
         }
 
-        public void ListBox_PointerPressed(object sender, PointerPressedEventArgs args) {
-            if (sender is Control { DataContext: LyricBoxViewModel.SuggestionItem item }) {
-                ApplySuggestionToBoxes(item.Alias);
+        public void Suggestions_PointerPressed(object? sender, PointerPressedEventArgs args) {
+            if (!args.GetCurrentPoint(listBox).Properties.IsLeftButtonPressed) {
+                return;
             }
-            EndEdit(true);
+            for (var visual = args.Source as Visual; visual != null && visual != listBox; visual = visual.GetVisualParent()) {
+                if (visual is Control { DataContext: LyricBoxViewModel.SuggestionItem item }) {
+                    ApplySuggestionToBoxes(item.Alias);
+                    EndEdit(true);
+                    args.Handled = true;
+                    return;
+                }
+            }
         }
 
         public void Show(UVoicePart part, LyricBoxNoteOrPhoneme noteOrPhoneme, string text) {

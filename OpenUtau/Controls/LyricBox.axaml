@@ -67,7 +67,7 @@
           <ListBox.ItemTemplate>
             <DataTemplate>
               <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center" HorizontalAlignment="Stretch"
-                    PointerPressed="ListBox_PointerPressed" ToolTip.Tip="{Binding Source}">
+                    ToolTip.Tip="{Binding Source}">
                 <TextBlock Grid.Column="0" VerticalAlignment="Center" IsHitTestVisible="False" Text="{Binding Alias}"/>
                 <TextBlock Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right" TextTrimming="CharacterEllipsis"
                            IsHitTestVisible="False" FontSize="10" Text="{Binding Source}"/>
