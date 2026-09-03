@@ -43,11 +43,15 @@ namespace OpenUtau.App.ViewModels {
                         Preview = ThemeManager.GetString("errors.lyrics.regexpreview");
                     }
                 });
+<<<<<<< HEAD
             this.WhenValueChanged(x => SelectedPreset)
+=======
+            this.WhenValueChanged(x => x.SelectedPreset)
+>>>>>>> 69171824 (fix ReactiveUI bug (#2349))
                 .Subscribe(p => {
-                    if (SelectedPreset != null) {
-                        OldValue = SelectedPreset.OldValue;
-                        NewValue = SelectedPreset.NewValue;
+                    if (p != null) {
+                        OldValue = p.OldValue;
+                        NewValue = p.NewValue;
                     }
                 });
         }
