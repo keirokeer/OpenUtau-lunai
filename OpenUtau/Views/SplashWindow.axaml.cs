@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Reactive.Disposables;
 using System.Threading;
 using System.Threading.Tasks;
@@ -81,17 +81,29 @@ namespace OpenUtau.App.Views {
 
         private static void InitAudio() {
             Log.Information("Initializing audio.");
-            if (!OS.IsWindows() || Core.Util.Preferences.Default.PreferPortAudio) {
-                try {
-                    PlaybackManager.Inst.AudioOutput = new Audio.MiniAudioOutput();
-                } catch (Exception e1) {
-                    Log.Error(e1, "Failed to init MiniAudio");
-                }
-            } else {
+            if (OS.IsWindows() && Core.Util.Preferences.Default.AudioBackEnd == 0) {
                 try {
                     PlaybackManager.Inst.AudioOutput = new NAudioOutput();
-                } catch (Exception e2) {
-                    Log.Error(e2, "Failed to init NAudio");
+                } catch (Exception e0) {
+                    Log.Error(e0, "Failed to init NAudio");
+                }
+            } else {
+                switch (Core.Util.Preferences.Default.AudioBackEnd) {
+                    case 0:
+                    case 1:
+                        try {
+                            PlaybackManager.Inst.AudioOutput = new Audio.MiniAudioOutput();
+                        } catch (Exception e1) {
+                            Log.Error(e1, "Failed to init MiniAudio");
+                        }
+                        break;
+                    case 2:
+                        try {
+                            PlaybackManager.Inst.AudioOutput = new Audio.SDL3AudioOutput();
+                        } catch (Exception e2) {
+                            Log.Error(e2, "Failed to init SDL3 Audio");
+                        }
+                        break;
                 }
             }
             Log.Information("Initialized audio.");

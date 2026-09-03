@@ -214,6 +214,13 @@ namespace OpenUtau.Core.Util {
                         };
                         Default.Theme = null;
                     }
+                    if (Default.PreferPortAudio != null) {
+                        Default.AudioBackEnd = Default.PreferPortAudio switch {
+                            false => 0,
+                            true => 1
+                        };
+                        Default.PreferPortAudio = null;
+                    }
                     Default.MigrateRealTimePitchMode();
                     MigrateLegacyPreferences(json);
                 } else {
@@ -305,7 +312,7 @@ namespace OpenUtau.Core.Util {
             public List<string> FavoriteSingers = new List<string>();
             public Dictionary<string, string> SingerPhonemizers = new Dictionary<string, string>();
             public List<string> RecentPhonemizers = new List<string>();
-            public bool PreferPortAudio = false;
+            public uint AudioBackEnd = 0; // 0 = Automatic, 1 = MiniAudio, 2 = SDL
             public bool UseSystemDefaultAudioDevice = true;
             public double PlayPosMarkerMargin = 0.9;
             public int LockStartTime = 0;
@@ -608,6 +615,7 @@ errors.txt
             // Legacy
             [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
             public int? Theme;
+            public bool? PreferPortAudio = false;
 
             public void MigrateRealTimePitchMode() {
                 if (RealTimePitchGeneration && RealTimePitchMode == (int)LivePitchMode.Off) {
