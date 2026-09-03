@@ -236,13 +236,18 @@ namespace OpenUtau.Core.Render {
             if (requests.Length == 0 || cancellation.IsCancellationRequested) {
                 return;
             }
-            foreach (var request in requests) {
-                PhraseWaveformCache.RemoveStaleForTrack(
-                    request.trackNo,
-                    request.phrases.Select(phrase => {
+            var keepSlotsByTrack = requests
+                .GroupBy(request => request.trackNo)
+                .ToDictionary(
+                    group => group.Key,
+                    group => group.SelectMany(request => request.phrases.Select(phrase => {
                         var layout = phrase.renderer.Layout(phrase);
                         return (phrase.hash, layout.positionMs - layout.leadingMs);
-                    }));
+                    })));
+            foreach (var pair in keepSlotsByTrack) {
+                PhraseWaveformCache.RemoveStaleForTrack(pair.Key, pair.Value);
+            }
+            foreach (var request in requests) {
                 SeedRequestFromCache(request);
                 request.part.SetRenderMixComplete(request.sources.All(source => source.HasSamples));
                 request.part.SetMix(request.mix);

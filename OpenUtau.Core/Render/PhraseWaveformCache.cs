@@ -132,19 +132,17 @@ namespace OpenUtau.Core.Render {
                 if (Math.Abs(pair.Value.PosMs - posMs) > SameSlotPosEpsilonMs) {
                     continue;
                 }
-                if (pair.Value.Samples.Length != samples.Length) {
-                    continue;
+                if (pair.Value.Samples.Length == samples.Length) {
+                    continuity = true;
+                    previousDedicatedWave = pair.Value.WaveformSamples;
+                    double age = (DateTime.Now - pair.Value.RenderTime).TotalMilliseconds;
+                    renderTime = age >= FadeDurationMs
+                        ? DateTime.Now.AddMilliseconds(-FadeDurationMs - 1)
+                        : pair.Value.RenderTime;
                 }
-                continuity = true;
-                previousDedicatedWave = pair.Value.WaveformSamples;
-                double age = (DateTime.Now - pair.Value.RenderTime).TotalMilliseconds;
-                renderTime = age >= FadeDurationMs
-                    ? DateTime.Now.AddMilliseconds(-FadeDurationMs - 1)
-                    : pair.Value.RenderTime;
                 if (pair.Key != key) {
                     entries.TryRemove(pair.Key, out _);
                 }
-                break;
             }
 
             float[]? storedWave;

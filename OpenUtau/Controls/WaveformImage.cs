@@ -51,7 +51,6 @@ namespace OpenUtau.App.Controls {
 
         private WriteableBitmap? bitmap;
         private float[] sampleData = new float[0];
-        private float[] mixScratch = new float[0];
         private int sampleCount;
         private int[] bitmapData = new int[0];
         private DateTime mixUnlockTime = DateTime.MinValue;
@@ -106,23 +105,20 @@ namespace OpenUtau.App.Controls {
                         if (sampleData.Length < sampleCount) {
                             Array.Resize(ref sampleData, sampleCount);
                         }
-                        if (mixScratch.Length < sampleCount) {
-                            Array.Resize(ref mixScratch, sampleCount);
-                        }
 
                         bool needsAnotherFrame = false;
                         Array.Clear(sampleData, 0, sampleData.Length);
 
-                        FillFromPhraseCache(part.trackNo, leftMs, ref needsAnotherFrame);
-
-                        bool hasCachedPhrases = PhraseWaveformCache.GetForTrack(part.trackNo).Any();
-                        if (part.Mix != null && !hasCachedPhrases) {
-                            Array.Clear(mixScratch, 0, sampleCount);
-                            part.Mix.Mix(samplePos, mixScratch, 0, sampleCount);
-                            Array.Copy(mixScratch, sampleData, sampleCount);
+                        bool isRendering = OpenUtau.Core.PlaybackManager.Inst.StartingToPlay;
+                        bool useAuthoritativeMix = part.Mix != null
+                            && part.RenderMixComplete
+                            && !isRendering;
+                        if (useAuthoritativeMix) {
+                            part.Mix!.Mix(samplePos, sampleData, 0, sampleCount);
+                        } else {
+                            FillFromPhraseCache(part.trackNo, leftMs, ref needsAnotherFrame);
                         }
 
-                        bool isRendering = OpenUtau.Core.PlaybackManager.Inst.StartingToPlay;
                         if (wasRendering && !isRendering) {
                             mixUnlockTime = DateTime.Now;
                         }

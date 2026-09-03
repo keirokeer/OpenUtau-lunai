@@ -262,6 +262,7 @@ namespace OpenUtau.Core {
                         Format.Ustx.Save(saveProjectNotif.Path, Project);
                     }
                 } else if (cmd is LoadProjectNotification notification) {
+                    PhraseWaveformCache.Clear();
                     undoQueue.Clear();
                     redoQueue.Clear();
                     undoGroup = null;
