@@ -58,6 +58,9 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public double PlayPosHighlightX { get; set; }
         [Reactive] public double PlayPosHighlightWidth { get; set; }
         [Reactive] public bool PlayPosWaitingRendering { get; set; }
+        [Reactive] public int PlayPosTick { get; set; }
+        [Reactive] public bool ShowPlaybackNoteHighlight { get; set; }
+        [Reactive] public bool ShowPlaybackNoteBounce { get; set; }
         [Reactive] public bool UseModernPlayhead { get; set; }
         public bool HasRangeSelection => DocManager.Inst.rangeEndTick > DocManager.Inst.rangeStartTick;
         public bool ShowPlaybackBarHighlight => !PlaybackManager.Inst.PlayingMaster || HasRangeSelection;
@@ -201,6 +204,7 @@ namespace OpenUtau.App.ViewModels {
 
         internal NotesViewModelHitTest HitTest;
         private int _lastNoteLength = 480;
+        private UNote[] playbackNotes = Array.Empty<UNote>();
         private string? portraitSource;
         private readonly object portraitLock = new object();
         private Bitmap? portraitFull;
@@ -434,6 +438,8 @@ namespace OpenUtau.App.ViewModels {
                 Preferences.Save();
             });
             ShowNoteParams = Preferences.Default.ShowNoteParams;
+            ShowPlaybackNoteHighlight = Preferences.Default.ShowPlaybackNoteHighlight;
+            ShowPlaybackNoteBounce = Preferences.Default.ShowPlaybackNoteBounce;
             NotePropertiesPanelWidth = NotePropsPanelMetrics.ClampWidth(Preferences.Default.NotePropertiesPanelWidth);
             this.WhenAnyValue(x => x.ShowNoteParams)
             .Subscribe(showNoteParams => {
@@ -531,6 +537,12 @@ namespace OpenUtau.App.ViewModels {
                             break;
                         case "TrackColor":
                             LoadTrackColor(Part, Project);
+                            break;
+                        case "PlaybackNoteHighlight":
+                            ShowPlaybackNoteHighlight = Preferences.Default.ShowPlaybackNoteHighlight;
+                            break;
+                        case "PlaybackNoteBounce":
+                            ShowPlaybackNoteBounce = Preferences.Default.ShowPlaybackNoteBounce;
                             break;
                     }
                 });
@@ -692,6 +704,7 @@ namespace OpenUtau.App.ViewModels {
             Part = part as UVoicePart;
             UpdatePhonemePanelLayoutConstraints();
             OnPartModified();
+            RebuildPlaybackNoteIndex();
             LoadPortrait(part, project);
             LoadWindowTitle(part, project);
             LoadTrackColor(part, project);
@@ -876,6 +889,7 @@ namespace OpenUtau.App.ViewModels {
         private void UnloadPart() {
             DeselectNotes();
             Part = null;
+            playbackNotes = Array.Empty<UNote>();
             pitchFollowPath.Build(null, 0, 0, 0, 0, Project.resolution);
             LoadPortrait(null, null);
             LoadWindowTitle(null, null);
@@ -1357,9 +1371,31 @@ namespace OpenUtau.App.ViewModels {
         private void SetPlayPos(int tick, bool waitingRendering) {
             PlayPosWaitingRendering = waitingRendering;
             tick -= Part?.position ?? 0;
+            PlayPosTick = tick;
             PlayPosX = TickToneToPoint(tick, 0).X;
             UpdateHighlight();
             this.RaisePropertyChanged(nameof(ShowThinPlayPosLine));
+        }
+
+        private void RebuildPlaybackNoteIndex() {
+            playbackNotes = Part?.notes.ToArray() ?? Array.Empty<UNote>();
+        }
+
+        public UNote? FindVoiceNoteAtTick(int tick) {
+            int low = 0;
+            int high = playbackNotes.Length - 1;
+            while (low <= high) {
+                int mid = low + (high - low) / 2;
+                var note = playbackNotes[mid];
+                if (tick < note.LeftBound) {
+                    high = mid - 1;
+                } else if (tick >= note.RightBound) {
+                    low = mid + 1;
+                } else {
+                    return note;
+                }
+            }
+            return null;
         }
 
         private void UpdateHighlight() {
@@ -1468,9 +1504,11 @@ namespace OpenUtau.App.ViewModels {
                         LoadPortrait(Part, Project);
                     }
                     OnPartModified();
+                    RebuildPlaybackNoteIndex();
                     MessageBus.Current.SendMessage(new NotesRefreshEvent());
                 } else if (cmd is PhonemizedNotification) {
                     OnPartModified();
+                    RebuildPlaybackNoteIndex();
                     MessageBus.Current.SendMessage(new NotesRefreshEvent());
                 } else if (notif is WaveformReadyNotification) {
                     MessageBus.Current.SendMessage(new WaveformRefreshEvent());
@@ -1511,6 +1549,7 @@ namespace OpenUtau.App.ViewModels {
                 CleanupSelectedNotes();
                 if (noteCommand.Part == Part) {
                     RebuildPitchFollowPath();
+                    RebuildPlaybackNoteIndex();
                     MessageBus.Current.SendMessage(new NotesRefreshEvent());
 
                     if (noteCommand is RemoveNoteCommand && isUndo) {

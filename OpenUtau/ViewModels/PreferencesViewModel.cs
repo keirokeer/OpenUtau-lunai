@@ -149,6 +149,9 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public bool ShowPortrait { get; set; }
         [Reactive] public bool ShowIcon { get; set; }
         [Reactive] public bool ShowGhostNotes { get; set; }
+        [Reactive] public bool NoteHoverGlow { get; set; }
+        [Reactive] public bool ShowPlaybackNoteHighlight { get; set; }
+        [Reactive] public bool ShowPlaybackNoteBounce { get; set; }
         [Reactive] public bool DetachPianoRoll { get; set; }
         [Reactive] public bool ShowNoteBorder { get; set; }
         [Reactive] public double NoteBorderThickness { get; set; }
@@ -597,6 +600,9 @@ namespace OpenUtau.App.ViewModels {
             ShowPortrait = Preferences.Default.ShowPortrait;
             ShowIcon = Preferences.Default.ShowIcon;
             ShowGhostNotes = Preferences.Default.ShowGhostNotes;
+            NoteHoverGlow = Preferences.Default.NoteHoverGlow;
+            ShowPlaybackNoteHighlight = Preferences.Default.ShowPlaybackNoteHighlight;
+            ShowPlaybackNoteBounce = Preferences.Default.ShowPlaybackNoteBounce;
             DetachPianoRoll = Preferences.Default.DetachPianoRoll;
             ShowNoteBorder = Preferences.Default.ShowNoteBorder;
             NoteBorderThickness = Math.Clamp(Preferences.Default.NoteBorderThickness, 0.5, 4);
@@ -862,6 +868,27 @@ namespace OpenUtau.App.ViewModels {
                     Preferences.Default.ShowGhostNotes = showGhostNotes;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("Part"));
+                });
+            this.WhenAnyValue(vm => vm.NoteHoverGlow)
+                .ObserveOn(RxApp.MainThreadScheduler)
+                .Subscribe(noteHoverGlow => {
+                    Preferences.Default.NoteHoverGlow = noteHoverGlow;
+                    Preferences.Save();
+                    MessageBus.Current.SendMessage(new NotesRefreshEvent());
+                });
+            this.WhenAnyValue(vm => vm.ShowPlaybackNoteHighlight)
+                .ObserveOn(RxApp.MainThreadScheduler)
+                .Subscribe(showPlaybackNoteHighlight => {
+                    Preferences.Default.ShowPlaybackNoteHighlight = showPlaybackNoteHighlight;
+                    Preferences.Save();
+                    MessageBus.Current.SendMessage(new PianorollRefreshEvent("PlaybackNoteHighlight"));
+                });
+            this.WhenAnyValue(vm => vm.ShowPlaybackNoteBounce)
+                .ObserveOn(RxApp.MainThreadScheduler)
+                .Subscribe(showPlaybackNoteBounce => {
+                    Preferences.Default.ShowPlaybackNoteBounce = showPlaybackNoteBounce;
+                    Preferences.Save();
+                    MessageBus.Current.SendMessage(new PianorollRefreshEvent("PlaybackNoteBounce"));
                 });
             this.WhenAnyValue(vm => vm.DetachPianoRoll)
                 .ObserveOn(RxApp.MainThreadScheduler)

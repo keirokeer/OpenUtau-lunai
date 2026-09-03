@@ -211,6 +211,9 @@
   <system:String x:Key="prefs.appearance.section.theme">Тема</system:String>
   <system:String x:Key="prefs.appearance.section.trackcolors">Цвета треков</system:String>
   <system:String x:Key="prefs.appearance.shownoteborder">Обводка нот</system:String>
+  <system:String x:Key="prefs.appearance.notehoverglow">Свечение при наведении</system:String>
+  <system:String x:Key="prefs.appearance.playbacknotehighlight">Подсветка нот при воспроизведении</system:String>
+  <system:String x:Key="prefs.appearance.playbacknotebounce">Подпрыгивание нот при воспроизведении</system:String>
   <system:String x:Key="prefs.appearance.solidexppanelgridlines">Сплошные линии стандартного значения в панели параметров</system:String>
   <system:String x:Key="prefs.appearance.solidtickgridlines">Сплошные линии сетки такта (пианоролл, треки и панель параметров)</system:String>
   <system:String x:Key="prefs.appearance.theme.builtin">Встроенные</system:String>

@@ -230,6 +230,30 @@
 
             <Grid Classes="prefRow" ColumnDefinitions="*,Auto">
 
+              <TextBlock Text="{DynamicResource prefs.appearance.notehoverglow}"/>
+
+              <ToggleSwitch IsChecked="{Binding NoteHoverGlow}"/>
+
+            </Grid>
+
+            <Grid Classes="prefRow" ColumnDefinitions="*,Auto">
+
+              <TextBlock Text="{DynamicResource prefs.appearance.playbacknotehighlight}"/>
+
+              <ToggleSwitch IsChecked="{Binding ShowPlaybackNoteHighlight}"/>
+
+            </Grid>
+
+            <Grid Classes="prefRow" ColumnDefinitions="*,Auto">
+
+              <TextBlock Text="{DynamicResource prefs.appearance.playbacknotebounce}"/>
+
+              <ToggleSwitch IsChecked="{Binding ShowPlaybackNoteBounce}"/>
+
+            </Grid>
+
+            <Grid Classes="prefRow" ColumnDefinitions="*,Auto">
+
               <TextBlock Text="{DynamicResource prefs.appearance.detachpianoroll}"/>
 
               <ToggleSwitch IsChecked="{Binding DetachPianoRoll}"/>

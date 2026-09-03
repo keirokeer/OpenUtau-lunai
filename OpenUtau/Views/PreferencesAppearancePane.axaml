@@ -75,6 +75,18 @@
       <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowGhostNotes}"/>
     </Grid>
     <Grid ColumnDefinitions="*,Auto">
+      <TextBlock Text="{DynamicResource prefs.appearance.notehoverglow}" HorizontalAlignment="Left"/>
+      <ToggleSwitch Grid.Column="1" IsChecked="{Binding NoteHoverGlow}"/>
+    </Grid>
+    <Grid ColumnDefinitions="*,Auto">
+      <TextBlock Text="{DynamicResource prefs.appearance.playbacknotehighlight}" HorizontalAlignment="Left"/>
+      <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowPlaybackNoteHighlight}"/>
+    </Grid>
+    <Grid ColumnDefinitions="*,Auto">
+      <TextBlock Text="{DynamicResource prefs.appearance.playbacknotebounce}" HorizontalAlignment="Left"/>
+      <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowPlaybackNoteBounce}"/>
+    </Grid>
+    <Grid ColumnDefinitions="*,Auto">
       <TextBlock Text="{DynamicResource prefs.appearance.shownoteborder}" HorizontalAlignment="Left"/>
       <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowNoteBorder}"/>
     </Grid>
