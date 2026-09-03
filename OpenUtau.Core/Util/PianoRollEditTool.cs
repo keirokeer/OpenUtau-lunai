@@ -14,7 +14,9 @@ namespace OpenUtau.Core.Util {
         PitchLineTool = 50,
         PitchSCurveTool = 60,
         PitchSineWaveTool = 70,
-        PitchSmoothenTool = 80
+        PitchSmoothenTool = 80,
+        // Appended (not renumbered) so saved ToolIndex list positions stay stable.
+        PitchPointTool = 90
     }
 
     public class EditTool {

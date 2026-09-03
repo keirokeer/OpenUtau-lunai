@@ -1369,14 +1369,12 @@ namespace OpenUtau.App.Controls {
         }
 
         private void NotesCanvasLeftPointerPressed(Control control, PointerPoint point, PointerPressedEventArgs args) {
+            EditTools tool = ViewModel.EditTool.CurrentTool;
             if (ViewModel.EditTool.IsPitchTool) {
                 ViewModel.NotesViewModel.DeselectNotes();
                 if (args.KeyModifiers != cmdKey) {
                     bool overwrite = ViewModel.EditTool.OverwritePitch;
-                    EditTools tool = ViewModel.EditTool.CurrentTool;
-                    if (tool == EditTools.PitchSmoothenTool) {
-                        editState = new SmoothenPitchState(control, ViewModel, this, overwrite);
-                    } else if (tool == EditTools.DrawPitchTool) {
+                    if (tool == EditTools.DrawPitchTool) {
                         editState = new DrawPitchState(control, ViewModel, this, overwrite);
                     } else if (tool == EditTools.PitchLineTool) {
                         editState = new PitchCurveState(control, ViewModel, this, PitchPreviewLine, PitchCurveState.CurveMode.Line, overwrite);
@@ -1384,6 +1382,8 @@ namespace OpenUtau.App.Controls {
                         editState = new PitchCurveState(control, ViewModel, this, PitchPreviewLine, PitchCurveState.CurveMode.SCurve, overwrite);
                     } else if (tool == EditTools.PitchSineWaveTool) {
                         editState = new PitchCurveState(control, ViewModel, this, PitchPreviewLine, PitchCurveState.CurveMode.Sine, overwrite);
+                    } else if (tool == EditTools.PitchSmoothenTool) {
+                        editState = new SmoothenPitchState(control, ViewModel, this, overwrite);
                     }
                     return;
                 }
@@ -1394,10 +1394,14 @@ namespace OpenUtau.App.Controls {
                 Cursor = ViewConstants.cursorNo;
                 return;
             }
-            var pitHitInfo = ViewModel.NotesViewModel.HitTest.HitTestPitchPoint(point.Position);
+            var pitchPointTool = tool == EditTools.PitchPointTool && args.KeyModifiers != cmdKey;
+            var pitHitInfo = ViewModel.NotesViewModel.HitTest.HitTestPitchPoint(point.Position, pitchPointTool);
             if (pitHitInfo.Note != null) {
                 editState = new PitchPointEditState(control, ViewModel, this,
                     pitHitInfo.Note, pitHitInfo.Index, pitHitInfo.OnPoint, pitHitInfo.X, pitHitInfo.Y);
+                return;
+            }
+            if (pitchPointTool) {
                 return;
             }
             var vbrHitInfo = ViewModel.NotesViewModel.HitTest.HitTestVibrato(point.Position);
@@ -1487,7 +1491,7 @@ namespace OpenUtau.App.Controls {
                 return;
             }
             if (ViewModel.NotesViewModel.ShowPitch) {
-                var pitHitInfo = ViewModel.NotesViewModel.HitTest.HitTestPitchPoint(point.Position);
+                var pitHitInfo = ViewModel.NotesViewModel.HitTest.HitTestPitchPoint(point.Position, false);
                 if (pitHitInfo.Note != null) {
                     var shapes = new List<MenuItemViewModel>();
                     var currentShape = pitHitInfo.Note.pitch.data[pitHitInfo.Index].shape;
@@ -1651,9 +1655,13 @@ namespace OpenUtau.App.Controls {
                 Cursor = null;
                 return;
             }
-            var pitHitInfo = ViewModel.NotesViewModel.HitTest.HitTestPitchPoint(point.Position);
+            var pitchPointTool = ViewModel.EditTool.CurrentTool == EditTools.PitchPointTool && args.KeyModifiers != cmdKey;
+            var pitHitInfo = ViewModel.NotesViewModel.HitTest.HitTestPitchPoint(point.Position, pitchPointTool);
             if (pitHitInfo.Note != null) {
                 Cursor = ViewConstants.cursorHand;
+                return;
+            } else if (pitchPointTool) {
+                Cursor = null;
                 return;
             }
             var vbrHitInfo = ViewModel.NotesViewModel.HitTest.HitTestVibrato(point.Position);
@@ -2264,6 +2272,7 @@ namespace OpenUtau.App.Controls {
                 case "ToolSelectPitchSCurve": ViewModel.ToolIndex = 6; return true;
                 case "ToolSelectPitchSine": ViewModel.ToolIndex = 7; return true;
                 case "ToolSelectPitchSmoothen": ViewModel.ToolIndex = 8; return true;
+                case "ToolSelectPitchPoint": ViewModel.ToolIndex = 9; return true;
 
                 // Expressions
                 case "ExpSelect1": expSelector1?.SelectExp(); return true;

@@ -571,6 +571,11 @@
                       <TextBlock Text="{DynamicResource pianoroll.tool.pitchsmoothen}" Foreground="{DynamicResource ToolTipForegroundBrush}"/>
                     </ToolTip.Tip>
                   </ListBoxItem>
+                  <ListBoxItem Classes="toolbar pitchPointTool">
+                    <ToolTip.Tip>
+                      <TextBlock Text="{DynamicResource pianoroll.tool.pitchpoint}" Foreground="{DynamicResource ToolTipForegroundBrush}"/>
+                    </ToolTip.Tip>
+                  </ListBoxItem>
                 </ListBox.Items>
             </ListBox>
             <Border Width="12"/>

@@ -388,6 +388,9 @@
   <Style Selector="ListBoxItem.pitchSmoothenTool /template/ Path#PART_ToolIcon">
     <Setter Property="Data" Value="M12,3.77L11.25,4.61C11.25,4.61 9.97,6.06 8.68,7.94C7.39,9.82 6,12.07 6,14.23A6,6 0 0,0 12,20.23A6,6 0 0,0 18,14.23C18,12.07 16.61,9.82 15.32,7.94C14.03,6.06 12.75,4.61 12.75,4.61L12,3.77M12,6.9C12.44,7.42 12.84,7.85 13.68,9.07C14.89,10.83 16,13.07 16,14.23C16,16.45 14.22,18.23 12,18.23C9.78,18.23 8,16.45 8,14.23C8,13.07 9.11,10.83 10.32,9.07C11.16,7.85 11.56,7.42 12,6.9Z" />
   </Style>
+  <Style Selector="ListBoxItem.pitchPointTool /template/ Path#PART_ToolIcon">
+    <Setter Property="Data" Value="M 13.75 14.19 L 14.38 14.32 L 18.55 16.4 C 19.25 16.63 19.71 17.32 19.65 18.06 V 18.19 L 19.65 18.32 L 18.75 24.44 C 18.69 24.87 18.5 25.27 18.15 25.55 C 17.84 25.85 17.43 26 17 26 H 10.12 C 9.63 26 9.18 25.82 8.85 25.47 L 2.86 19.5 L 3.76 18.5 C 4 18.25 4.38 18.11 4.74 18.13 H 5.03 L 9 19 V 8.5 A 2,2 0 0,1 11,6.5 A 2,2 0 0,1 13,8.5 V 14.19 H 13.75 Z M 11 0.5 A 4 4 0 0 0 11 8.5 A 4 4 0 0 0 11 0.5 M 11 2.5 A 2 2 0 0 0 11 6.5 A 2 2 0 0 0 11 2.5 Z" />
+  </Style>
 
   <Style Selector="Slider.fader">
     <Setter Property="Foreground" Value="{DynamicResource SelectedTrackAccentBrush}"/>
