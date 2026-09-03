@@ -295,7 +295,9 @@ namespace OpenUtau.Core.Render {
                         result.samples,
                         result.waveformSamples);
                     if (waveformChanged) {
-                        DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
+                        Task.Factory.StartNew(() => {
+                            DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
+                        }, CancellationToken.None, TaskCreationOptions.None, DocManager.Inst.MainScheduler);
                     }
                 }
                 DocManager.Inst.ExecuteCmd(new PhraseRenderedNotification(request.part, phrase, result, request.trackNo));

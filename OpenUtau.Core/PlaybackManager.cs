@@ -460,12 +460,16 @@ namespace OpenUtau.Core {
                     PlayingMaster = true;
                     StartingToPlay = false;
                     StartPlayback(project.timeAxis.TickPosToMsPos(tick), playbackAdapter);
-                    DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
+                    Task.Factory.StartNew(() => {
+                        DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
+                    }, CancellationToken.None, TaskCreationOptions.None, DocManager.Inst.MainScheduler);
                 } catch (Exception e) {
                     Log.Error(e, "Failed to render.");
                     StopPlayback();
                     var customEx = new MessageCustomizableException("Failed to render.", "<translate:errors.failed.render>", e);
-                    DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(customEx));
+                    Task.Factory.StartNew(() => {
+                        DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(customEx));
+                    }, CancellationToken.None, TaskCreationOptions.None, DocManager.Inst.MainScheduler);
                 }
             });
         }
