@@ -772,6 +772,7 @@ The voicebank may not work on another OS.</system:String>
   <system:String x:Key="themeeditor.title">Theme Editor</system:String>
 
   <system:String x:Key="tip.aliasbox">Override Alias</system:String>
+  <system:String x:Key="phoneme.show.error">Alt + Click to view the full error</system:String>
   <system:String x:Key="tip.exps">Numerical,Options Type
     Left Button Draw: Set expressions
     Shift + Left Button Draw: Set uniform expressions
