@@ -137,7 +137,7 @@ namespace OpenUtau.Core.DiffSinger {
                 if (options.exportVariance && singer.HasVariancePredictor) {
                     var variancePredictor = singer.getVariancePredictor();
                     VarianceResult varianceResult;
-                    lock (variancePredictor) {
+                    lock (singer.SessionLock) {
                         varianceResult = variancePredictor.Process(phrase);
                     }
                     if (varianceResult.energy != null) {
