@@ -458,8 +458,8 @@ namespace OpenUtau.Core {
                     playbackAdapter.SetPosition((int)(project.timeAxis.TickPosToMsPos(tick) * 44100 / 1000) * 2);
                     faders = result.Item2;
                     PlayingMaster = true;
-                    StartingToPlay = false;
                     StartPlayback(project.timeAxis.TickPosToMsPos(tick), playbackAdapter);
+                    StartingToPlay = false;
                     Task.Factory.StartNew(() => {
                         DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
                     }, CancellationToken.None, TaskCreationOptions.None, DocManager.Inst.MainScheduler);
