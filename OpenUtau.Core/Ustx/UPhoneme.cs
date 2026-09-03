@@ -140,7 +140,7 @@ namespace OpenUtau.Core.Ustx {
                     maxPreutter = gapMs;
                 }
                 if (autoPreutter > maxPreutter) {
-                    double ratio = maxPreutter / autoPreutter;
+                    double ratio = autoPreutter > 0 ? maxPreutter / autoPreutter : 0d;
                     autoPreutter = maxPreutter;
                     autoOverlap *= ratio;
                 }
