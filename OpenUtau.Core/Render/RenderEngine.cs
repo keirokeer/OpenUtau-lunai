@@ -48,6 +48,9 @@ namespace OpenUtau.Core.Render {
         readonly int endTick;
         readonly int trackNo;
 
+        static readonly System.Collections.Concurrent.ConcurrentDictionary<string, float[]> XsyBlendCache =
+            new System.Collections.Concurrent.ConcurrentDictionary<string, float[]>();
+
         public RenderEngine(UProject project, int startTick = 0, int endTick = -1, int trackNo = -1) {
             this.project = project;
             this.startTick = startTick;
@@ -278,13 +281,83 @@ namespace OpenUtau.Core.Render {
                         realCurvesPublished = PublishRealCurveUpdates(request.part, phrase, realCurves);
                     })
                     : null;
-                var task = phrase.renderer.Render(phrase, progress, request.trackNo, cancellation, true, renderEvents);
-                task.Wait();
-                if (cancellation.IsCancellationRequested) {
-                    break;
+                bool useXsy = phrase.xsy != null && phrase.xsy.Any(x => x > 0);
+                RenderResult result;
+                if (!useXsy) {
+                    var task = phrase.renderer.Render(phrase, progress, request.trackNo, cancellation, true, renderEvents);
+                    task.Wait();
+                    if (cancellation.IsCancellationRequested) {
+                        break;
+                    }
+                    result = task.Result;
+                    source.SetSamples(result.samples);
+                } else {
+                    string xsyKey = $"{phrase.hash:x16}|" +
+                        string.Join(",", phrase.phones.Select(p => $"{p.oto2?.Set}:{p.oto2?.Alias}"));
+                    if (!XsyBlendCache.TryGetValue(xsyKey, out var blended)) {
+                        var taskA = phrase.renderer.Render(phrase, progress, request.trackNo, cancellation, true, renderEvents);
+                        taskA.Wait();
+                        if (cancellation.IsCancellationRequested) {
+                            break;
+                        }
+                        float[] samplesA = taskA.Result.samples;
+
+                        var otoField = typeof(RenderPhone).GetField("oto");
+                        var hashField = typeof(RenderPhone).GetField("hash");
+                        var phraseHashField = typeof(RenderPhrase).GetField("hash");
+                        var originalOtos = phrase.phones.Select(p => p.oto).ToArray();
+                        var originalHashes = phrase.phones.Select(p => p.hash).ToArray();
+                        ulong originalPhraseHash = phrase.hash;
+                        float[] samplesB;
+                        try {
+                            for (int i = 0; i < phrase.phones.Length; i++) {
+                                var phone = phrase.phones[i];
+                                if (phone.oto2 != null) {
+                                    otoField.SetValue(phone, phone.oto2);
+                                    hashField.SetValue(phone, phone.hash ^ 0x5858585858585858);
+                                }
+                            }
+                            phraseHashField.SetValue(phrase, phrase.hash ^ 0x5858585858585858);
+                            var taskB = phrase.renderer.Render(phrase, progress, request.trackNo, cancellation, true);
+                            taskB.Wait();
+                            samplesB = taskB.Result.samples;
+                        } finally {
+                            for (int i = 0; i < phrase.phones.Length; i++) {
+                                otoField.SetValue(phrase.phones[i], originalOtos[i]);
+                                hashField.SetValue(phrase.phones[i], originalHashes[i]);
+                            }
+                            phraseHashField.SetValue(phrase, originalPhraseHash);
+                        }
+                        if (cancellation.IsCancellationRequested) {
+                            break;
+                        }
+
+                        const int fftSize = 2048;
+                        const int hopSize = 512;
+                        int totalSamples = Math.Max(samplesA.Length, samplesB.Length);
+                        int frameCount = Math.Max(1, (totalSamples - fftSize) / hopSize + 1);
+                        float[] frameRatios = new float[frameCount];
+                        int pitchStart = phrase.position - phrase.leading;
+                        for (int f = 0; f < frameCount; f++) {
+                            double timeMs = phrase.positionMs - phrase.leadingMs
+                                + (double)(f * hopSize) / 44100.0 * 1000.0;
+                            double tick = project.timeAxis.MsPosToTickPos(timeMs);
+                            int curveIndex = (int)Math.Max(0, (tick - pitchStart) / 5);
+                            if (phrase.xsy.Length > 0) {
+                                frameRatios[f] = curveIndex < phrase.xsy.Length
+                                    ? Math.Clamp(phrase.xsy[curveIndex] / 100f, 0f, 1f)
+                                    : Math.Clamp(phrase.xsy.Last() / 100f, 0f, 1f);
+                            }
+                        }
+                        blended = CrossSynthDSP.StftBlend(samplesA, samplesB, frameRatios);
+                        if (XsyBlendCache.Count > 1024) {
+                            XsyBlendCache.Clear();
+                        }
+                        XsyBlendCache[xsyKey] = blended;
+                    }
+                    source.SetSamples(blended);
+                    result = new RenderResult { samples = blended };
                 }
-                var result = task.Result;
-                source.SetSamples(result.samples);
                 request.part.SetMix(request.mix);
                 if (result.samples != null) {
                     var layout = phrase.renderer.Layout(phrase);

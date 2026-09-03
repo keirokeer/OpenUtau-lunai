@@ -2122,8 +2122,53 @@ namespace OpenUtau.App.Views {
                 if (track.ValidateVoiceColor(out var oldColors, out var newColors)) {
                     await VoiceColorRemappingAsync(track, oldColors, newColors);
                 }
+                await RemapImportedVocalModesAsync(track);
             }
             DocManager.Inst.EndUndoGroup();
+        }
+
+        async Task RemapImportedVocalModesAsync(UTrack track) {
+            if (track.Singer?.SingerType != USingerType.DiffSinger) return;
+            track.Singer.EnsureLoaded();
+            if (!track.Singer.Loaded) return;
+            var parts = DocManager.Inst.Project.parts.Where(p => p.trackNo == track.TrackNo && p is UVoicePart).Cast<UVoicePart>().ToArray();
+            var modes = parts.SelectMany(p => p.curves)
+                .Where(c => c.descriptor != null && IsImportedVocalModeCurve(c.abbr))
+                .Select(c => c.descriptor.name)
+                .Where(n => !string.IsNullOrWhiteSpace(n))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+            if (modes.Length == 0) return;
+
+            var oldModes = new[] { "" }.Concat(modes).ToArray();
+            var colors = track.Singer.Subbanks.Select(s => s.Color).ToArray();
+            var dialog = new VoiceColorMappingDialog { DataContext = new VoiceColorMappingViewModel(oldModes, colors, track.TrackName) };
+            await dialog.ShowDialog(this);
+            if (!dialog.Apply) return;
+
+            foreach (var mapping in ((VoiceColorMappingViewModel)dialog.DataContext).ColorMappings.Where(m => m.OldIndex > 0 && m.SelectedIndex > 0)) {
+                var sourceName = modes[mapping.OldIndex - 1];
+                var sourceDescriptor = DocManager.Inst.Project.expressions.Values.FirstOrDefault(d => d.name.Equals(sourceName, StringComparison.OrdinalIgnoreCase));
+                if (sourceDescriptor == null) continue;
+                string targetAbbr = $"cl{mapping.SelectedIndex:D2}";
+                if (!DocManager.Inst.Project.expressions.TryGetValue(targetAbbr, out var targetDescriptor)) {
+                    targetDescriptor = new UExpressionDescriptor($"voice color {colors[mapping.SelectedIndex]}", targetAbbr, 0, 100, 0) { type = UExpressionType.Curve };
+                    DocManager.Inst.Project.RegisterExpression(targetDescriptor);
+                }
+                foreach (var part in parts) {
+                    var source = part.curves.FirstOrDefault(c => c.abbr == sourceDescriptor.abbr);
+                    if (source == null || part.curves.Any(c => c.abbr == targetAbbr)) continue;
+                    part.curves.Add(new UCurve(targetDescriptor) { xs = source.xs.ToList(), ys = source.ys.Select(y => Math.Clamp(y <= 1 ? y * 100 : y, 0, 100)).ToList() });
+                }
+            }
+        }
+
+        static bool IsImportedVocalModeCurve(string abbr) {
+            if (abbr.StartsWith("cl", StringComparison.OrdinalIgnoreCase)) return false;
+            return abbr != Ustx.DYN && abbr != Ustx.PITD && abbr != Ustx.TENC &&
+                abbr != Ustx.BREC && abbr != Ustx.GENC && abbr != Ustx.VOIC &&
+                abbr != Ustx.SHFC && abbr != Ustx.CLR && abbr != Ustx.CLRY &&
+                abbr != "opec";
         }
         async Task VoiceColorRemappingAsync(UTrack track, string[] oldColors, string[] newColors) {
             var parts = DocManager.Inst.Project.parts
@@ -2349,6 +2394,7 @@ namespace OpenUtau.App.Views {
                     } else if (track.ValidateVoiceColor(out var oldColors, out var newColors)) { // Verify whether remapping is required when the singer is changed
                         VoiceColorRemapping(track, oldColors, newColors);
                     }
+                    _ = RemapImportedVocalModesAsync(track);
                 }
             }
         }
