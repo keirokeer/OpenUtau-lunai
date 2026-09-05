@@ -475,11 +475,6 @@
                     <CheckBox IsChecked="{Binding PianoRollFullscreen}" IsHitTestVisible="False"/>
                   </MenuItem.Icon>
                 </MenuItem>
-                <MenuItem Header="{DynamicResource pianoroll.menu.view.pianoroll.detach}" Click="OnMenuDetachPianoRoll">
-                  <MenuItem.Icon>
-                    <CheckBox IsChecked="{Binding PianoRollDetached}" />
-                  </MenuItem.Icon>
-                </MenuItem>
                 <MenuItem Header="{DynamicResource pianoroll.menu.view.pianoroll.hide}" Click="OnMenuHidePianoRoll"/>
                 <MenuItem Header="{DynamicResource pianoroll.menu.view.tiktokmode}" Click="OnMenuTikTokMode">
                   <MenuItem.Icon>
