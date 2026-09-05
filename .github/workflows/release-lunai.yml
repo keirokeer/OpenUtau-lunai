@@ -198,7 +198,7 @@ jobs:
           if (-not $portable) { throw "Velopack Portable.zip not found in $outDir" }
           # Stable download names; keep Releases/ for nupkg + feed metadata only (no duplicates).
           Copy-Item $setup.FullName "OpenUtau-Lunai-$rid-Setup.exe" -Force
-          Copy-Item $portable.FullName "OpenUtau-Lunai-$rid.zip" -Force
+          Copy-Item $portable.FullName "OpenUtau-Lunai-$rid-Portable.zip" -Force
           Remove-Item $setup.FullName -Force
           Remove-Item $portable.FullName -Force
           # assets.*.json still lists Setup/Portable by Velopack names; rewrite to match what we ship in Releases/.
@@ -254,12 +254,14 @@ jobs:
           name: artifacts-${{ matrix.arch.name }}
           path: |
             OpenUtau-Lunai-${{ matrix.arch.name }}-Setup.exe
+            OpenUtau-Lunai-${{ matrix.arch.name }}-Portable.zip
             OpenUtau-Lunai-${{ matrix.arch.name }}.zip
             OpenUtau-Lunai-${{ matrix.arch.name }}.dmg
             OpenUtau-Lunai-${{ matrix.arch.name }}.tar.gz
             OpenUtau-Lunai-*.AppImage
             bin/${{ matrix.arch.name }}/*.AppImage
             Releases/${{ matrix.arch.rid }}/*
+          if-no-files-found: warn
 
       # Create / update GitHub Release with this arch's files
       - name: Create GitHub Release
@@ -272,6 +274,7 @@ jobs:
           draft: ${{ inputs.draft }}
           files: |
             OpenUtau-Lunai-${{ matrix.arch.name }}-Setup.exe
+            OpenUtau-Lunai-${{ matrix.arch.name }}-Portable.zip
             OpenUtau-Lunai-${{ matrix.arch.name }}.zip
             OpenUtau-Lunai-${{ matrix.arch.name }}.dmg
             OpenUtau-Lunai-${{ matrix.arch.name }}.tar.gz
@@ -284,7 +287,8 @@ jobs:
             **Windows (Velopack — recommended)**  
             [Setup 64-bit](${{ env.REPO_URL }}/releases/download/${{ inputs.version }}/OpenUtau-Lunai-win-x64-Setup.exe)  
             [Setup ARM64](${{ env.REPO_URL }}/releases/download/${{ inputs.version }}/OpenUtau-Lunai-win-arm64-Setup.exe)  
-            [Portable ZIP (self-updating) 64-bit](${{ env.REPO_URL }}/releases/download/${{ inputs.version }}/OpenUtau-Lunai-win-x64.zip)
+            [Portable ZIP (self-updating) 64-bit](${{ env.REPO_URL }}/releases/download/${{ inputs.version }}/OpenUtau-Lunai-win-x64-Portable.zip)  
+            [Portable ZIP (self-updating) ARM64](${{ env.REPO_URL }}/releases/download/${{ inputs.version }}/OpenUtau-Lunai-win-arm64-Portable.zip)
 
             **Migrating from older NSIS installs:** install the new Setup once. After that, use Help → Check for Update inside the app.
 
