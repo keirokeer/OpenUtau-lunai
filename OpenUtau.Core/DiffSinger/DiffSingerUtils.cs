@@ -13,6 +13,8 @@ namespace OpenUtau.Core.DiffSinger {
         public const string VELC = "velc";
         public const string ENE = "ene";
         public const string PEXP = "pexp";
+        /// <summary>Vocoder-only pitch offset curve (cents). Melodyne-style heard-pitch tuning.</summary>
+        public const string VPIT = "vpit";
         public const string VoiceColorHeader = "cl";
         public const string VoiceColorNamePrefix = "voice color ";
         public const int headFrames = 8;
@@ -47,7 +49,7 @@ namespace OpenUtau.Core.DiffSinger {
                 return colorIndex >= 1 && colorIndex <= dsSinger.Subbanks.Count;
             }
             return abbr switch {
-                Format.Ustx.DYN or Format.Ustx.PITD or Format.Ustx.CLR or Format.Ustx.SHFC => true,
+                Format.Ustx.DYN or Format.Ustx.PITD or Format.Ustx.CLR or Format.Ustx.SHFC or VPIT => true,
                 Format.Ustx.BREC => dsSinger.dsConfig.useBreathinessEmbed,
                 ENE => dsSinger.dsConfig.useEnergyEmbed,
                 Format.Ustx.VOIC => dsSinger.dsConfig.useVoicingEmbed,
@@ -230,6 +232,31 @@ namespace OpenUtau.Core.DiffSinger {
             return result;
         }
 
+        /// <summary>
+        /// Shift base F0 (Hz) by a per-frame vocoder pitch curve in cents.
+        /// Used only for the vocoder ONNX <c>f0</c> input (Melodyne-style tuning).
+        /// </summary>
+        public static float[] ApplyVocoderPitchCents(float[] baseF0Hz, double[] vocoderPitchCents) {
+            if (baseF0Hz == null) {
+                throw new ArgumentNullException(nameof(baseF0Hz));
+            }
+            var result = new float[baseF0Hz.Length];
+            if (vocoderPitchCents == null || vocoderPitchCents.Length == 0) {
+                Array.Copy(baseF0Hz, result, baseF0Hz.Length);
+                return result;
+            }
+            int n = Math.Min(baseF0Hz.Length, vocoderPitchCents.Length);
+            for (int i = 0; i < n; i++) {
+                double cents = vocoderPitchCents[i];
+                result[i] = cents == 0
+                    ? baseF0Hz[i]
+                    : baseF0Hz[i] * (float)Math.Pow(2, cents / 1200.0);
+            }
+            for (int i = n; i < baseF0Hz.Length; i++) {
+                result[i] = baseF0Hz[i];
+            }
+            return result;
+        }
 
         //MusicMath.Linear, but float numbers are used instead of double
         public static float LinearF(float x0, float x1, float y0, float y1, float x) {

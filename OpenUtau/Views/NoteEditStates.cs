@@ -1358,6 +1358,55 @@ namespace OpenUtau.App.Views {
         }
     }
 
+    /// <summary>
+    /// Draw absolute heard pitch via VPIT: mouse Y is the target pitch,
+    /// independent of the existing pitch curve shape (unlike PITD draw).
+    /// </summary>
+    class DrawVocoderPitchState : NoteEditState {
+        protected override bool ShowValueTip => false;
+        protected override string? commandNameKey => "command.pitch.draw";
+        double? lastBasePitch;
+        Point lastPoint;
+
+        public DrawVocoderPitchState(
+            Control control,
+            PianoRollViewModel vm,
+            IValueTip valueTip) : base(control, vm, valueTip) { }
+
+        public override void Begin(IPointer pointer, Point point) {
+            base.Begin(pointer, point);
+            lastPoint = point;
+        }
+
+        public override void Update(IPointer pointer, Point point) {
+            if (vm.NotesViewModel.Part == null) {
+                return;
+            }
+            int tick = vm.NotesViewModel.PointToTick(point);
+            var samplePoint = vm.NotesViewModel.TickToneToPoint(
+                (int)Math.Round(tick / 5.0) * 5,
+                vm.NotesViewModel.PointToToneDouble(point));
+            double? basePitch = vm.NotesViewModel.HitTest.SampleFinalPitch(samplePoint);
+            if (basePitch == null) {
+                return;
+            }
+            double tone = vm.NotesViewModel.PointToToneDouble(point);
+            // Absolute target: VPIT cents so that pitches + VPIT == mouse tone.
+            int y = (int)Math.Round(tone * 100 - basePitch.Value);
+            int lastY = (int)Math.Round(tone * 100 - (lastBasePitch ?? basePitch.Value));
+            DocManager.Inst.ExecuteCmd(new SetCurveCommand(
+                vm.NotesViewModel.Project,
+                vm.NotesViewModel.Part,
+                Core.DiffSinger.DiffSingerUtils.VPIT,
+                tick,
+                y,
+                vm.NotesViewModel.PointToTick(lastBasePitch == null ? point : lastPoint),
+                lastY));
+            lastBasePitch = basePitch;
+            lastPoint = point;
+        }
+    }
+
     class PitchCurveState : NoteEditState {
         protected override bool ShowValueTip => true;
         protected override string? commandNameKey => "command.pitch.draw";
@@ -1831,12 +1880,16 @@ namespace OpenUtau.App.Views {
         public override MouseButton MouseButton => MouseButton.Right;
         protected override bool ShowValueTip => false;
         protected override string? commandNameKey => "command.pitch.reset";
+        private readonly string curveAbbr;
         Point lastPoint;
 
         public ResetPitchState(
             Control control,
             PianoRollViewModel vm,
-            IValueTip valueTip) : base(control, vm, valueTip) { }
+            IValueTip valueTip,
+            string? curveAbbr = null) : base(control, vm, valueTip) {
+            this.curveAbbr = curveAbbr ?? Core.Format.Ustx.PITD;
+        }
         public override void Begin(IPointer pointer, Point point) {
             base.Begin(pointer, point);
             lastPoint = point;
@@ -1848,7 +1901,7 @@ namespace OpenUtau.App.Views {
             DocManager.Inst.ExecuteCmd(new SetCurveCommand(
                 vm.NotesViewModel.Project,
                 vm.NotesViewModel.Part,
-                Core.Format.Ustx.PITD,
+                curveAbbr,
                 vm.NotesViewModel.PointToTick(point),
                 0,
                 vm.NotesViewModel.PointToTick(lastPoint),

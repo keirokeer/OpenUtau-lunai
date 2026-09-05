@@ -295,6 +295,30 @@ namespace OpenUtau.App.ViewModels {
             return curve[pitchIndex];
         }
 
+        /// <summary>
+        /// Final piano-roll pitch (notes + vibrato + pitch points + PITD), in tone*100 units.
+        /// Used by VPIT draw so the vocoder curve follows the mouse absolutely.
+        /// </summary>
+        public double? SampleFinalPitch(Point point) {
+            if (viewModel.Part == null || viewModel.Part.renderPhrases.Count == 0) {
+                return null;
+            }
+            double tick = viewModel.PointToTick(point);
+            double absTick = tick + viewModel.Part.position;
+
+            var phrase = viewModel.Part.renderPhrases.FirstOrDefault(p => p.end >= absTick);
+            if (phrase == null && viewModel.Part.renderPhrases.Count > 0) {
+                phrase = viewModel.Part.renderPhrases.Last();
+            }
+            if (phrase == null || phrase.pitches.Length == 0) {
+                return null;
+            }
+            int phraseStartRel = phrase.position - viewModel.Part.position;
+            var pitchIndex = (int)Math.Round((tick - phraseStartRel + phrase.leading) / 5.0);
+            pitchIndex = Math.Clamp(pitchIndex, 0, phrase.pitches.Length - 1);
+            return phrase.pitches[pitchIndex];
+        }
+
         public VibratoHitInfo HitTestVibrato(Point mousePos) {
             if (viewModel.Part == null || !viewModel.ShowVibrato) {
                 return default;

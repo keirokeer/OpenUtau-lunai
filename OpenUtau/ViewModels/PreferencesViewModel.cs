@@ -194,6 +194,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public bool DiffSingerAcousticLocalRetake { get; set; }
         [Reactive] public bool DiffSingerUnvoicedConsonantAcousticF0Interpolate { get; set; }
         [Reactive] public bool DiffSingerShowAcousticF0PatchPreview { get; set; }
+        [Reactive] public bool DiffSingerAcousticFlatPitch { get; set; }
         [Reactive] public bool DiffSingerPhonemeVarianceRemap { get; set; }
         [Reactive] public bool DiffSingerLangCodeHide { get; set; }
         [Reactive] public bool DiffSingerPhonemePanelMode { get; set; }
@@ -582,6 +583,7 @@ namespace OpenUtau.App.ViewModels {
             DiffSingerAcousticLocalRetake = Preferences.Default.DiffSingerAcousticLocalRetake;
             DiffSingerUnvoicedConsonantAcousticF0Interpolate = Preferences.Default.DiffSingerUnvoicedConsonantAcousticF0Interpolate;
             DiffSingerShowAcousticF0PatchPreview = Preferences.Default.DiffSingerShowAcousticF0PatchPreview;
+            DiffSingerAcousticFlatPitch = Preferences.Default.DiffSingerAcousticFlatPitch;
             DiffSingerPhonemeVarianceRemap = Preferences.Default.DiffSingerPhonemeVarianceRemap;
             DiffSingerLangCodeHide = Preferences.Default.DiffSingerLangCodeHide;
             DiffSingerPhonemePanelMode = Preferences.Default.DiffSingerPhonemePanelMode;
@@ -1082,6 +1084,11 @@ namespace OpenUtau.App.ViewModels {
             this.WhenAnyValue(vm => vm.DiffSingerShowAcousticF0PatchPreview)
                 .Subscribe(show => {
                     Preferences.Default.DiffSingerShowAcousticF0PatchPreview = show;
+                    Preferences.Save();
+                });
+            this.WhenAnyValue(vm => vm.DiffSingerAcousticFlatPitch)
+                .Subscribe(enabled => {
+                    Preferences.Default.DiffSingerAcousticFlatPitch = enabled;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.DiffSingerPhonemeVarianceRemap)

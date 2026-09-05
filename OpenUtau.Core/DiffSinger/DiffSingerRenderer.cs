@@ -35,6 +35,7 @@ namespace OpenUtau.Core.DiffSinger {
             ENE,
             PEXP,
             Format.Ustx.SHFC,
+            DiffSingerUtils.VPIT,
         };
 
         private static readonly Dictionary<string, Func<float, float, float>> varianceDeltaFunctions =
@@ -101,7 +102,9 @@ namespace OpenUtau.Core.DiffSinger {
                     } else {
                         depth = 1.0;
                     }
-                    var wavName = $"ds-{phrase.hash:x16}-depth{depth:f2}-steps{steps}.wav";
+                    var wavName = Preferences.Default.DiffSingerAcousticFlatPitch
+                        ? $"ds-{phrase.hash:x16}-depth{depth:f2}-steps{steps}-flatac.wav"
+                        : $"ds-{phrase.hash:x16}-depth{depth:f2}-steps{steps}.wav";
                     var wavPath = Path.Join(PathManager.Inst.CachePath, wavName);
                     phrase.AddCacheFile(wavPath);
                     string progressInfo = $"Track {trackNo + 1}: {this} depth={depth:f2} steps={steps} \"{string.Join(" ", phrase.phones.Select(p => p.phoneme))}\"";
@@ -261,14 +264,23 @@ namespace OpenUtau.Core.DiffSinger {
             var tokenBlendWeights = DiffSingerPhonemeBlend.BuildTokenBlendWeights(
                 tokensArr, phrase.phones, tryBlendToken);
             var frameBlendWeights = DiffSingerPhonemeBlend.ExpandToFrames(tokenBlendWeights, durations);
+            float[] f0Source = Preferences.Default.DiffSingerAcousticFlatPitch
+                ? phrase.pitchesBeforeBend
+                : phrase.pitches;
             float[] f0 = DiffSingerUtils.SampleCurve(phrase, phrase.pitches, 0, frameMs, totalFrames, headFrames, tailFrames, 
                 x => MusicMath.ToneToFreq(x * 0.01))
                 .Select(f => (float)f).ToArray();
-            float[] acousticF0 = f0.ToArray();
+            float[] acousticF0 = DiffSingerUtils.SampleCurve(phrase, f0Source, 0, frameMs, totalFrames, headFrames, tailFrames,
+                x => MusicMath.ToneToFreq(x * 0.01))
+                .Select(f => (float)f).ToArray();
             DiffSingerUnvoicedConsonantPatch.ApplyAcousticF0(phrase, durations, (float)frameMs, acousticF0);
             float[] shiftedF0 = acousticF0.Zip(DiffSingerUtils.SampleCurve(phrase, phrase.toneShift, 0, frameMs, totalFrames,
                 headFrames, tailFrames, x => x),
                 (x, d) => x * (float) Math.Pow(2, d / 1200)).ToArray();
+            float[] vocoderF0 = DiffSingerUtils.ApplyVocoderPitchCents(
+                f0,
+                DiffSingerUtils.SampleCurve(phrase, phrase.vocoderPitch, 0, frameMs, totalFrames,
+                    headFrames, tailFrames, x => x));
 
             var acousticInputs = new List<NamedOnnxValue>();
             acousticInputs.Add(NamedOnnxValue.CreateFromTensor("tokens",
@@ -546,11 +558,14 @@ namespace OpenUtau.Core.DiffSinger {
                             !acousticRetakeMask.Any(x => x) &&
                             DiffSingerAcousticRetake.IsMelCompatibleWithState(
                                 cachedAcoustic, DiffSingerAcousticRetake.RestoreMel(cachedAcoustic))) {
-                            // Conditions unchanged — reuse previous mel; skip vocoder when samples exist.
+                            // Conditions unchanged — reuse previous mel; skip vocoder only when F0 matches
+                            // (VPIT / vocoder pitch must still re-run the vocoder).
                             mel = DiffSingerAcousticRetake.RestoreMel(cachedAcoustic);
                             previousAcoustic = cachedAcoustic;
+                            ulong vocoderF0Hash = DiffSingerAcousticRetake.HashVocoderF0(vocoderF0);
                             if (cachedAcoustic.rawSamples != null &&
-                                cachedAcoustic.hopSize == hopSize) {
+                                cachedAcoustic.hopSize == hopSize &&
+                                cachedAcoustic.vocoderF0Hash == vocoderF0Hash) {
                                 skipVocoderReuseSamples = true;
                             }
                         } else if (acousticRetakeMask != null &&
@@ -631,8 +646,8 @@ namespace OpenUtau.Core.DiffSinger {
                 var vocoderInputs = new List<NamedOnnxValue>();
                 vocoderInputs.Add(NamedOnnxValue.CreateFromTensor("mel", mel));
                 vocoderInputs.Add(NamedOnnxValue.CreateFromTensor("f0",
-                    new DenseTensor<float>(f0, new int[] { f0.Length })
-                    .Reshape(new int[] { 1, f0.Length })));
+                    new DenseTensor<float>(vocoderF0, new int[] { vocoderF0.Length })
+                    .Reshape(new int[] { 1, vocoderF0.Length })));
                 var vocoderCache = Preferences.Default.DiffSingerTensorCache
                     ? new DiffSingerCache(vocoder.hash, vocoderInputs)
                     : null;
@@ -681,7 +696,8 @@ namespace OpenUtau.Core.DiffSinger {
                         (float)frameMs,
                         samples,
                         sampleRate,
-                        hopSize));
+                        hopSize,
+                        DiffSingerAcousticRetake.HashVocoderF0(vocoderF0)));
             }
             // OpenUtau playback/export is fixed at 44.1 kHz; resample vocoder output if needed.
             // Keep acoustic-retake cache/compose above at the vocoder native rate.
@@ -898,6 +914,16 @@ namespace OpenUtau.Core.DiffSinger {
                     isFlag = false,
                 });
             }
+            // vocoder pitch (Melodyne-style; always available for DiffSinger)
+            result.Add(new UExpressionDescriptor {
+                name = "vocoder pitch (curve)",
+                abbr = DiffSingerUtils.VPIT,
+                type = UExpressionType.Curve,
+                min = -1200,
+                max = 1200,
+                defaultValue = 0,
+                isFlag = false,
+            });
             //speakers
             if (dsSinger != null && dsSinger.dsConfig.speakers != null) {
                 float voiceColorCeiling = Preferences.GetVoiceColorCurveMax();

@@ -651,6 +651,7 @@ namespace OpenUtau.App.Controls {
                         }
                         if (ShowFinalPitch) {
                             RenderFinalPitch(leftTick, rightTick, viewModel, context, PitchFocusFinalPitchThickness);
+                            RenderVocoderPitch(leftTick, rightTick, viewModel, context, PitchFocusFinalPitchThickness);
                         }
                         RenderAcousticF0PatchPreview(leftTick, rightTick, viewModel, context);
                     }
@@ -660,6 +661,7 @@ namespace OpenUtau.App.Controls {
                     RenderDiffSingerPhraseBoundaries(leftTick, rightTick, viewModel, context);
                     if (ShowFinalPitch && !hidePitch) {
                         RenderFinalPitch(leftTick, rightTick, viewModel, context);
+                        RenderVocoderPitch(leftTick, rightTick, viewModel, context);
                     }
                     RenderAcousticF0PatchPreview(leftTick, rightTick, viewModel, context);
                     foreach (var note in Part.notes) {
@@ -1192,6 +1194,88 @@ namespace OpenUtau.App.Controls {
                     }
                     var polyline = new PolylineGeometry(points.ToArray(), false);
                     context.DrawGeometry(null, pen, polyline);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Heard pitch after VPIT: phrase.pitches + vocoderPitch cents.
+        /// Only drawn where |VPIT| is non-zero — gaps stay empty.
+        /// </summary>
+        private void RenderVocoderPitch(
+            double leftTick, double rightTick, NotesViewModel viewModel, DrawingContext context,
+            double? thickness = null) {
+            if (Part == null || viewModel.Project == null) {
+                return;
+            }
+            if (Part.trackNo < 0 || Part.trackNo >= viewModel.Project.tracks.Count) {
+                return;
+            }
+            var track = viewModel.Project.tracks[Part.trackNo];
+            if (track.Singer is not { Found: true, SingerType: USingerType.DiffSinger }) {
+                return;
+            }
+            IBrush? brush = ThemeManager.AccentBrush2;
+            if (brush == null) {
+                return;
+            }
+            double w = thickness ?? 1.5;
+            var pen = new Pen(brush, w) { LineJoin = PenLineJoin.Round };
+            const float eps = 0.5f; // half a cent — ignore empty/default samples
+            lock (Part) {
+                foreach (var phrase in Part.renderPhrases) {
+                    if (phrase.vocoderPitch == null || phrase.vocoderPitch.Length == 0) {
+                        continue;
+                    }
+                    if (phrase.position - Part.position > rightTick || phrase.end - Part.position < leftTick) {
+                        continue;
+                    }
+                    int pitchStart = phrase.position - phrase.leading - Part.position;
+                    int startIdx = (int)Math.Max(0, (leftTick - pitchStart) / 5);
+                    int endIdx = (int)Math.Min(
+                        Math.Min(phrase.pitches.Length, phrase.vocoderPitch.Length),
+                        (rightTick - pitchStart) / 5 + 1);
+                    if (endIdx <= startIdx) {
+                        continue;
+                    }
+                    points.Clear();
+                    int runStart = -1;
+                    void FlushSegment(int runEndExclusive) {
+                        // Drop first/last samples of each non-zero run — those are
+                        // UCurve lerp ramps from empty(0) into the authored VPIT.
+                        if (runStart < 0) {
+                            return;
+                        }
+                        int drawStart = runStart + 1;
+                        int drawEnd = runEndExclusive - 1; // exclusive → last interior is drawEnd-1
+                        if (drawEnd - drawStart < 2) {
+                            runStart = -1;
+                            points.Clear();
+                            return;
+                        }
+                        points.Clear();
+                        for (int i = drawStart; i < drawEnd; ++i) {
+                            int t = pitchStart + i * 5;
+                            float p = phrase.pitches[i] + phrase.vocoderPitch[i];
+                            points.Add(viewModel.TickToneToPoint(t, p / 100 - 0.5));
+                        }
+                        if (points.Count >= 2) {
+                            context.DrawGeometry(null, pen, new PolylineGeometry(points.ToArray(), false));
+                        }
+                        points.Clear();
+                        runStart = -1;
+                    }
+                    for (int i = startIdx; i < endIdx; ++i) {
+                        float cents = phrase.vocoderPitch[i];
+                        if (Math.Abs(cents) <= eps) {
+                            FlushSegment(i);
+                            continue;
+                        }
+                        if (runStart < 0) {
+                            runStart = i;
+                        }
+                    }
+                    FlushSegment(endIdx);
                 }
             }
         }

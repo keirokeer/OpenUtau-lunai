@@ -296,6 +296,11 @@ namespace OpenUtau.Core.Util {
             public bool DiffSingerAcousticLocalRetake = true;
             public bool DiffSingerUnvoicedConsonantAcousticF0Interpolate = true;
             public bool DiffSingerShowAcousticF0PatchPreview = false;
+            /// <summary>
+            /// When true, DiffSinger acoustic F0 uses note+vibrato only (no pitch points / PITD).
+            /// Vocoder still receives full pitch + VPIT. Emulates NNSVS/Voisona-style resampling.
+            /// </summary>
+            public bool DiffSingerAcousticFlatPitch = false;
             public bool DiffSingerPhonemeVarianceRemap = true;
             public bool DiffSingerLangCodeHide = false;
             public bool DiffSingerPhonemePanelMode = true;

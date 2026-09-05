@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using K4os.Hash.xxHash;
 using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
 using OpenUtau.Core.Render;
@@ -18,6 +19,8 @@ namespace OpenUtau.Core.DiffSinger {
         public readonly float[]? rawSamples;
         public readonly int sampleRate;
         public readonly int hopSize;
+        /// <summary>Hash of vocoder F0 used to produce <see cref="rawSamples"/> (VPIT-aware).</summary>
+        public readonly ulong vocoderF0Hash;
 
         public AcousticRetakeState(
             Dictionary<string, float[]> conditions,
@@ -28,7 +31,8 @@ namespace OpenUtau.Core.DiffSinger {
             float frameMs,
             float[]? rawSamples = null,
             int sampleRate = 0,
-            int hopSize = 0) {
+            int hopSize = 0,
+            ulong vocoderF0Hash = 0) {
             this.conditions = new Dictionary<string, float[]>(conditions, StringComparer.Ordinal);
             this.mel = (float[])mel.Clone();
             this.melDims = (int[])melDims.Clone();
@@ -38,6 +42,7 @@ namespace OpenUtau.Core.DiffSinger {
             this.rawSamples = rawSamples == null ? null : (float[])rawSamples.Clone();
             this.sampleRate = sampleRate;
             this.hopSize = hopSize;
+            this.vocoderF0Hash = vocoderF0Hash;
         }
 
         public bool HasCompatibleRawSamples(int expectedLength, int hopSize) {
@@ -479,7 +484,8 @@ namespace OpenUtau.Core.DiffSinger {
             float frameMs,
             float[]? rawSamples = null,
             int sampleRate = 0,
-            int hopSize = 0) {
+            int hopSize = 0,
+            ulong vocoderF0Hash = 0) {
             var dims = mel.Dimensions.ToArray();
             return new AcousticRetakeState(
                 conditions,
@@ -490,7 +496,17 @@ namespace OpenUtau.Core.DiffSinger {
                 frameMs,
                 rawSamples,
                 sampleRate,
-                hopSize);
+                hopSize,
+                vocoderF0Hash);
+        }
+
+        public static ulong HashVocoderF0(float[]? f0) {
+            if (f0 == null || f0.Length == 0) {
+                return 0;
+            }
+            var bytes = new byte[f0.Length * sizeof(float)];
+            Buffer.BlockCopy(f0, 0, bytes, 0, bytes.Length);
+            return K4os.Hash.xxHash.XXH64.DigestOf(bytes);
         }
 
         /// <summary>

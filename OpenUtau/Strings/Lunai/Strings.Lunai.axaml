@@ -157,6 +157,10 @@
     Left click to draw
     Right click to reset
     Hold Ctrl to select</system:String>
+  <system:String x:Key="pianoroll.tool.drawvocoderpitch">Draw Vocoder Pitch (DiffSinger)
+    Left click to draw
+    Right click to reset
+    Hold Ctrl to select</system:String>
   <system:String x:Key="pianoroll.tool.knife">Knife Tool (5)</system:String>
   <system:String x:Key="pianoroll.tool.pitchesinewave">Pitch Sine Wave Tool (Shift + 3)
     Drag to draw sine wave, release to enter adjusting mode
@@ -255,6 +259,8 @@
   <system:String x:Key="prefs.rendering.diffsingeracousticlocalretake">DiffSinger Acoustic Local Retake</system:String>
   <system:String x:Key="prefs.rendering.diffsingeracousticlocalretake.hint">On pitch/curve edits, regenerate only the changed region (needs Tensor Cache and a bank with retake+gt_mel).</system:String>
   <system:String x:Key="prefs.rendering.diffsingershowacousticf0patchpreview">Show acoustic F0 patch preview on piano roll</system:String>
+  <system:String x:Key="prefs.rendering.diffsingeracousticflatpitch">Send flat note pitch to acoustic</system:String>
+  <system:String x:Key="prefs.rendering.diffsingeracousticflatpitch.hint">Acoustic model gets note + vibrato only (no pitch points / PITD). Vocoder still gets full pitch bends, plus the vocoder pitch (VPIT) curve for Melodyne-style tuning. Large VPIT offsets may artifact on NSF/non-PC vocoders; PC-NSF-HiFiGAN handles mismatch better. SHFC remains separate (timbre/register).</system:String>
   <system:String x:Key="prefs.diffsinger.phonemevarianceremap">Phoneme-aware open mouth &amp; tension</system:String>
   <system:String x:Key="prefs.diffsinger.phonemevarianceremap.hint">Remaps Open Mouth and Tension by phoneme at render time. Enable the debug preview to draw the effective curve on the expression panel.</system:String>
   <system:String x:Key="prefs.diffsinger.showphonemevarianceremappreview">Show phoneme remap preview on expression panel</system:String>

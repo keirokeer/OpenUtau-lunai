@@ -1376,6 +1376,8 @@ namespace OpenUtau.App.Controls {
                     bool overwrite = ViewModel.EditTool.OverwritePitch;
                     if (tool == EditTools.DrawPitchTool) {
                         editState = new DrawPitchState(control, ViewModel, this, overwrite);
+                    } else if (tool == EditTools.DrawVocoderPitchTool) {
+                        editState = new DrawVocoderPitchState(control, ViewModel, this);
                     } else if (tool == EditTools.PitchLineTool) {
                         editState = new PitchCurveState(control, ViewModel, this, PitchPreviewLine, PitchCurveState.CurveMode.Line, overwrite);
                     } else if (tool == EditTools.PitchSCurveTool) {
@@ -1487,7 +1489,10 @@ namespace OpenUtau.App.Controls {
             }
             var selectedNotes = ViewModel.NotesViewModel.Selection.ToList();
             if (ViewModel.EditTool.IsPitchTool) {
-                editState = new ResetPitchState(control, ViewModel, this);
+                string? resetAbbr = ViewModel.EditTool.CurrentTool == EditTools.DrawVocoderPitchTool
+                    ? Core.DiffSinger.DiffSingerUtils.VPIT
+                    : null;
+                editState = new ResetPitchState(control, ViewModel, this, resetAbbr);
                 return;
             }
             if (ViewModel.NotesViewModel.ShowPitch) {
@@ -1651,7 +1656,7 @@ namespace OpenUtau.App.Controls {
             if (ViewModel?.NotesViewModel?.HitTest == null) {
                 return;
             }
-            if (ViewModel.EditTool.IsMatch([EditTools.DrawPitchTool, EditTools.PitchLineTool, EditTools.PitchSCurveTool, EditTools.PitchSineWaveTool, EditTools.PitchSmoothenTool, EditTools.EraserTool]) && args.KeyModifiers != cmdKey) {
+            if (ViewModel.EditTool.IsMatch([EditTools.DrawPitchTool, EditTools.DrawVocoderPitchTool, EditTools.PitchLineTool, EditTools.PitchSCurveTool, EditTools.PitchSineWaveTool, EditTools.PitchSmoothenTool, EditTools.EraserTool]) && args.KeyModifiers != cmdKey) {
                 Cursor = null;
                 return;
             }

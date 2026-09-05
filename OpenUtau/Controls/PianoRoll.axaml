@@ -574,6 +574,11 @@
                       <TextBlock Text="{DynamicResource pianoroll.tool.pitchpoint}" Foreground="{DynamicResource ToolTipForegroundBrush}"/>
                     </ToolTip.Tip>
                   </ListBoxItem>
+                  <ListBoxItem Classes="toolbar drawVocoderPitchTool" IsVisible="{Binding IsDiffSingerTrack}">
+                    <ToolTip.Tip>
+                      <TextBlock Text="{DynamicResource pianoroll.tool.drawvocoderpitch}" Foreground="{DynamicResource ToolTipForegroundBrush}"/>
+                    </ToolTip.Tip>
+                  </ListBoxItem>
                 </ListBox.Items>
             </ListBox>
             <Border Width="12"/>

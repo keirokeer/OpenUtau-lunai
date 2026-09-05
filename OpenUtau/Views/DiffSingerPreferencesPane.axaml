@@ -168,6 +168,11 @@
               <TextBlock Text="{DynamicResource prefs.rendering.diffsingershowacousticf0patchpreview}"/>
               <ToggleSwitch IsChecked="{Binding DiffSingerShowAcousticF0PatchPreview}"/>
             </Grid>
+            <Grid Classes="prefRow" ColumnDefinitions="*,Auto"
+                  ToolTip.Tip="{DynamicResource prefs.rendering.diffsingeracousticflatpitch.hint}">
+              <TextBlock Text="{DynamicResource prefs.rendering.diffsingeracousticflatpitch}"/>
+              <ToggleSwitch IsChecked="{Binding DiffSingerAcousticFlatPitch}"/>
+            </Grid>
             <Grid Classes="prefRow" ColumnDefinitions="*,Auto">
               <TextBlock Text="{DynamicResource prefs.rendering.diffsingerpitchlocalretaking}"/>
               <ToggleSwitch IsChecked="{Binding DiffSingerLocalRetaking}"/>

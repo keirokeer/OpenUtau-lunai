@@ -388,6 +388,10 @@
             <ToggleSwitch IsChecked="{Binding DiffSingerShowAcousticF0PatchPreview}"
                           IsEnabled="{Binding DiffSingerUnvoicedConsonantAcousticF0Interpolate}" />
           </Grid>
+          <Grid Margin="0,5,0,0" ToolTip.Tip="{DynamicResource prefs.rendering.diffsingeracousticflatpitch.hint}">
+            <TextBlock Text="{DynamicResource prefs.rendering.diffsingeracousticflatpitch}" HorizontalAlignment="Left" />
+            <ToggleSwitch IsChecked="{Binding DiffSingerAcousticFlatPitch}" />
+          </Grid>
           <Grid Margin="0,5,0,0">
             <TextBlock Text="{DynamicResource prefs.rendering.diffsingerpitchlocalretaking}" HorizontalAlignment="Left" />
             <ToggleSwitch IsChecked="{Binding DiffSingerLocalRetaking}" />

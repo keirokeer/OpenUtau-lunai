@@ -206,11 +206,13 @@ namespace OpenUtau.Core.Render {
         public readonly RenderPhone[] phones;
 
         public readonly float[] pitches;
+        public readonly float[] pitchesBeforeBend;
         public readonly float[] pitchesBeforeDeviation;
         public readonly float[] dynamics;
         public readonly float[] gender;
         public readonly float[] breathiness;
         public readonly float[] toneShift;
+        public readonly float[] vocoderPitch;
         public readonly float[] tension;
         public readonly float[] mouthOpening;
         public readonly float[] voicing;
@@ -303,6 +305,9 @@ namespace OpenUtau.Core.Render {
                     pitches[i] = point.Y * 100;
                 }
             }
+            // Snapshot for DiffSinger "acoustic flat pitch": notes + vibrato only
+            // (before pitch points / PITD). Vocoder still uses full pitches.
+            pitchesBeforeBend = pitches.ToArray();
             // Pitch points
             foreach (var note in uNotes) {
                 var pitchPoints = note.pitch.data
@@ -471,6 +476,7 @@ namespace OpenUtau.Core.Render {
                     case Format.Ustx.PITD: break;
                     case Format.Ustx.DYN : dynamics = curveSampled; break;
                     case Format.Ustx.SHFC: toneShift = curveSampled; break;
+                    case DiffSinger.DiffSingerUtils.VPIT: vocoderPitch = curveSampled; break;
                     case Format.Ustx.GENC: gender = curveSampled; break;
                     case Format.Ustx.TENC: tension = curveSampled; break;
                     case Format.Ustx.OPEC: mouthOpening = curveSampled; break;
@@ -552,7 +558,7 @@ namespace OpenUtau.Core.Render {
                         writer.Write(phone.hash);
                     }
                     if (postEffect) {
-                        foreach (var array in new float[][] { pitches, dynamics, gender, breathiness, toneShift, tension, mouthOpening, voicing, xsy }) {
+                        foreach (var array in new float[][] { pitches, dynamics, gender, breathiness, toneShift, vocoderPitch, tension, mouthOpening, voicing, xsy }) {
                             if (array == null) {
                                 writer.Write("null");
                             } else {

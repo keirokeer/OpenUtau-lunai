@@ -221,6 +221,8 @@
   "prefs.rendering.diffsingeracousticlocalretake": "Локальный пересъём acoustic DiffSinger",
   "prefs.rendering.diffsingeracousticlocalretake.hint": "При правке pitch/кривых пересобирается только изменённый участок (нужны Tensor Cache и банк с retake+gt_mel).",
   "prefs.rendering.diffsingershowacousticf0patchpreview": "Показывать превью F0 патча на piano roll",
+  "prefs.rendering.diffsingeracousticflatpitch": "Ровный pitch нот в acoustic",
+  "prefs.rendering.diffsingeracousticflatpitch.hint": "Acoustic получает только ноту + vibrato (без pitch points / PITD). Vocoder по-прежнему слышит полные bends и кривую vocoder pitch (VPIT) — тюнинг как Melodyne. Большие сдвиги VPIT на NSF/не-PC могут давать артефакты; PC-NSF-HiFiGAN лучше держит mismatch. SHFC отдельно (тембр/регистр).",
   "prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate": "Интерполяция F0 acoustic на глухих согласных DiffSinger (тест)",
   "prefs.shortcut.search.watermark": "Поиск по названию или клавише...",
   "prefs.shortcut.tooltip": "ЛКМ — изменить. ПКМ — сбросить.",

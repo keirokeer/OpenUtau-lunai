@@ -16,7 +16,8 @@ namespace OpenUtau.Core.Util {
         PitchSineWaveTool = 70,
         PitchSmoothenTool = 80,
         // Appended (not renumbered) so saved ToolIndex list positions stay stable.
-        PitchPointTool = 90
+        PitchPointTool = 90,
+        DrawVocoderPitchTool = 100,
     }
 
     public class EditTool {
@@ -39,7 +40,7 @@ namespace OpenUtau.Core.Util {
                 }
             }
         }
-        [JsonIgnore] public bool IsPitchTool => BaseTool == 3 || (BaseTool >= 5 && BaseTool <= 8);
+        [JsonIgnore] public bool IsPitchTool => BaseTool == 3 || (BaseTool >= 5 && BaseTool <= 8) || BaseTool == 10;
         public bool IsMatch(IEnumerable<EditTools> tools) => tools.Contains(CurrentTool);
     }
 }

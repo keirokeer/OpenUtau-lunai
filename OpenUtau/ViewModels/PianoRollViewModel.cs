@@ -579,6 +579,9 @@ namespace OpenUtau.App.ViewModels {
                     if (ShowDiffSingerPanel) {
                         ShowDiffSingerPanel = false;
                     }
+                    if (ToolIndex == 10) {
+                        ToolIndex = 3;
+                    }
                     // Keep ShowExpressionDefaultsPanel preference; hide via IsExpressionDefaultsPanelVisible.
                 }
                 RaiseLeftDockLayoutProperties();

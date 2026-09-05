@@ -157,6 +157,10 @@
     ЛКМ, чтобы рисовать
     ПКМ, чтобы сбросить
     Удерживайте Ctrl, чтобы выделить</system:String>
+  <system:String x:Key="pianoroll.tool.drawvocoderpitch">Рисование Vocoder Pitch (DiffSinger)
+    ЛКМ, чтобы рисовать
+    ПКМ, чтобы сбросить
+    Удерживайте Ctrl, чтобы выделить</system:String>
   <system:String x:Key="pianoroll.tool.knife">Нож (5)</system:String>
   <system:String x:Key="pianoroll.tool.pitchesinewave">Инструмент синусоиды питча (Shift + 3)
     Перетащите, чтобы нарисовать синусоиду, отпустите для режима настройки
@@ -259,6 +263,8 @@
   <system:String x:Key="prefs.rendering.diffsingeracousticlocalretake">Локальный пересъём acoustic DiffSinger</system:String>
   <system:String x:Key="prefs.rendering.diffsingeracousticlocalretake.hint">При правке pitch/кривых пересобирается только изменённый участок (нужны Tensor Cache и банк с retake+gt_mel).</system:String>
   <system:String x:Key="prefs.rendering.diffsingershowacousticf0patchpreview">Показывать превью F0 патча на piano roll</system:String>
+  <system:String x:Key="prefs.rendering.diffsingeracousticflatpitch">Ровный pitch нот в acoustic</system:String>
+  <system:String x:Key="prefs.rendering.diffsingeracousticflatpitch.hint">Acoustic получает только ноту + vibrato (без pitch points / PITD). Vocoder по-прежнему слышит полные bends и кривую vocoder pitch (VPIT) — тюнинг как Melodyne. Большие сдвиги VPIT на NSF/не-PC могут давать артефакты; PC-NSF-HiFiGAN лучше держит mismatch. SHFC отдельно (тембр/регистр).</system:String>
   <system:String x:Key="prefs.diffsinger.phonemevarianceremap">Open Mouth и Tension с учётом фонем</system:String>
   <system:String x:Key="prefs.diffsinger.phonemevarianceremap.hint">Ремап Open Mouth и Tension по фонемам при рендере. Превью effective-кривой на панели параметров — в debug.</system:String>
   <system:String x:Key="prefs.diffsinger.showphonemevarianceremappreview">Показывать превью phoneme remap на панели параметров</system:String>
