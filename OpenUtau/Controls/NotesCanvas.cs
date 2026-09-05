@@ -254,8 +254,8 @@ namespace OpenUtau.App.Controls {
         private bool invalidatePending;
 
         private const double HoverGlowDuration = 0.12;
-        private const float PlaybackHighlightFadeInPerSecond = 8.0f;
-        private const float PlaybackHighlightFadeOutPerSecond = 6.2f;
+        private const float PlaybackHighlightFadeInPerSecond = 5.5f;
+        private const float PlaybackHighlightFadeOutPerSecond = 14.0f;
         private const float PlaybackNoteBounceDuration = 0.25f;
         private const double PlaybackNoteBounceHeight = 12.0;
         private UNote? hoverNote;
@@ -280,7 +280,7 @@ namespace OpenUtau.App.Controls {
             ClipToBounds = true;
             pointGeometry = new EllipseGeometry(new Rect(-2.5, -2.5, 5, 5));
 
-            highlightTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1000.0 / 30.0) };
+            highlightTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1000.0 / 60.0) };
             highlightTimer.Tick += (_, _) => UpdatePlaybackHighlight(false);
             hoverTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1000.0 / 60.0) };
             hoverTimer.Tick += (_, _) => UpdateHoverGlow();
@@ -483,10 +483,12 @@ namespace OpenUtau.App.Controls {
             if (target != activePlaybackNote) {
                 if (activePlaybackNote != null && activeHighlight > 0.001f) {
                     fadingPlaybackNote = activePlaybackNote;
-                    fadingHighlight = activeHighlight;
+                    // Cap handoff brightness so the previous note does not linger at full glow.
+                    fadingHighlight = Math.Min(activeHighlight, 0.55f);
                 }
                 activePlaybackNote = target;
-                activeHighlight = 0;
+                // Keep a small seed so the fade-in does not pop from zero.
+                activeHighlight = target == null ? 0 : Math.Min(activeHighlight, 0.15f);
                 activeBounceElapsed = 0;
                 changed = true;
             }
