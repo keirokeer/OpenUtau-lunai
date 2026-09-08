@@ -192,7 +192,7 @@
       </Border>
       <Carousel Grid.Row="1" SelectedIndex="{Binding Page}" >
         <!--Welcome page-->
-        <Grid Classes="workspaceLayout" Margin="8,0,8,8" ColumnDefinitions="*,8,380" RowDefinitions="*">
+        <Grid Classes="workspaceLayout" Margin="8,0,8,8" ColumnDefinitions="*,8,380" RowDefinitions="*" KeyDown="OnCarouselPageKeyDown">
           <Grid Grid.Column="0" RowDefinitions="Auto,8,*" ColumnDefinitions="*,8,*">
             <Border Grid.Row="0" Grid.ColumnSpan="3" Classes="welcomeCard">
               <StackPanel Spacing="8">
@@ -278,7 +278,7 @@
         </Grid>
       
         <!--Main page-->
-        <Grid x:Name="WorkspaceTracksGrid" Classes="workspaceLayout" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+        <Grid x:Name="WorkspaceTracksGrid" Classes="workspaceLayout" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" KeyDown="OnCarouselPageKeyDown">
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="{Binding TracksViewModel.TrackHeaderColumnWidth}"/>
             <ColumnDefinition Width="*"/>

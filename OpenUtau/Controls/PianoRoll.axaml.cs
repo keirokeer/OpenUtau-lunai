@@ -1886,7 +1886,6 @@ namespace OpenUtau.App.Controls {
             }
             var hitInfo = ViewModel.NotesViewModel.HitTest.HitTestAlias(point);
             var phoneme = hitInfo.phoneme;
-            Log.Debug($"PhonemeCanvasDoubleTapped, hit = {hitInfo.hit}, point = {{{hitInfo.point}}}, phoneme = {phoneme?.phoneme}");
             if (!hitInfo.hit) {
                 return;
             }

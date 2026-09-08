@@ -71,8 +71,8 @@ namespace OpenUtau.Plugin.Builtin {
                 //{"i r","Er"},
                 {"ir","Er"},
                 {"ir-","Er-"},
-                {"6 r","or-"},
-                {"6r-","0r-"},
+                {"6r-","or-"},
+                {"6r","or"},
             };
 
         private readonly Dictionary<string, string> vvExceptions =
@@ -707,6 +707,7 @@ namespace OpenUtau.Plugin.Builtin {
                         var ccNoParse = $"{cc[cc.Length - 3]}{cc[cc.Length - 2]}{cc[cc.Length - 1]}";
                         bool dontParse = false;
                         var lastCforLoop = cc.Length - 1;
+                        bool leadingCBeforeCluster = false;
 
                         // str exceptions
                         if (cccExceptions.Contains($"{ccNoParse}") && cc.Length - 3 >= lastCPrevWord) {
@@ -719,7 +720,13 @@ namespace OpenUtau.Plugin.Builtin {
                                 vc = $"{prevV} {vccE}";
                             }
                             if (cc.Length == 4) {
-                                vc = $"{prevV}{cc[0]}";
+                                if (HasOto($"{cc[0]} {cc[1]}", syllable.vowelTone)) {
+                                    vc = $"{prevV}{cc[0]}-";
+                                    leadingCBeforeCluster = true;
+                                } else {
+                                    vc = $"{prevV}{cc[0]}";
+                                    lastCforLoop = 0;
+                                }
                             }
 
                             if (vc == "ing")
@@ -787,7 +794,10 @@ namespace OpenUtau.Plugin.Builtin {
 
                                 if (phonemes.Count == 0) {
                                     parsingVCC = $"{prevV}{cc[0]}-";
-                                    if (cc.Length - lastCPrevWord - 1 > 0 && !dontParse && !HasOto($"{cc[0]} {cc[1]}", syllable.vowelTone)) {
+                                    if (cc.Length - lastCPrevWord - 1 > 0 &&
+                                        !dontParse &&
+                                        !HasOto($"{cc[0]} {cc[1]}", syllable.vowelTone)
+                                        && lastCPrevWord == 0) {
                                         parsingVCC = $"{prevV}{cc[0]}";
                                     }
                                     if (!HasOto(parsingVCC, syllable.vowelTone)) {
@@ -834,7 +844,7 @@ namespace OpenUtau.Plugin.Builtin {
                                 }
                             }
 
-                            if (i == lastCPrevWord - 1) {
+                            if (i == lastCPrevWord - 1 || (leadingCBeforeCluster && i == 0)) {
                                 parsingCC = $"{cc[i]} {cc[i + 1]}";
                                 if (vcVowels.ContainsKey(prevV) &&  i > 0 && !phonemes.Contains($"{cc[i - 1]}{cc[i]}")) {
                                     parsingCC = $"{cc[i - 1]}{cc[i]}";

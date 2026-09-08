@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using OpenUtau.Api;
 using OpenUtau.Classic;
+using OpenUtau.Core.DiffSinger;
 using OpenUtau.Core.Editing;
 using OpenUtau.Core.Lib;
 using OpenUtau.Core.Render;
@@ -272,6 +273,8 @@ namespace OpenUtau.Core {
                     playPosTick = 0;
                     rangeStartTick = 0;
                     rangeEndTick = 0;
+                    SingerManager.Inst.ReleaseSingersNotInUse(Project);
+                    DiffSingerRealCurveScheduler.CancelAll();
                 } else if (cmd is SetPlayPosTickNotification setPlayPosTickNotif) {
                     playPosTick = setPlayPosTickNotif.playPosTick;
                 } else if (cmd is SetRangeSelectionNotification setRange) {
@@ -283,6 +286,7 @@ namespace OpenUtau.Core {
                     }
                 } else if (cmd is SingersChangedNotification) {
                     SingerManager.Inst.SearchAllSingers();
+                    SingerManager.Inst.ReleaseSingersNotInUse(Project);
                 } else if (cmd is ValidateProjectNotification) {
                     Project.ValidateFull();
                 } else if (cmd is SingersRefreshedNotification || cmd is OtoChangedNotification) {

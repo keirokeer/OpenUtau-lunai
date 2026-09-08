@@ -331,6 +331,7 @@ namespace OpenUtau.Core.DiffSinger {
                 pitchPredictor = null;
                 variancePredictor?.Dispose();
                 variancePredictor = null;
+                DiffSingerRealCurveScheduler.CancelAll();
             }
         }
     }

@@ -1010,6 +1010,24 @@ namespace OpenUtau.App.Views {
             }
         }
 
+        void OnCarouselPageKeyDown(object? sender, KeyEventArgs e) {
+            // Avalonia's Carousel navigates pages on arrow/Home/End keys, and it
+            // receives them bubbling up from any descendant (e.g. pressing Alt+Left
+            // in the lyric box switched the window back to the welcome page).
+            // Pages are only switched programmatically via the Page property, so
+            // swallow navigation keys the page content did not handle itself.
+            switch (e.Key) {
+                case Key.Left:
+                case Key.Right:
+                case Key.Up:
+                case Key.Down:
+                case Key.Home:
+                case Key.End:
+                    e.Handled = true;
+                    break;
+            }
+        }
+
         void OnPointerPressed(object? sender, PointerPressedEventArgs args) {
             if (!PianoRollContainer.IsPointerOver && !args.Handled && args.ClickCount == 1) {
                 this.Focus();
