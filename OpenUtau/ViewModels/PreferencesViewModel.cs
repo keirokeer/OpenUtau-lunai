@@ -567,7 +567,9 @@ namespace OpenUtau.App.ViewModels {
             OnnxRunner = String.IsNullOrEmpty(Preferences.Default.OnnxRunner) ?
                OnnxRunnerOptions[0] : Preferences.Default.OnnxRunner;
             OnnxGpuOptions = Onnx.getGpuInfo();
-            OnnxGpu = OnnxGpuOptions.FirstOrDefault(x => x.deviceId == Preferences.Default.OnnxGpu, OnnxGpuOptions[0]);
+            OnnxGpu = OnnxGpuOptions.Count > 0
+                ? OnnxGpuOptions.FirstOrDefault(x => x.deviceId == Preferences.Default.OnnxGpu, OnnxGpuOptions[0])
+                : new GpuInfo();
             ShowOnnxGpu = OnnxRunner == "DirectML";
             // GAME backend: ONNX is the default, GGML is available when installed.
             GameBackend = Preferences.Default.GameBackend switch {

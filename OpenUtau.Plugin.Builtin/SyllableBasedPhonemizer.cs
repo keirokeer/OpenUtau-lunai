@@ -482,16 +482,13 @@ namespace OpenUtau.Plugin.Builtin {
 
                         // DIPHTHONG AUTO-TAIL DETECTION
                         var yamlDiphthongs = data.symbols?.Where(s => s.type == "diphthong").Select(s => s.symbol).Distinct().ToArray() ?? Array.Empty<string>();
-                        var dynamicTails = consonants.OrderByDescending(c => c.Length).ToArray();
 
                         foreach (var d in yamlDiphthongs) {
-                            if (!diphthongSplits.ContainsKey(d)) {
-                                foreach (var tail in dynamicTails) {
-                                    if (d.EndsWith(tail) && d != tail) {
-                                        diphthongTails[d] = tail;
-                                        break;
-                                    }
-                                }
+                            var customMapping = data.diphthongs?.FirstOrDefault(dt => dt.from == d);
+                            if (customMapping is { from: not null, to: { Length: > 0 } } mapped) {
+                                diphthongTails[d] = mapped.to;
+                            } else {
+                                diphthongTails[d] = d + "-";
                             }
                         }
 
