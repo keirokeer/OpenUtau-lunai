@@ -205,7 +205,7 @@ namespace OpenUtau.Core.DiffSinger {
             if (noteIndexes.Count == 0 || noteIndexes.Count >= phrase.notes.Length) {
                 mask = Enumerable.Repeat(true, totalFrames).ToArray();
             } else {
-                mask = BuildNoteFrameMask(phrase, paddedDurations, noteIndexes, totalFrames);
+                mask = BuildNoteFrameMask(phrase, paddedDurations, noteIndexes, totalFrames, frameMs);
                 int pad = Math.Max(1, (int)Math.Round(PadMs / Math.Max(frameMs, 1e-3f)));
                 mask = PadMask(mask, pad);
             }
@@ -216,20 +216,25 @@ namespace OpenUtau.Core.DiffSinger {
             RenderPhrase phrase,
             IReadOnlyList<int> paddedDurations,
             ISet<int> selectedNoteIndexes,
-            int totalFrames) {
+            int totalFrames,
+            float frameMs) {
             var mask = new bool[totalFrames];
-            if (paddedDurations.Count != phrase.phones.Length + 2) {
+            var segments = DiffSingerUtils.PaddedSegments(
+                phrase, frameMs, DiffSingerUtils.headFrames, DiffSingerUtils.tailFrames);
+            if (paddedDurations.Count != segments.Count) {
                 return Enumerable.Repeat(true, totalFrames).ToArray();
             }
-            int frame = Math.Max(0, paddedDurations[0]);
-            for (int i = 0; i < phrase.phones.Length; i++) {
-                int noteIdx = FindNoteIndex(phrase, phrase.phones[i]);
-                bool retake = noteIdx >= 0 && selectedNoteIndexes.Contains(noteIdx);
-                int dur = Math.Max(0, paddedDurations[i + 1]);
-                for (int f = 0; f < dur; f++) {
-                    int fi = frame + f;
-                    if (fi >= 0 && fi < totalFrames) {
-                        mask[fi] = retake;
+            int frame = 0;
+            for (int i = 0; i < segments.Count; i++) {
+                int dur = Math.Max(0, paddedDurations[i]);
+                if (segments[i].PhoneIndex >= 0) {
+                    int noteIdx = FindNoteIndex(phrase, phrase.phones[segments[i].PhoneIndex]);
+                    bool retake = noteIdx >= 0 && selectedNoteIndexes.Contains(noteIdx);
+                    for (int f = 0; f < dur; f++) {
+                        int fi = frame + f;
+                        if (fi >= 0 && fi < totalFrames) {
+                            mask[fi] = retake;
+                        }
                     }
                 }
                 frame += dur;

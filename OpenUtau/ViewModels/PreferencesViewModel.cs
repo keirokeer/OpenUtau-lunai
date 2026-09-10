@@ -570,7 +570,7 @@ namespace OpenUtau.App.ViewModels {
             OnnxGpu = OnnxGpuOptions.Count > 0
                 ? OnnxGpuOptions.FirstOrDefault(x => x.deviceId == Preferences.Default.OnnxGpu, OnnxGpuOptions[0])
                 : new GpuInfo();
-            ShowOnnxGpu = OnnxRunner == "DirectML";
+            ShowOnnxGpu = OnnxRunner == "DirectML" || OnnxRunner == "CUDA";
             // GAME backend: ONNX is the default, GGML is available when installed.
             GameBackend = Preferences.Default.GameBackend switch {
                 "ggml" => "GGML",
@@ -996,7 +996,7 @@ namespace OpenUtau.App.ViewModels {
                 .Subscribe(index => {
                     Preferences.Default.OnnxRunner = index;
                     Preferences.Save();
-                    ToggleOnnxGpuDisplay(index == "DirectML");
+                    ToggleOnnxGpuDisplay(index == "DirectML" || index == "CUDA");
                 });
             this.WhenAnyValue(vm => vm.OnnxGpu)
                 .Subscribe(index => {

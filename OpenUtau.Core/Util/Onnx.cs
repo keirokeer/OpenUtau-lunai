@@ -22,6 +22,8 @@ namespace OpenUtau.Core {
     }
 
     public class Onnx {
+        private static bool cudaAvailable = OS.IsLinux() && CudaGpuDetector.IsCudaAvailable() && CudaGpuDetector.IsCuDnnAvailable();
+
         private static readonly Dictionary<int, OrtEpDevice> devices = initializeDevices();
 
         private static Dictionary<int, OrtEpDevice> initializeDevices() {
@@ -45,6 +47,11 @@ namespace OpenUtau.Core {
                 "CPU",
                 "CoreML"
                 };
+            } else if (cudaAvailable) {
+                return new List<string> {
+                "CPU",
+                "CUDA"
+                };
             } else if (OS.IsAndroid()) {
                 return new List<string> {
                 "CPU",
@@ -57,6 +64,10 @@ namespace OpenUtau.Core {
         }
 
         public static List<GpuInfo> getGpuInfo() {
+            if (cudaAvailable) {
+                return CudaGpuDetector.GetCudaDevices();
+            }
+
             if (OS.IsAndroid()) {
                 return new List<GpuInfo>{new GpuInfo {
                     deviceId = 0, // eliminate exception of taking OnnxGpuOptions[0]
@@ -121,6 +132,9 @@ namespace OpenUtau.Core {
                         { "ModelFormat", "NeuralNetwork"},
                         { "EnableOnSubgraphs", coremlEnableOnSubgraphs ? "1" : "0" }  // Disable subgraph processing to avoid complex control flow issues
                     });
+                    break;
+                case "CUDA":
+                    options.AppendExecutionProvider_CUDA(Preferences.Default.OnnxGpu);
                     break;
                 case "NNAPI":
                     options.AppendExecutionProvider_Nnapi();

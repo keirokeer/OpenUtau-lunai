@@ -29,7 +29,9 @@ namespace OpenUtau.Core.DiffSinger {
                 || singer.unvoicedPhonemes.Count == 0) {
                 return;
             }
-            var phonemes = phrase.phones.Select(p => p.phoneme).ToArray();
+            var phonemes = DiffSingerUtils.PaddedSegments(
+                    phrase, frameMs, DiffSingerUtils.headFrames, DiffSingerUtils.tailFrames)
+                .Select(s => s.Phoneme).ToArray();
             ApplyAcousticF0(phonemes, durations, frameMs, f0, singer.unvoicedPhonemes);
         }
 
@@ -50,7 +52,8 @@ namespace OpenUtau.Core.DiffSinger {
                 acousticF0Hz = DiffSingerUtils.SampleCurve(
                     phrase, phrase.pitches, 0, frameMs, totalFrames, headFrames, tailFrames,
                     x => MusicMath.ToneToFreq(x * 0.01)).Select(f => (float)f).ToArray();
-                var phonemes = phrase.phones.Select(p => p.phoneme).ToArray();
+                var phonemes = DiffSingerUtils.PaddedSegments(phrase, frameMs, headFrames, tailFrames)
+                    .Select(s => s.Phoneme).ToArray();
                 ApplyAcousticF0(phonemes, durations, frameMs, acousticF0Hz, singer.unvoicedPhonemes);
                 return acousticF0Hz.Length > 0;
             } catch {
@@ -100,25 +103,50 @@ namespace OpenUtau.Core.DiffSinger {
             IReadOnlyList<int> durations,
             IReadOnlySet<string> targetPhonemes) {
             var ranges = new List<UnvoicedFrameRange>();
-            if (phonemes.Count == 0 || durations.Count < phonemes.Count + 2 || targetPhonemes.Count == 0) {
+            if (phonemes.Count == 0 || targetPhonemes.Count == 0) {
                 return ranges;
             }
-            int frame = durations[0];
-            int runStart = -1;
-            for (int phoneIndex = 0; phoneIndex < phonemes.Count; ++phoneIndex) {
-                int start = frame;
-                frame += durations[phoneIndex + 1];
-                if (targetPhonemes.Contains(phonemes[phoneIndex])) {
-                    if (runStart < 0) {
-                        runStart = start;
+            // Segment-aligned: phonemes length matches durations (includes SP gaps).
+            if (phonemes.Count == durations.Count) {
+                int frame = 0;
+                int runStart = -1;
+                for (int i = 0; i < phonemes.Count; ++i) {
+                    int start = frame;
+                    frame += durations[i];
+                    if (targetPhonemes.Contains(phonemes[i])) {
+                        if (runStart < 0) {
+                            runStart = start;
+                        }
+                    } else if (runStart >= 0) {
+                        ranges.Add(new UnvoicedFrameRange(runStart, start));
+                        runStart = -1;
                     }
-                } else if (runStart >= 0) {
-                    ranges.Add(new UnvoicedFrameRange(runStart, start));
-                    runStart = -1;
+                }
+                if (runStart >= 0) {
+                    ranges.Add(new UnvoicedFrameRange(runStart, frame));
+                }
+                return ranges;
+            }
+            // Legacy layout: [head] + phones + [tail]
+            if (durations.Count < phonemes.Count + 2) {
+                return ranges;
+            }
+            int legacyFrame = durations[0];
+            int legacyRunStart = -1;
+            for (int phoneIndex = 0; phoneIndex < phonemes.Count; ++phoneIndex) {
+                int start = legacyFrame;
+                legacyFrame += durations[phoneIndex + 1];
+                if (targetPhonemes.Contains(phonemes[phoneIndex])) {
+                    if (legacyRunStart < 0) {
+                        legacyRunStart = start;
+                    }
+                } else if (legacyRunStart >= 0) {
+                    ranges.Add(new UnvoicedFrameRange(legacyRunStart, start));
+                    legacyRunStart = -1;
                 }
             }
-            if (runStart >= 0) {
-                ranges.Add(new UnvoicedFrameRange(runStart, frame));
+            if (legacyRunStart >= 0) {
+                ranges.Add(new UnvoicedFrameRange(legacyRunStart, legacyFrame));
             }
             return ranges;
         }

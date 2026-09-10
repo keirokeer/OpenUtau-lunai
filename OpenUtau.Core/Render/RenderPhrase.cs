@@ -587,9 +587,14 @@ namespace OpenUtau.Core.Render {
             if (phonemes.Count == 0) {
                 return phrases;
             }
+            var renderer = track.RendererSettings.Renderer;
             var phrasePhonemes = new List<UPhoneme>() { phonemes[0] };
             for (int i = 1; i < phonemes.Count; ++i) {
-                if (phonemes[i - 1].End != phonemes[i].position) {
+                // A gap normally starts a new phrase, but the renderer may ask
+                // to keep adjacent phrases together when their padded audio
+                // would overlap (e.g. DiffSinger input padding).
+                if (phonemes[i - 1].End != phonemes[i].position
+                    && !renderer.ShouldMergePhrases(project, track, phonemes[i - 1], phonemes[i])) {
                     phrases.Add(new RenderPhrase(project, track, part, phrasePhonemes));
                     phrasePhonemes.Clear();
                 }

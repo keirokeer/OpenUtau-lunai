@@ -124,7 +124,8 @@ namespace OpenUtau.Core.DiffSinger {
             int headFrames,
             int tailFrames,
             PhonemeTypeLookup? types) {
-            var phonemes = phrase.phones.Select(p => p.phoneme).ToArray();
+            var segments = DiffSingerUtils.PaddedSegments(phrase, frameMs, headFrames, tailFrames);
+            var phonemes = segments.Select(s => s.Phoneme).ToArray();
             var durations = DiffSingerUtils.PaddedPhoneDurations(phrase, frameMs, headFrames, tailFrames);
             return BuildFrameScales(phonemes, durations, abbr, frameMs, types);
         }
@@ -137,27 +138,59 @@ namespace OpenUtau.Core.DiffSinger {
             PhonemeTypeLookup? types) {
             int totalFrames = durations.Sum();
             var scales = new float[totalFrames];
-            if (phonemes.Count == 0 || durations.Count < phonemes.Count + 2 || totalFrames == 0) {
+            if (phonemes.Count == 0 || totalFrames == 0) {
+                return scales;
+            }
+
+            // Segment-aligned: phonemes includes SP head/gaps/tail (same length as durations).
+            if (phonemes.Count == durations.Count) {
+                var segmentScales = phonemes.Select(p => GetScale(p, abbr, types)).ToArray();
+                FillAndCrossfade(scales, durations, segmentScales, frameMs, abbr);
+                return scales;
+            }
+
+            // Legacy layout: phonemes = real phones only, durations = [head] + phones + [tail].
+            if (durations.Count < phonemes.Count + 2) {
                 return scales;
             }
             var phoneScales = phonemes.Select(p => GetScale(p, abbr, types)).ToArray();
-            int frame = durations[0];
-            for (int phoneIndex = 0; phoneIndex < phonemes.Count; ++phoneIndex) {
+            var bodyDurations = new int[phonemes.Count];
+            for (int i = 0; i < phonemes.Count; ++i) {
+                bodyDurations[i] = durations[i + 1];
+            }
+            var bodyOnly = new float[bodyDurations.Sum()];
+            FillAndCrossfade(bodyOnly, bodyDurations, phoneScales, frameMs, abbr);
+            int head = Math.Max(0, durations[0]);
+            for (int i = 0; i < bodyOnly.Length && head + i < totalFrames; ++i) {
+                scales[head + i] = bodyOnly[i];
+            }
+            return scales;
+        }
+
+        static void FillAndCrossfade(
+            float[] scales,
+            IReadOnlyList<int> durations,
+            IReadOnlyList<float> segmentScales,
+            float frameMs,
+            string abbr) {
+            int totalFrames = scales.Length;
+            int frame = 0;
+            for (int i = 0; i < segmentScales.Count; ++i) {
                 int start = frame;
-                frame += durations[phoneIndex + 1];
-                float scale = phoneScales[phoneIndex];
-                for (int i = start; i < frame && i < totalFrames; ++i) {
-                    scales[i] = scale;
+                frame += durations[i];
+                float scale = segmentScales[i];
+                for (int j = start; j < frame && j < totalFrames; ++j) {
+                    scales[j] = scale;
                 }
             }
             int crossfadeFrames = Math.Clamp(
                 (int)Math.Round(GetCrossfadeMs(abbr) / frameMs), 1, 20);
-            frame = durations[0];
-            for (int phoneIndex = 0; phoneIndex < phonemes.Count - 1; ++phoneIndex) {
-                int boundary = frame + durations[phoneIndex + 1];
+            frame = 0;
+            for (int i = 0; i < segmentScales.Count - 1; ++i) {
+                int boundary = frame + durations[i];
                 frame = boundary;
-                float left = phoneScales[phoneIndex];
-                float right = phoneScales[phoneIndex + 1];
+                float left = segmentScales[i];
+                float right = segmentScales[i + 1];
                 if (Math.Abs(left - right) < 0.001f) {
                     continue;
                 }
@@ -167,12 +200,11 @@ namespace OpenUtau.Core.DiffSinger {
                 if (fadeLength <= 1) {
                     continue;
                 }
-                for (int i = fadeStart; i < fadeEnd; ++i) {
-                    float t = SmoothStep((i - fadeStart) / (float)(fadeLength - 1));
-                    scales[i] = left + (right - left) * t;
+                for (int j = fadeStart; j < fadeEnd; ++j) {
+                    float t = SmoothStep((j - fadeStart) / (float)(fadeLength - 1));
+                    scales[j] = left + (right - left) * t;
                 }
             }
-            return scales;
         }
 
         static float GetCrossfadeMs(string abbr) {

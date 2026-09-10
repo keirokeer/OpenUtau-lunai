@@ -81,6 +81,15 @@ namespace OpenUtau.Core.DiffSinger {
             };
         }
 
+        public (double HeadMs, double TailMs) PhrasePadding(USinger singer, IEnumerable<UPhoneme> phonemes) {
+            var dsSinger = singer as DiffSingerSinger;
+            if (dsSinger == null) {
+                return (0, 0);
+            }
+            double frameMs = dsSinger.dsConfig.frameMs();
+            return (DiffSingerUtils.GetHeadMs(frameMs), DiffSingerUtils.GetTailMs(frameMs));
+        }
+
         public Task<RenderResult> Render(RenderPhrase phrase, Progress progress, int trackNo, CancellationTokenSource cancellation, bool isPreRender, RenderPhraseEvents? renderEvents = null) {
             var task = Task.Run(() => {
                 lock (lockObj) {
@@ -248,11 +257,9 @@ namespace OpenUtau.Core.DiffSinger {
             //durations: phoneme duration in frames
             //f0: pitch curve in Hz by frame
             //speedup: Diffusion render speedup, int
-            var tokens = phrase.phones
-                .Select(p => p.phoneme)
-                .Prepend("SP")
-                .Append("SP")
-                .Select(phoneme => (Int64)singer.PhonemeTokenize(phoneme))
+            var segments = DiffSingerUtils.PaddedSegments(phrase, frameMs, headFrames, tailFrames);
+            var tokens = segments
+                .Select(segment => (Int64)singer.PhonemeTokenize(segment.Phoneme))
                 .ToList();
             var durations = DiffSingerUtils.PaddedPhoneDurations(phrase, frameMs, headFrames, tailFrames)
                 .ToList();
@@ -260,9 +267,10 @@ namespace OpenUtau.Core.DiffSinger {
             Func<string, int?> tryBlendToken = p =>
                 singer.TryPhonemeTokenize(p, out int tok) ? tok : null;
             var tokensArr = tokens.ToArray();
-            var tokensB = DiffSingerPhonemeBlend.BuildTokensB(tokensArr, phrase.phones, tryBlendToken);
+            var segmentPhoneIndexes = segments.Select(s => s.PhoneIndex).ToArray();
+            var tokensB = DiffSingerPhonemeBlend.BuildTokensB(tokensArr, phrase.phones, segmentPhoneIndexes, tryBlendToken);
             var tokenBlendWeights = DiffSingerPhonemeBlend.BuildTokenBlendWeights(
-                tokensArr, phrase.phones, tryBlendToken);
+                tokensArr, phrase.phones, segmentPhoneIndexes, tryBlendToken);
             var frameBlendWeights = DiffSingerPhonemeBlend.ExpandToFrames(tokenBlendWeights, durations);
             float[] f0Source = Preferences.Default.DiffSingerAcousticFlatPitch
                 ? phrase.pitchesBeforeBend
@@ -327,13 +335,10 @@ namespace OpenUtau.Core.DiffSinger {
             }
             //Language id
             if(singer.dsConfig.use_lang_id){
-                var langIdByPhone = phrase.phones
-                    .Select(p => (long)singer.languageIds.GetValueOrDefault(
-                        DiffSingerUtils.PhonemeLanguage(p.phoneme),0
-                        ))
-                    .Prepend(0)
-                    .Append(0)
-                    .ToArray();
+                var langIdByPhone = DiffSingerUtils.PaddedLanguageIds(
+                    phrase, frameMs, headFrames, tailFrames,
+                    phoneme => (long)singer.languageIds.GetValueOrDefault(
+                        DiffSingerUtils.PhonemeLanguage(phoneme), 0));
                 var langIdTensor = new DenseTensor<Int64>(langIdByPhone, new int[] { langIdByPhone.Length }, false)
                     .Reshape(new int[] { 1, langIdByPhone.Length });
                 acousticInputs.Add(NamedOnnxValue.CreateFromTensor("languages", langIdTensor));

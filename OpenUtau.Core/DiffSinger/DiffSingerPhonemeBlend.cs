@@ -38,8 +38,57 @@ namespace OpenUtau.Core.DiffSinger {
             if (phones == null) {
                 throw new ArgumentNullException(nameof(phones));
             }
-            var blends = phones.Select(p => (p.blendPhoneme, p.blendWeight)).ToArray();
-            return BuildTokensB(tokens, blends, tryTokenize);
+            var indexes = BuildLegacyPhoneIndexes(phones.Length);
+            return BuildTokensB(tokens, phones, indexes, tryTokenize);
+        }
+
+        /// <summary>
+        /// Copy of <paramref name="tokens"/>. For each segment with PhoneIndex &gt;= 0 and an active blend,
+        /// replaces the corresponding token with the B phoneme token.
+        /// Invalid B → leave A token (caller should zero that weight).
+        /// </summary>
+        public static long[] BuildTokensB(
+            long[] tokens,
+            RenderPhone[] phones,
+            IReadOnlyList<int> segmentPhoneIndexes,
+            Func<string, int?> tryTokenize) {
+            if (tokens == null) {
+                throw new ArgumentNullException(nameof(tokens));
+            }
+            if (phones == null) {
+                throw new ArgumentNullException(nameof(phones));
+            }
+            if (segmentPhoneIndexes == null) {
+                throw new ArgumentNullException(nameof(segmentPhoneIndexes));
+            }
+            if (tryTokenize == null) {
+                throw new ArgumentNullException(nameof(tryTokenize));
+            }
+            var result = (long[])tokens.Clone();
+            if (tokens.Length != segmentPhoneIndexes.Count) {
+                Log.Warning(
+                    "Phoneme blend: token count {TokenCount} != segment indexes ({Expected}); skipping tokens_b edits",
+                    tokens.Length, segmentPhoneIndexes.Count);
+                return result;
+            }
+            for (int i = 0; i < segmentPhoneIndexes.Count; i++) {
+                int phoneIndex = segmentPhoneIndexes[i];
+                if (phoneIndex < 0 || phoneIndex >= phones.Length) {
+                    continue;
+                }
+                var phone = phones[phoneIndex];
+                if (!IsActive(phone.blendPhoneme, phone.blendWeight)) {
+                    continue;
+                }
+                string blend = phone.blendPhoneme!.Trim();
+                int? tok = tryTokenize(blend);
+                if (tok == null) {
+                    Log.Warning("Phoneme blend: unsupported blend phoneme \"{Phoneme}\"; ignoring", blend);
+                    continue;
+                }
+                result[i] = tok.Value;
+            }
+            return result;
         }
 
         /// <summary>
@@ -89,8 +138,39 @@ namespace OpenUtau.Core.DiffSinger {
             if (phones == null) {
                 throw new ArgumentNullException(nameof(phones));
             }
-            var blends = phones.Select(p => (p.blendPhoneme, p.blendWeight)).ToArray();
-            return BuildTokenBlendWeights(tokens, blends);
+            return BuildTokenBlendWeights(tokens, phones, BuildLegacyPhoneIndexes(phones.Length));
+        }
+
+        /// <summary>Per-token blend weights in 0–1; SP / gap segments always 0.</summary>
+        public static float[] BuildTokenBlendWeights(
+            long[] tokens,
+            RenderPhone[] phones,
+            IReadOnlyList<int> segmentPhoneIndexes) {
+            if (tokens == null) {
+                throw new ArgumentNullException(nameof(tokens));
+            }
+            if (phones == null) {
+                throw new ArgumentNullException(nameof(phones));
+            }
+            if (segmentPhoneIndexes == null) {
+                throw new ArgumentNullException(nameof(segmentPhoneIndexes));
+            }
+            var weights = new float[tokens.Length];
+            if (tokens.Length != segmentPhoneIndexes.Count) {
+                return weights;
+            }
+            for (int i = 0; i < segmentPhoneIndexes.Count; i++) {
+                int phoneIndex = segmentPhoneIndexes[i];
+                if (phoneIndex < 0 || phoneIndex >= phones.Length) {
+                    continue;
+                }
+                var phone = phones[phoneIndex];
+                if (!IsActive(phone.blendPhoneme, phone.blendWeight)) {
+                    continue;
+                }
+                weights[i] = Math.Clamp(phone.blendWeight, 0, 100) / 100f;
+            }
+            return weights;
         }
 
         /// <summary>Per-token blend weights in 0–1; head/tail SP always 0.</summary>
@@ -125,8 +205,32 @@ namespace OpenUtau.Core.DiffSinger {
             if (phones == null) {
                 throw new ArgumentNullException(nameof(phones));
             }
-            var blends = phones.Select(p => (p.blendPhoneme, p.blendWeight)).ToArray();
-            return BuildTokenBlendWeights(tokens, blends, tryTokenize);
+            return BuildTokenBlendWeights(tokens, phones, BuildLegacyPhoneIndexes(phones.Length), tryTokenize);
+        }
+
+        public static float[] BuildTokenBlendWeights(
+            long[] tokens,
+            RenderPhone[] phones,
+            IReadOnlyList<int> segmentPhoneIndexes,
+            Func<string, int?> tryTokenize) {
+            var weights = BuildTokenBlendWeights(tokens, phones, segmentPhoneIndexes);
+            if (tryTokenize == null || tokens.Length != segmentPhoneIndexes.Count) {
+                return weights;
+            }
+            for (int i = 0; i < segmentPhoneIndexes.Count; i++) {
+                int phoneIndex = segmentPhoneIndexes[i];
+                if (phoneIndex < 0 || phoneIndex >= phones.Length) {
+                    continue;
+                }
+                var phone = phones[phoneIndex];
+                if (!IsActive(phone.blendPhoneme, phone.blendWeight)) {
+                    continue;
+                }
+                if (tryTokenize(phone.blendPhoneme!.Trim()) == null) {
+                    weights[i] = 0f;
+                }
+            }
+            return weights;
         }
 
         /// <summary>
@@ -151,6 +255,16 @@ namespace OpenUtau.Core.DiffSinger {
                 }
             }
             return weights;
+        }
+
+        static int[] BuildLegacyPhoneIndexes(int phoneCount) {
+            var indexes = new int[phoneCount + 2];
+            indexes[0] = -1;
+            for (int i = 0; i < phoneCount; i++) {
+                indexes[i + 1] = i;
+            }
+            indexes[^1] = -1;
+            return indexes;
         }
 
         /// <summary>Expand per-token weights to per-frame using phone durations (same length as tokens).</summary>
