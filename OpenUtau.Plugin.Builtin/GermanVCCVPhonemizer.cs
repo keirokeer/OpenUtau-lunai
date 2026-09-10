@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -89,8 +89,8 @@ namespace OpenUtau.Plugin.Builtin {
             string[] PreviousWordCc = syllable.PreviousWordCc.Select(c => ReplacePhoneme(c, syllable.tone)).ToArray();
             int prevWordConsonantsCount = syllable.prevWordConsonantsCount;
 
-            foreach (var entry in yamlFallbacks) {
-                if (!HasOto(entry.Key, syllable.tone) && !HasOto(entry.Key, syllable.tone)) {
+            foreach (var entry in yamlFallbacks.Where(r => r.FromList.Count == 1 && r.ToList.Count > 0)) {
+                if (!HasOto(entry.FromList[0], syllable.tone) && !HasOto(entry.FromList[0], syllable.tone)) {
                     isYamlFallbacks = true;
                     break;
                 }
@@ -386,7 +386,7 @@ namespace OpenUtau.Plugin.Builtin {
             return phonemes;
         }
 
-        protected override string ValidateAlias(string alias) {
+        protected override string ValidateAlias(string alias, int tone = 0) {
             foreach (var VV in new[] { "a 6", "a6" }) {
                 alias = alias.Replace(VV, "a a");
             }
@@ -429,8 +429,8 @@ namespace OpenUtau.Plugin.Builtin {
             }
 
             if (isYamlFallbacks) {
-                foreach (var syllable in yamlFallbacks.OrderByDescending(f => f.Key.Length)) {
-                    alias = alias.Replace(syllable.Key, syllable.Value);
+                foreach (var syllable in yamlFallbacks.Where(r => r.FromList.Count == 1 && r.ToList.Count > 0).OrderByDescending(f => f.FromList[0].Length)) {
+                    alias = alias.Replace(syllable.FromList[0], syllable.ToList[0]);
                 }
             }
 

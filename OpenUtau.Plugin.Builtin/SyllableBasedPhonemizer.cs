@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Text;
 using OpenUtau.Api;
 using OpenUtau.Core.Ustx;
@@ -31,7 +32,7 @@ namespace OpenUtau.Plugin.Builtin {
     /// If your oto hase same symbols for them, like "n" for stretchable "n" from a long note and "n" from CV,
     /// then you can use a vitrual symbol [N], and then replace it with [n] in ValidateAlias().
     /// </summary>
-    public abstract class SyllableBasedPhonemizer : Phonemizer {
+    public abstract class SyllableBasedPhonemizer : Phonemizer, IG2pSymbols {
 
         /// <summary>
         /// Syllable is [V] [C..] [V]
@@ -298,6 +299,20 @@ namespace OpenUtau.Plugin.Builtin {
             .IgnoreUnmatchedProperties()
             .Build();
 
+        private static readonly ConcurrentDictionary<string, (DateTime lastModified, YAMLData data)> YamlCache = new();
+
+        private static YAMLData LoadYamlCached(string filePath) {
+            var lastWrite = File.GetLastWriteTimeUtc(filePath);
+            if (YamlCache.TryGetValue(filePath, out var cached) && cached.lastModified == lastWrite) {
+                return cached.data;
+            }
+
+            using var reader = new StreamReader(filePath, Encoding.UTF8);
+            var parsed = TolerantDeserializer.Deserialize<YAMLData>(reader);
+            YamlCache[filePath] = (lastWrite, parsed);
+            return parsed;
+        }
+
         public override void SetSinger(USinger singer) {
             if (this.singer != singer) {
                 this.singer = singer;
@@ -449,7 +464,7 @@ namespace OpenUtau.Plugin.Builtin {
                 // parse the files sequentially (Singer configs seamlessly overwrite global configs)
                 foreach (var file in filesToParse) {
                     try {
-                        var data = TolerantDeserializer.Deserialize<YAMLData>(File.ReadAllText(file));
+                        var data = LoadYamlCached(file);
                         
                         var yamlVowels = data.symbols?.Where(s => s.type == "vowel" || s.type == "diphthong").Select(s => s.symbol).ToArray() ?? Array.Empty<string>();
                         vowels = yamlVowels.Concat(vowels).Distinct().ToArray();
@@ -546,11 +561,13 @@ namespace OpenUtau.Plugin.Builtin {
                         }
 
                         if (data?.fallbacks != null) {
+                            var localFallbacks = new List<Replacement>();
                             foreach (var df in data.fallbacks) {
-                                if (!string.IsNullOrEmpty(df.from) && !string.IsNullOrEmpty(df.to)) {
-                                    yamlFallbacks[df.from] = df.to; 
+                                if (df.FromList.Count > 0 && df.ToList.Count > 0) {
+                                    localFallbacks.Add(df);
                                 }
                             }
+                            yamlFallbacks.InsertRange(0, localFallbacks);
                         }
 
                         if (data?.diphthongs != null) {
@@ -928,13 +945,72 @@ namespace OpenUtau.Plugin.Builtin {
             return phonemesString.Split(' ');
         }
 
+        protected virtual string ReplacePhoneme(string phoneme, int tone) {
+            if (string.IsNullOrEmpty(phoneme)) return "";
+            if (dictionaryReplacements.TryGetValue(phoneme, out var replaced)) {
+                return replaced;
+            }
+            return phoneme;
+        }
+
         /// <summary>
-        /// use to validate alias
+        /// Validates formatted aliases.
+        /// If the alias is missing in OTO, it applies character/phoneme substring replacements from YAML fallbacks.
         /// </summary>
-        /// <param name="alias"></param>
-        /// <returns></returns>
-        protected virtual string ValidateAlias(string alias) {
-            return alias;
+        protected virtual string ValidateAlias(string alias, int tone = 0) {
+            if (string.IsNullOrEmpty(alias)) return alias;
+            if (HasOto(alias, tone)) return alias;
+
+            var singleRules = yamlFallbacks
+                .Where(r => r.FromList.Count == 1)
+                .OrderByDescending(r => r.FromList[0].Length)
+                .ToList();
+
+            // Exact direct substitution check
+            // Try replacing ONLY the exact missing token first (e.g. "x uw" -> "sh uw")
+            foreach (var rule in singleRules) {
+                string fromStr = rule.FromList[0].Trim('(', ')');
+                if (alias.Contains(fromStr)) {
+                    foreach (var target in rule.ToList) {
+                        string candidate = alias.Replace(fromStr, target);
+                        if (HasOto(candidate, tone)) {
+                            return candidate;
+                        }
+                    }
+                }
+            }
+
+            // Multi-rule cascaded fallback (only if Stage 1 failed completely)
+            string cascadedAlias = alias;
+            bool changed = false;
+
+            foreach (var rule in singleRules) {
+                string fromStr = rule.FromList[0].Trim('(', ')');
+                if (cascadedAlias.Contains(fromStr)) {
+                    foreach (var target in rule.ToList) {
+                        string candidate = cascadedAlias.Replace(fromStr, target);
+                        if (HasOto(candidate, tone)) {
+                            return candidate;
+                        }
+                    }
+                    if (rule.ToList.Count > 0) {
+                        cascadedAlias = cascadedAlias.Replace(fromStr, rule.ToList[0]);
+                        changed = true;
+                    }
+                }
+            }
+
+            if (changed && HasOto(cascadedAlias, tone)) {
+                return cascadedAlias;
+            }
+
+            var legacyFallbacks = GetAliasesFallback();
+            if (legacyFallbacks != null && legacyFallbacks.TryGetValue(alias, out var legacyTarget)) {
+                if (HasOto(legacyTarget, tone)) return legacyTarget;
+                return legacyTarget;
+            }
+
+            return changed ? cascadedAlias : alias;
         }
 
         /// <summary>
@@ -1204,7 +1280,7 @@ namespace OpenUtau.Plugin.Builtin {
 
         protected Dictionary<string, string> dictionaryReplacements = new Dictionary<string, string>();
         protected Dictionary<string, double> PhonemeOverrides = new Dictionary<string, double>();
-        protected Dictionary<string, string> yamlFallbacks = new Dictionary<string, string>();
+        protected List<Replacement> yamlFallbacks = new List<Replacement>();
         protected List<string> consExceptions = new List<string>();
 
         protected Dictionary<string, string> diphthongTails = new Dictionary<string, string>();
@@ -1215,13 +1291,12 @@ namespace OpenUtau.Plugin.Builtin {
             public bool? isglides { get; set; }
             public SymbolData[] symbols { get; set; } = Array.Empty<SymbolData>();
             public Replacement[] replacements { get; set; } = Array.Empty<Replacement>();
-            public Fallbacks[] fallbacks { get; set; } = Array.Empty<Fallbacks>();
+            public Replacement[] fallbacks { get; set; } = Array.Empty<Replacement>();
             public Timings[] timings { get; set; } = Array.Empty<Timings>();
             public DiphthongData[] diphthongs { get; set; } = Array.Empty<DiphthongData>();
             public VowelSustainData[] vowelsustains { get; set; } = Array.Empty<VowelSustainData>();
 
             public struct SymbolData { public string symbol { get; set; } public string type { get; set; } }
-            public struct Fallbacks { public string from { get; set; } public string to { get; set; } }
             public struct Timings { public string symbol { get; set; } public double value { get; set; } }
             public struct DiphthongData { public string from { get; set; } public string to { get; set; } }
             public struct VowelSustainData { public string symbol { get; set; } public string sustain { get; set; } public double offset { get; set; } }
@@ -1743,10 +1818,7 @@ namespace OpenUtau.Plugin.Builtin {
         }
 
         private string ValidateAliasIfNeeded(string alias, int tone) {
-            if (HasOto(alias, tone)) {
-                return alias;
-            }
-            return ValidateAlias(alias);
+            return ValidateAlias(alias, tone);
         }
 
         private Phoneme[] ScalePhonemes(Phoneme[] phonemes, int startPosition, int phonemesCount, int containerLengthTick = -1) {
@@ -1773,6 +1845,10 @@ namespace OpenUtau.Plugin.Builtin {
             }
 
             return phonemes.Where(n => n.phoneme != null).ToArray();
+        }
+
+        string[] IG2pSymbols.GetSymbols(Note note) {
+            return GetSymbols(note) ?? Array.Empty<string>();
         }
 
         #endregion

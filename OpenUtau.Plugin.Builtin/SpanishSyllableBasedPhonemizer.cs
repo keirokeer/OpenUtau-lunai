@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using OpenUtau.Api;
 using OpenUtau.Core.G2p;
@@ -423,7 +423,7 @@ namespace OpenUtau.Plugin.Builtin {
             return phonemes;
         }
 
-        protected override string ValidateAlias(string alias) {
+        protected override string ValidateAlias(string alias, int tone = 0) {
             // Validate alias depending on method
             if (isSeseo) {
                 foreach (var syllable in seseo) {

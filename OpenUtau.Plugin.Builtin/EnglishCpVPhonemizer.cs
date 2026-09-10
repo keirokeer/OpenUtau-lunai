@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -247,8 +247,8 @@ namespace OpenUtau.Plugin.Builtin {
                 }
             }
 
-            foreach (var entry in yamlFallbacks) {
-                if (!HasOto(entry.Key, syllable.tone) && !HasOto(entry.Value, syllable.tone)) {
+            foreach (var entry in yamlFallbacks.Where(r => r.FromList.Count == 1 && r.ToList.Count > 0)) {
+                if (!HasOto(entry.FromList[0], syllable.tone) && !HasOto(entry.ToList[0], syllable.tone)) {
                     isYamlFallbacks = true;
                     break;
                 }
@@ -815,7 +815,7 @@ namespace OpenUtau.Plugin.Builtin {
             return alias;
         }
 
-        protected override string ValidateAlias(string alias) {
+        protected override string ValidateAlias(string alias, int tone = 0) {
 
             // VALIDATE ALIAS DEPENDING ON METHOD
             if (isTimitPhonemes) {
@@ -834,8 +834,8 @@ namespace OpenUtau.Plugin.Builtin {
                 }
             }
             if (isYamlFallbacks) {
-                foreach (var fb in yamlFallbacks.OrderByDescending(f => f.Key.Length)) {
-                    alias = alias.Replace(fb.Key, fb.Value);
+                foreach (var fb in yamlFallbacks.Where(r => r.FromList.Count == 1 && r.ToList.Count > 0).OrderByDescending(f => f.FromList[0].Length)) {
+                    alias = alias.Replace(fb.FromList[0], fb.ToList[0]);
                 }
             }
 

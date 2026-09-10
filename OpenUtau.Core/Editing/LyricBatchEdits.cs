@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using OpenUtau.Api;
 using OpenUtau.Core.Ustx;
 using WanaKanaNet;
 
@@ -143,6 +144,75 @@ namespace OpenUtau.Core.Editing {
                     }
                 }
             }
+            docManager.EndUndoGroup();
+        }
+    }
+
+    public class AddPhoneticHints : BatchEdit {
+        public virtual string Name => name;
+        private string name;
+        static readonly Regex phoneticHintPattern = new Regex(@"\[(.*)\]");
+
+        public AddPhoneticHints() {
+            name = "pianoroll.menu.lyrics.addphonetichints";
+        }
+
+        public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
+            var notes = selectedNotes.Count > 0 ? selectedNotes.ToArray() : part.notes.ToArray();
+            if (notes.Length == 0) {
+                return;
+            }
+            var track = project.tracks[part.trackNo];
+            var phonemizer = track.Phonemizer;
+            if (phonemizer == null) {
+                return;
+            }
+
+            docManager.StartUndoGroup("command.batch.lyric", true);
+            foreach (var note in notes) {
+                if (phoneticHintPattern.IsMatch(note.lyric) || note.lyric.StartsWith("+")) {
+                    continue;
+                }
+
+                var constructNote = note.ToPhonemizerNote(track, part);
+
+                if (phonemizer is IG2pSymbols sym) {
+                    var phonemeList = sym.GetSymbols(constructNote);
+                    if (phonemeList == null || phonemeList.Length == 0) {
+                        continue;
+                    }
+                    string lyric = note.lyric + " [" + string.Join(" ", phonemeList) + "]";
+                    docManager.ExecuteCmd(new ChangeNoteLyricCommand(part, note, lyric));
+                } else {
+                    // Fallback: for phonemizers without G2P symbols, append the last
+                    // raw phoneme as a hint (and split on earlier phoneme boundaries).
+                    var phonemeList = part.phonemes
+                        .Where(p => note.phonemeIndexes.Contains(p.index) && p.position >= note.position && p.position < (note.position + note.duration))
+                        .OrderBy(p => p.position)
+                        .ToList();
+
+                    if (phonemeList.Count == 0) {
+                        continue;
+                    }
+
+                    var currentNote = note;
+                    for (int i = 1; i < phonemeList.Count; i++) {
+                        int splitPos = phonemeList[i].position;
+
+                        var newNote = project.CreateNote(currentNote.tone, splitPos, currentNote.End - splitPos);
+                        docManager.ExecuteCmd(new AddNoteCommand(part, newNote));
+                        foreach (var exp in currentNote.phonemeExpressions.OrderBy(exp => exp.index)) {
+                            docManager.ExecuteCmd(new SetNoteExpressionCommand(project, track, part, newNote, exp.abbr, new float?[] { exp.value }));
+                        }
+                        docManager.ExecuteCmd(new ResizeNoteCommand(part, currentNote, splitPos - currentNote.End));
+                        docManager.ExecuteCmd(new ChangeNoteLyricCommand(part, currentNote, phonemeList[i - 1].rawPhoneme));
+
+                        currentNote = newNote;
+                    }
+                    docManager.ExecuteCmd(new ChangeNoteLyricCommand(part, currentNote, note.lyric + " [" + phonemeList[phonemeList.Count - 1].rawPhoneme + ']'));
+                }
+            }
+
             docManager.EndUndoGroup();
         }
     }

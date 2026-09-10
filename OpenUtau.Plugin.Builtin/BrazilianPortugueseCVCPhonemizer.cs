@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using OpenUtau.Api;
@@ -108,7 +108,7 @@ namespace OpenUtau.Plugin.Builtin {
 
         // change rh V -> r V
         // since rh is a VC only alias, r is used as their natural approximant to make CV connections, if it happens
-        protected override string ValidateAlias(string alias) {
+        protected override string ValidateAlias(string alias, int tone = 0) {
             foreach (var vowel in vowels) {
                 alias = alias.Replace("rh" + " " + vowel, "r" + " " + vowel);
             }

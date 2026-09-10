@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.IO;
@@ -234,8 +234,8 @@ namespace OpenUtau.Plugin.Builtin {
             var rv = $"- {v}";
             
             // Switch between phonetic systems, depending on certain aliases in the bank
-            foreach (var entry in yamlFallbacks) {
-                if (!HasOto(entry.Key, syllable.tone) && !HasOto(entry.Key, syllable.tone)) {
+            foreach (var entry in yamlFallbacks.Where(r => r.FromList.Count == 1 && r.ToList.Count > 0)) {
+                if (!HasOto(entry.FromList[0], syllable.tone) && !HasOto(entry.FromList[0], syllable.tone)) {
                     isYamlFallbacks = true;
                     break;
                 }
@@ -742,7 +742,7 @@ namespace OpenUtau.Plugin.Builtin {
             return phonemes;
         }
 
-        protected override string ValidateAlias(string alias) {
+        protected override string ValidateAlias(string alias, int tone = 0) {
             if (string.IsNullOrEmpty(alias)) {
                 return alias;
             }
@@ -810,8 +810,8 @@ namespace OpenUtau.Plugin.Builtin {
             }
 
             if (isYamlFallbacks) {
-                foreach (var syllable in yamlFallbacks.OrderByDescending(f => f.Key.Length)) {
-                    candidate = candidate.Replace(syllable.Key, syllable.Value);
+                foreach (var syllable in yamlFallbacks.Where(r => r.FromList.Count == 1 && r.ToList.Count > 0).OrderByDescending(f => f.FromList[0].Length)) {
+                    candidate = candidate.Replace(syllable.FromList[0], syllable.ToList[0]);
                 }
             }
 

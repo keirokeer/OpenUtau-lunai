@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.IO;
@@ -205,8 +205,8 @@ namespace OpenUtau.Plugin.Builtin {
             bool isAtomicCluster = cc.Length == 2 && ccvException.Contains(cc[0]);
 
             // Check for missing YAML fallback phonemes
-            foreach (var entry in yamlFallbacks) {
-                if (!HasOto(entry.Key, syllable.tone) && !HasOto(entry.Value, syllable.tone)) {
+            foreach (var entry in yamlFallbacks.Where(r => r.FromList.Count == 1 && r.ToList.Count > 0)) {
+                if (!HasOto(entry.FromList[0], syllable.tone) && !HasOto(entry.ToList[0], syllable.tone)) {
                     isYamlFallbacks = true;
                     break;
                 }
@@ -980,14 +980,14 @@ namespace OpenUtau.Plugin.Builtin {
             return alias;
         }
 
-        protected string ValidateAlias(string alias, int tone) {
+        protected new string ValidateAlias(string alias, int tone) {
             if (HasOto(alias, tone)) return alias;
 
             // YAML Fallbacks
             if (yamlFallbacks != null && yamlFallbacks.Count > 0) {
                 string originalYaml = alias;
-                foreach (var fb in yamlFallbacks.OrderByDescending(f => f.Key.Length)) {
-                    alias = alias.Replace(fb.Key, fb.Value);
+                foreach (var fb in yamlFallbacks.Where(r => r.FromList.Count == 1 && r.ToList.Count > 0).OrderByDescending(f => f.FromList[0].Length)) {
+                    alias = alias.Replace(fb.FromList[0], fb.ToList[0]);
                 }
                 // If YAML changed something, test the NEW string!
                 if (alias != originalYaml && HasOto(alias, tone)) return alias;

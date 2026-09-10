@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using OpenUtau.Api;
@@ -544,7 +544,7 @@ namespace OpenUtau.Plugin.Builtin {
         }
 
         //TODO: add "oi" exception
-        protected override string ValidateAlias(string alias) {
+        protected override string ValidateAlias(string alias, int tone = 0) {
 
             //fraloids conversion
             if (usesFraloids) {

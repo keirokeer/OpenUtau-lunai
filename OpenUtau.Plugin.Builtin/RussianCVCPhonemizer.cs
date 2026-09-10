@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using OpenUtau.Api;
@@ -95,7 +95,7 @@ namespace OpenUtau.Plugin.Builtin {
         }
 
         // russian specific replacements
-        protected override string ValidateAlias(string alias) {
+        protected override string ValidateAlias(string alias, int tone = 0) {
             foreach (var consonant in new[] { "'", "~" }) {
                 alias = alias.Replace(consonant + "y", consonant + "i");
             }
