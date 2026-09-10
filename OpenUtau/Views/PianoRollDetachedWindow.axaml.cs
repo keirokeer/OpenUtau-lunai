@@ -1,8 +1,10 @@
 using System;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Notifications;
 using Avalonia.Input;
 using OpenUtau.App.Controls;
+using OpenUtau.Core;
 using OpenUtau.Core.Util;
 
 namespace OpenUtau.App.Views {
@@ -14,6 +16,7 @@ namespace OpenUtau.App.Views {
         private bool tikTokMode;
         private bool skipSaveSize;
         private bool inTikTokResizeLock;
+        private WindowNotificationManager notificationManager;
 
         public PianoRollDetachedWindow(PianoRoll pianoRoll) {
             InitializeComponent();
@@ -30,6 +33,11 @@ namespace OpenUtau.App.Views {
             Width = ws.Width;
             Height = ws.Height;
             WindowState = (WindowState)ws.State;
+
+            notificationManager = new WindowNotificationManager(this) {
+                Position = NotificationPosition.BottomCenter,
+                MaxItems = 3
+            };
         }
 
         public void WindowGotFocus(object sender, GotFocusEventArgs e) {
@@ -99,5 +107,12 @@ namespace OpenUtau.App.Views {
             Close();
         }
 
+        public bool Toast(ToastNotification toast) {
+            if (this.IsActive) {
+                notificationManager.Show(ToastControl.GetNotification(toast, this));
+                return true;
+            }
+            return false;
+        }
     }
 }

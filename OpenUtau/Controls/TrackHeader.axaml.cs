@@ -237,14 +237,20 @@ namespace OpenUtau.App.Controls {
             args.Handled = true;
         }
 
-        void SingerButtonClicked(object sender, RoutedEventArgs args) {
+        async void SingerButtonClicked(object sender, RoutedEventArgs args) {
+            args.Handled = true;
             try {
-                ViewModel?.RefreshSingers();
-                SingersMenu.Open((Control)sender);
+                if (SingerManager.Inst.Singers.Count > 0) {
+                    if (ViewModel != null) {
+                        await ViewModel.RefreshSingersAsync();
+                    }
+                    SingersMenu.Open((Control)sender);
+                } else {
+                    DocManager.Inst.ExecuteCmd(new ErrorMessageNotification("There is no singer."));
+                }
             } catch (Exception e) {
                 DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(e));
             }
-            args.Handled = true;
         }
 
         void SingerButtonContextRequested(object sender, ContextRequestedEventArgs args) {

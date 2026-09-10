@@ -465,6 +465,7 @@ OpenUtau стремится стать средой редактирования
   <system:String x:Key="pianoroll.menu.lyrics.movesuffixtovoicecolor">Переместить суффикс в VoiceColor</system:String>
   <system:String x:Key="pianoroll.menu.lyrics.removelettersuffix">Удалить буквенный суффикс</system:String>
   <system:String x:Key="pianoroll.menu.lyrics.removephonetichint">Удалить фонетическую подсказку</system:String>
+  <system:String x:Key="pianoroll.menu.lyrics.addphonetichints">Добавить фонетическую подсказку</system:String>
   <system:String x:Key="pianoroll.menu.lyrics.removetonesuffix">Удалить суффикс тона</system:String>
   <system:String x:Key="pianoroll.menu.lyrics.romajitohiragana">Ромадзи в хирагану</system:String>
   <system:String x:Key="pianoroll.menu.notedefaults">Нота по умолчанию</system:String>

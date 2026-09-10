@@ -264,7 +264,6 @@ namespace OpenUtau.App.Controls {
         private float hoverFadeGlow;
         private DateTime hoverLastFrame = DateTime.UtcNow;
         private readonly DispatcherTimer hoverTimer;
-        private Point lastPointerPos;
         private readonly Dictionary<(Color color, byte alpha, int thickness), Pen> glowPens = new();
 
         private PolylineGeometry polylineGeometry = new PolylineGeometry();
@@ -343,8 +342,11 @@ namespace OpenUtau.App.Controls {
 
         protected override void OnPointerMoved(PointerEventArgs e) {
             base.OnPointerMoved(e);
-            lastPointerPos = e.GetPosition(this);
-            UpdateHoveredNote();
+            if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) {
+                SetHoveredNote(null);
+            } else {
+                UpdateHoveredNote();
+            }
         }
 
         protected override void OnPointerExited(PointerEventArgs e) {
@@ -372,19 +374,7 @@ namespace OpenUtau.App.Controls {
                 SetHoveredNote(null);
                 return;
             }
-            double tick = viewModel.PointToTick(lastPointerPos);
-            int tone = viewModel.PointToTone(lastPointerPos);
-            UNote? found = null;
-            foreach (var note in Part.notes) {
-                if (note.position > tick && note.LeftBound > tick) {
-                    break;
-                }
-                if (note.LeftBound <= tick && tick < note.RightBound && note.AdjustedTone == tone) {
-                    found = note;
-                    break;
-                }
-            }
-            SetHoveredNote(found);
+            SetHoveredNote(viewModel.SelectableNote);
         }
 
         void SetHoveredNote(UNote? note) {
@@ -456,10 +446,8 @@ namespace OpenUtau.App.Controls {
             return pen;
         }
 
-        void DrawHoverGlow(DrawingContext context, Point leftTop, Size size, double radius, float glow) {
-            ISolidColorBrush? solid = ThemeManager.NoteBrush as ISolidColorBrush
-                ?? ThemeManager.AccentBrush1 as ISolidColorBrush;
-            if (glow <= 0.01f || solid == null) {
+        void DrawHoverGlow(DrawingContext context, Point leftTop, Size size, double radius, IBrush brush, float glow) {
+            if (glow <= 0.01f || brush is not ISolidColorBrush solid) {
                 return;
             }
             byte alpha = (byte)Math.Clamp((int)Math.Round(glow * 100), 0, 255);
@@ -731,7 +719,7 @@ namespace OpenUtau.App.Controls {
                 IPen? pen = showBorder ? ThemeManager.NoteBorderPen : null;
                 context.DrawRectangle(brush1, pen, new Rect(leftTop, rightBottom), cornerRadius, cornerRadius);
                 if (Preferences.Default.NoteHoverGlow) {
-                    DrawHoverGlow(context, leftTop, size, cornerRadius, GetHoverGlow(note));
+                    DrawHoverGlow(context, leftTop, size, cornerRadius, brush1, GetHoverGlow(note));
                 }
             } else {
                 var brush = hasError
@@ -751,7 +739,7 @@ namespace OpenUtau.App.Controls {
                     : ThemeManager.NoteBorderPen;
                 context.DrawRectangle(brush, borderPen, new Rect(leftTop, rightBottom), cornerRadius, cornerRadius);
                 if (Preferences.Default.NoteHoverGlow) {
-                    DrawHoverGlow(context, leftTop, size, cornerRadius, GetHoverGlow(note));
+                    DrawHoverGlow(context, leftTop, size, cornerRadius, brush, GetHoverGlow(note));
                 }
             }
             if (TrackHeight < 10 || note.lyric.Length == 0) {
