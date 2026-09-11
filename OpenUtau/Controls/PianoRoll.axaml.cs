@@ -2373,9 +2373,9 @@ namespace OpenUtau.App.Controls {
 
                 // Playhead & Timeline Navigation
                 case "PlayheadHome": playVm.MovePlayPos(notesVm.Part.position); return true;
-                case "SelectToStart": if (notesVm.Part.notes.FirstOrDefault() is UNote first) notesVm.ExtendSelection(first); return true;
+                case "SelectToStart": if (notesVm.Part.notes.FirstOrDefault() is UNote first) notesVm.ExtendSelectionTo(first); return true;
                 case "PlayheadEnd": playVm.MovePlayPos(notesVm.Part.End); HScrollBar.Value = HScrollBar.Maximum; return true;
-                case "SelectToEnd": if (notesVm.Part.notes.LastOrDefault() is UNote last) notesVm.ExtendSelection(last); return true;
+                case "SelectToEnd": if (notesVm.Part.notes.LastOrDefault() is UNote last) notesVm.ExtendSelectionTo(last); return true;
                 
                 case "PlayheadLeft": playVm.MovePlayPos(playVm.PlayPosTick - snapUnit); return true;
                 case "PlayheadToSelectionStart": if (!notesVm.Selection.IsEmpty) playVm.MovePlayPos(notesVm.Part.position + notesVm.Selection.FirstOrDefault()!.position); return true;

@@ -233,16 +233,14 @@ namespace OpenUtau.App.ViewModels {
         }
 
         public void ToggleMute() {
-            if (!Mute) {
-                Mute = true;
-            } else {
-                Mute = false;
-            }
+            Mute = !Mute;
             this.RaisePropertyChanged(nameof(Mute));
             JudgeMuted();
         }
 
-        public void ToggleMute(bool mute) {
+        // SetMute: do not overload ToggleMute — Avalonia 12 MethodToCommandConverter
+        // prefers the single-parameter overload and NREs when CommandParameter is null.
+        public void SetMute(bool mute) {
             if (mute) {
                 Mute = true;
             } else {

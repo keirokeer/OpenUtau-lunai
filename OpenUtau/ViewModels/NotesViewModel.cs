@@ -1005,7 +1005,9 @@ namespace OpenUtau.App.ViewModels {
                 ScrollIntoView(Selection.Head!);
             }
         }
-        public void ExtendSelection(UNote note) {
+        // Named ExtendSelectionTo (not ExtendSelection overload): Avalonia MethodToCommandConverter
+        // cannot bind uniquely when both ExtendSelection(int) and ExtendSelection(UNote) exist.
+        public void ExtendSelectionTo(UNote note) {
             if (Selection.SelectTo(note)) {
                 MessageBus.Current.SendMessage(new NotesSelectionEvent(Selection));
             }
