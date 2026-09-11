@@ -27,6 +27,7 @@ using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using OpenUtau.Colors;
 using ReactiveUI;
+using RxVoid = ReactiveUI.Primitives.RxVoid;
 using Serilog;
 using SharpCompress;
 using Point = Avalonia.Point;
@@ -68,12 +69,12 @@ namespace OpenUtau.App.Views {
 
         private bool shouldOpenPartsContextMenu;
 
-        private readonly ReactiveCommand<UPart, Unit> PartRenameCommand;
-        private readonly ReactiveCommand<UPart, Unit> PartGotoFileCommand;
-        private readonly ReactiveCommand<UPart, Unit> PartReplaceAudioCommand;
-        private readonly ReactiveCommand<UPart, Unit> PartTranscribeCommand;
-        private readonly ReactiveCommand<UPart, Unit> PartMergeCommand;
-        private readonly ReactiveCommand<UPart, Unit> PartSplitCommand;
+        private readonly ReactiveCommand<UPart, RxVoid> PartRenameCommand;
+        private readonly ReactiveCommand<UPart, RxVoid> PartGotoFileCommand;
+        private readonly ReactiveCommand<UPart, RxVoid> PartReplaceAudioCommand;
+        private readonly ReactiveCommand<UPart, RxVoid> PartTranscribeCommand;
+        private readonly ReactiveCommand<UPart, RxVoid> PartMergeCommand;
+        private readonly ReactiveCommand<UPart, RxVoid> PartSplitCommand;
 
         public MainWindow() {
             Log.Information("Creating main window.");
@@ -1053,7 +1054,10 @@ namespace OpenUtau.App.Views {
                 .Append(Core.Vogen.VogenSingerInstaller.FileExt)
                 .Append(PackageManager.OudepExt)
                 .ToArray();
-            var files = args.Data?.GetFiles()?.Where(i => i != null).Select(i => i.Path.LocalPath).ToArray() ?? new string[] { };
+            var files = args.DataTransfer.TryGetFiles()?
+                .Where(i => i != null)
+                .Select(i => i!.Path.LocalPath)
+                .ToArray() ?? Array.Empty<string>();
             if (files.Length == 0) {
                 return;
             }

@@ -9,18 +9,18 @@ using OpenUtau.Core.Format;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.SourceGenerators;
 
 namespace OpenUtau.App.ViewModels {
-    public class ExpressionDefaultItem : ReactiveObject {
+    public partial class ExpressionDefaultItem : ReactiveObject {
         public string Abbr { get; }
-        [Reactive] public string Name { get; set; }
-        [Reactive] public float Min { get; set; }
-        [Reactive] public float Max { get; set; }
-        [Reactive] public float DefaultValue { get; set; }
-        [Reactive] public float PlayheadValue { get; set; }
-        [Reactive] public bool ShowPlayheadMarker { get; set; }
-        [Reactive] public bool HasTrackOverride { get; set; }
+        [Reactive] public partial string Name { get; set; }
+        [Reactive] public partial float Min { get; set; }
+        [Reactive] public partial float Max { get; set; }
+        [Reactive] public partial float DefaultValue { get; set; }
+        [Reactive] public partial float PlayheadValue { get; set; }
+        [Reactive] public partial bool ShowPlayheadMarker { get; set; }
+        [Reactive] public partial bool HasTrackOverride { get; set; }
 
         public ExpressionDefaultItem(UExpressionDescriptor descriptor) {
             Abbr = descriptor.abbr;
@@ -40,7 +40,7 @@ namespace OpenUtau.App.ViewModels {
         }
     }
 
-    public class ExpressionStyleItemViewModel : ViewModelBase {
+    public partial class ExpressionStyleItemViewModel : ViewModelBase {
         public string Name { get; }
         public string SingerName { get; }
         public string ToolTipText { get; }
@@ -59,26 +59,26 @@ namespace OpenUtau.App.ViewModels {
         }
     }
 
-    public class ExpressionDefaultsViewModel : ViewModelBase, ICmdSubscriber {
+    public partial class ExpressionDefaultsViewModel : ViewModelBase, ICmdSubscriber {
         public ObservableCollectionExtended<ExpressionDefaultItem> ParameterItems { get; } = new();
         public ObservableCollectionExtended<ExpressionDefaultItem> VoiceColorItems { get; } = new();
         public ObservableCollectionExtended<string> VoiceColorOptions { get; } = new();
         public ObservableCollectionExtended<ExpressionStyleItemViewModel> StyleItems { get; } = new();
 
-        [Reactive] public bool HasParameters { get; private set; }
-        [Reactive] public bool HasVoiceColors { get; private set; }
-        [Reactive] public bool ShowDefaultVoiceColorPicker { get; private set; }
-        [Reactive] public bool HasStyles { get; private set; }
-        [Reactive] public bool CanSaveStyle { get; private set; }
-        [Reactive] public int SelectedVoiceColorIndex { get; set; }
-        [Reactive] public string VoiceColorCurveMaxText { get; set; } = "100";
-        [Reactive] public bool IsTrackMode { get; set; }
-        [Reactive] public bool CanUseTrackMode { get; private set; }
-        [Reactive] public bool HasTrackOverrides { get; private set; }
-        [Reactive] public string PanelTitle { get; private set; } = string.Empty;
-        [Reactive] public string TrackSubtitle { get; private set; } = string.Empty;
-        [Reactive] public bool HasTrackSubtitle { get; private set; }
-        [Reactive] public string ResetTooltip { get; private set; } = string.Empty;
+        [Reactive] public partial bool HasParameters { get; private set; }
+        [Reactive] public partial bool HasVoiceColors { get; private set; }
+        [Reactive] public partial bool ShowDefaultVoiceColorPicker { get; private set; }
+        [Reactive] public partial bool HasStyles { get; private set; }
+        [Reactive] public partial bool CanSaveStyle { get; private set; }
+        [Reactive] public partial int SelectedVoiceColorIndex { get; set; }
+        [Reactive] public partial string VoiceColorCurveMaxText { get; set; } = "100";
+        [Reactive] public partial bool IsTrackMode { get; set; }
+        [Reactive] public partial bool CanUseTrackMode { get; private set; }
+        [Reactive] public partial bool HasTrackOverrides { get; private set; }
+        [Reactive] public partial string PanelTitle { get; private set; } = string.Empty;
+        [Reactive] public partial string TrackSubtitle { get; private set; } = string.Empty;
+        [Reactive] public partial bool HasTrackSubtitle { get; private set; }
+        [Reactive] public partial string ResetTooltip { get; private set; } = string.Empty;
 
         UVoicePart? part;
         int trackNo = -1;

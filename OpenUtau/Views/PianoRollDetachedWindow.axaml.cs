@@ -40,7 +40,7 @@ namespace OpenUtau.App.Views {
             };
         }
 
-        public void WindowGotFocus(object sender, GotFocusEventArgs e) {
+        public void WindowGotFocus(object sender, FocusChangedEventArgs e) {
             if (e.Source is PianoRollDetachedWindow) {
                 pianoRoll.Focus();
             }

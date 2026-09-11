@@ -1,15 +1,15 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
 using OpenUtau.Core.G2p;
 using OpenUtau.Core.Util;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.SourceGenerators;
 
 namespace OpenUtau.App.ViewModels {
-    public class PhoneticAssistantViewModel : ViewModelBase {
-        public class G2pOption {
+    public partial class PhoneticAssistantViewModel : ViewModelBase {
+        public partial class G2pOption {
             public string name;
             public Type klass;
             public G2pOption(Type klass) {
@@ -20,9 +20,9 @@ namespace OpenUtau.App.ViewModels {
         }
         public List<G2pOption> G2ps => g2ps;
 
-        [Reactive] public G2pOption? G2p { get; set; }
-        [Reactive] public string? Grapheme { get; set; }
-        [Reactive] public string Phonemes { get; set; }
+        [Reactive] public partial G2pOption? G2p { get; set; }
+        [Reactive] public partial string? Grapheme { get; set; }
+        [Reactive] public partial string Phonemes { get; set; }
 
         private readonly List<G2pOption> g2ps = new List<G2pOption>() {
             new G2pOption(typeof(ArpabetG2p)),

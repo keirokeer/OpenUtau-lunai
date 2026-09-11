@@ -8,10 +8,10 @@ using OpenUtau.Core.Render;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.SourceGenerators;
 
 namespace OpenUtau.App.ViewModels {
-    public sealed class TrackRendererOption {
+    public sealed partial class TrackRendererOption {
         public string Id { get; }
         public string DisplayName { get; }
 
@@ -23,16 +23,16 @@ namespace OpenUtau.App.ViewModels {
         public override string ToString() => DisplayName;
     }
 
-    class TrackSettingsViewModel : ViewModelBase {
+    partial class TrackSettingsViewModel : ViewModelBase {
         public UTrack Track { get; private set; }
         public IReadOnlyList<TrackRendererOption> RendererOptions { get; }
-        [Reactive] public TrackRendererOption? SelectedRenderer { get; set; }
+        [Reactive] public partial TrackRendererOption? SelectedRenderer { get; set; }
         public ObservableCollectionExtended<IResampler> Resamplers => resamplers;
-        [Reactive] public IResampler? Resampler { get; set; }
-        [Reactive] public bool NeedsResampler { get; set; }
+        [Reactive] public partial IResampler? Resampler { get; set; }
+        [Reactive] public partial bool NeedsResampler { get; set; }
         public ObservableCollectionExtended<IWavtool> Wavtools => wavtools;
-        [Reactive] public IWavtool? Wavtool { get; set; }
-        [Reactive] public bool NeedsWavtool { get; set; }
+        [Reactive] public partial IWavtool? Wavtool { get; set; }
+        [Reactive] public partial bool NeedsWavtool { get; set; }
 
         readonly ObservableCollectionExtended<IResampler> resamplers =
             new ObservableCollectionExtended<IResampler>();

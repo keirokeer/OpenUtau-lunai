@@ -3,11 +3,11 @@ using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.SourceGenerators;
 
 namespace OpenUtau.App.ViewModels {
-    public class TimeAxisChangedEvent { }
-    public class PlaybackViewModel : ViewModelBase, ICmdSubscriber {
+    public partial class TimeAxisChangedEvent { }
+    public partial class PlaybackViewModel : ViewModelBase, ICmdSubscriber {
         UProject Project => DocManager.Inst.Project;
         public int BeatPerBar => Project.timeSignatures[0].beatPerBar;
         public int BeatUnit => Project.timeSignatures[0].beatUnit;
@@ -18,7 +18,7 @@ namespace OpenUtau.App.ViewModels {
         public int Resolution => Project.resolution;
         public int PlayPosTick => DocManager.Inst.playPosTick;
         public TimeSpan PlayPosTime => TimeSpan.FromMilliseconds((int)Project.timeAxis.TickPosToMsPos(DocManager.Inst.playPosTick));
-        [Reactive] public bool MetronomeEnabled { get; set; } = Preferences.Default.MetronomeEnabled;
+        [Reactive] public partial bool MetronomeEnabled { get; set; } = Preferences.Default.MetronomeEnabled;
 
         bool playbackActiveLast;
 

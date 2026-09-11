@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
@@ -10,14 +10,15 @@ using DynamicData.Binding;
 using OpenUtau.App.Views;
 using OpenUtau.Core.Util;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using RxVoid = ReactiveUI.Primitives.RxVoid;
+using ReactiveUI.SourceGenerators;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Formatting;
 using Serilog.Formatting.Display;
 
 namespace OpenUtau.App.ViewModels {
-    public class LogEventConverter : IValueConverter {
+    public partial class LogEventConverter : IValueConverter {
         private ITextFormatter formater;
         private StringWriter stringWriter;
         public LogEventConverter() {
@@ -39,7 +40,7 @@ namespace OpenUtau.App.ViewModels {
         }
     }
 
-    public class DebugViewModel : ViewModelBase {
+    public partial class DebugViewModel : ViewModelBase {
 
         private DebugWindow? window;
 
@@ -54,7 +55,7 @@ namespace OpenUtau.App.ViewModels {
             });
         }
 
-        public class Sink : ILogEventSink {
+        public partial class Sink : ILogEventSink {
             static Sink sink = new Sink();
             public static Sink Inst => sink;
 
@@ -121,10 +122,10 @@ namespace OpenUtau.App.ViewModels {
             }
         }
 
-        [Reactive] public LogEventLevel LogEventLevel { get; set; }
+        [Reactive] public partial LogEventLevel LogEventLevel { get; set; }
         public ObservableCollection<LogEvent> LogEvents => Sink.Inst.LogEvents;
-        public ReactiveCommand<Unit, Unit> ReverseLogOrderCommand { get; private set; }
-        public ReactiveCommand<Unit, Unit> CopyLogCommand { get; private set; }
+        public ReactiveCommand<RxVoid, RxVoid> ReverseLogOrderCommand { get; private set; }
+        public ReactiveCommand<RxVoid, RxVoid> CopyLogCommand { get; private set; }
 
         public void Clear() {
             Sink.Inst.LogEvents.Clear();

@@ -17,17 +17,15 @@ namespace OpenUtau.App.Views {
         public SplashWindow() {
             InitializeComponent();
             UpdateLogo();
-            MessageBus.Current.Listen<ThemeChangedEvent>()
-                .Subscribe(_ => UpdateLogo())
-                .DisposeWith(disposable);
+            disposable.Add(MessageBus.Current.Listen<ThemeChangedEvent>()
+                .Subscribe(_ => UpdateLogo()));
             this.Cursor = new Cursor(StandardCursorType.AppStarting);
             // Screens are not populated yet when Opened fires on X11 and
             // Wayland, so retry on activation changes until they are. This
             // fires several times per launch (GetObservable also pushes the
             // current value on subscribe), so Start() is guarded to run once.
-            this.GetObservable(Window.IsActiveProperty)
-                .Subscribe(_ => SplashWindow_Opened())
-                .DisposeWith(disposable);
+            disposable.Add(this.GetObservable(Window.IsActiveProperty)
+                .Subscribe(_ => SplashWindow_Opened()));
         }
 
         private readonly CompositeDisposable disposable = new();

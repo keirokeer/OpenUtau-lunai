@@ -5,14 +5,14 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using OpenUtau.Core;
 using OpenUtau.Core.Util;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.SourceGenerators;
 using Serilog;
 using Velopack;
 using Velopack.Exceptions;
 using Velopack.Sources;
 
 namespace OpenUtau.App.ViewModels {
-    public class UpdaterViewModel : ViewModelBase {
+    public partial class UpdaterViewModel : ViewModelBase {
         public const string LunaiRepository = "keirokeer/OpenUtau-lunai";
         public const string LunaiReleasesUrl = "https://github.com/keirokeer/OpenUtau-lunai/releases";
         public const string LunaiRepoUrl = "https://github.com/keirokeer/OpenUtau-lunai";
@@ -22,11 +22,11 @@ namespace OpenUtau.App.ViewModels {
 
         public string AppVersion => $"v{Assembly.GetEntryAssembly()?.GetName().Version}";
         public bool IsDarkMode => ThemeManager.IsDarkMode;
-        [Reactive] public string UpdaterStatus { get; set; }
-        [Reactive] public bool UpdateAvailable { get; set; }
-        [Reactive] public FontWeight UpdateButtonFontWeight { get; set; }
+        [Reactive] public partial string UpdaterStatus { get; set; }
+        [Reactive] public partial bool UpdateAvailable { get; set; }
+        [Reactive] public partial FontWeight UpdateButtonFontWeight { get; set; }
         /// <summary>When true, Update button opens GitHub instead of applying a Velopack package.</summary>
-        [Reactive] public bool OpenGitHubOnUpdate { get; set; }
+        [Reactive] public partial bool OpenGitHubOnUpdate { get; set; }
         public Action? CloseApplication { get; set; }
 
         UpdateManager? updateManager;

@@ -2,11 +2,11 @@ using System.Collections.ObjectModel;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.SourceGenerators;
 
 namespace OpenUtau.App.ViewModels;
 
-public class ExpressionStyleValueItem : ViewModelBase {
+public partial class ExpressionStyleValueItem : ViewModelBase {
     public string Abbr { get; }
     public string Name { get; }
     public double Min { get; }
@@ -14,8 +14,8 @@ public class ExpressionStyleValueItem : ViewModelBase {
     public double FactoryValue { get; }
     public bool IsOptions { get; }
     public ObservableCollection<string> Options { get; } = new();
-    [Reactive] public double Value { get; set; }
-    [Reactive] public int SelectedOptionIndex { get; set; }
+    [Reactive] public partial double Value { get; set; }
+    [Reactive] public partial int SelectedOptionIndex { get; set; }
 
     public ExpressionStyleValueItem(UExpressionDescriptor descriptor, float value, string[]? options = null) {
         Abbr = descriptor.abbr;
@@ -49,12 +49,12 @@ public class ExpressionStyleValueItem : ViewModelBase {
     }
 }
 
-public class SaveExpressionStyleViewModel : ViewModelBase {
+public partial class SaveExpressionStyleViewModel : ViewModelBase {
     public ObservableCollection<ExpressionStyleValueItem> Items { get; } = new();
 
-    [Reactive] public string StyleName { get; set; } = string.Empty;
-    [Reactive] public string SingerName { get; set; } = string.Empty;
-    [Reactive] public string ErrorMessage { get; set; } = string.Empty;
+    [Reactive] public partial string StyleName { get; set; } = string.Empty;
+    [Reactive] public partial string SingerName { get; set; } = string.Empty;
+    [Reactive] public partial string ErrorMessage { get; set; } = string.Empty;
     public bool HasSingerName => !string.IsNullOrWhiteSpace(SingerName);
     public bool HasError => !string.IsNullOrEmpty(ErrorMessage);
 

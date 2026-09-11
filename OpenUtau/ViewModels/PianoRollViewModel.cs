@@ -9,6 +9,7 @@ using Avalonia.Input;
 using Avalonia.Threading;
 using DynamicData.Binding;
 using OpenUtau.App;
+using OpenUtau.App.Helpers;
 using OpenUtau.App.Controls;
 using OpenUtau.App.Views;
 using OpenUtau.Classic;
@@ -17,17 +18,19 @@ using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using OpenUtau.ViewModels;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using RxVoid = ReactiveUI.Primitives.RxVoid;
+using ReactiveUI.Avalonia;
+using ReactiveUI.SourceGenerators;
 
 namespace OpenUtau.App.ViewModels {
-    public class PhonemeMouseoverEvent {
+    public partial class PhonemeMouseoverEvent {
         public readonly UPhoneme? mouseoverPhoneme;
         public PhonemeMouseoverEvent(UPhoneme? mouseoverPhoneme) {
             this.mouseoverPhoneme = mouseoverPhoneme;
         }
     }
 
-    public class NotesContextMenuArgs {
+    public partial class NotesContextMenuArgs {
         public PianoRollViewModel? ViewModel { get; set; }
 
         public bool ForNote { get; set; }
@@ -40,21 +43,21 @@ namespace OpenUtau.App.ViewModels {
         public PitchPointHitInfo PitchPointHitInfo { get; set; }
     }
 
-    public class PianorollRefreshEvent {
+    public partial class PianorollRefreshEvent {
         public readonly string refreshItem;
         public PianorollRefreshEvent(string refreshItem) {
             this.refreshItem = refreshItem;
         }
     }
 
-    public class PianoRollViewModel : ViewModelBase, ICmdSubscriber {
+    public partial class PianoRollViewModel : ViewModelBase, ICmdSubscriber {
         DispatcherTimer? progressSmoothTimer;
         double progressTarget;
 
-        [Reactive] public NotesViewModel NotesViewModel { get; set; }
-        [Reactive] public PlaybackViewModel? PlaybackViewModel { get; set; }
-        [Reactive] public CurveViewModel CurveViewModel { get; set; }
-        [Reactive] public Dictionary<string, string> Hotkeys { get; set; } = new Dictionary<string, string>();
+        [Reactive] public partial NotesViewModel NotesViewModel { get; set; }
+        [Reactive] public partial PlaybackViewModel? PlaybackViewModel { get; set; }
+        [Reactive] public partial CurveViewModel CurveViewModel { get; set; }
+        [Reactive] public partial Dictionary<string, string> Hotkeys { get; set; } = new Dictionary<string, string>();
 
         public double Width => Preferences.Default.PianorollWindowSize.Width;
         public double Height => Preferences.Default.PianorollWindowSize.Height;
@@ -78,7 +81,7 @@ namespace OpenUtau.App.ViewModels {
         public bool PlaybackAutoScroll2 { get => Preferences.Default.PlaybackAutoScroll == 2 ? true : false; }
         public bool PianoRollDetached { get => Preferences.Default.DetachPianoRoll; }
         public bool HideMenuItemVisible => !Preferences.Default.DetachPianoRoll;
-        [Reactive] public bool PianoRollFullscreen { get; set; }
+        [Reactive] public partial bool PianoRollFullscreen { get; set; }
         public bool UsesExpandedPianoRollLayout => PianoRollDetached || PianoRollFullscreen;
         public bool IsSidePanelVisible => !UsesExpandedPianoRollLayout;
         public bool IsLeftDockPanelVisible => (ShowAppearancePanel || ShowDiffSingerPanel || (ShowExpressionDefaultsPanel && IsDiffSingerTrack)) && !UsesExpandedPianoRollLayout;
@@ -89,14 +92,14 @@ namespace OpenUtau.App.ViewModels {
         public bool IsAppearanceOnlyGapResizeVisible => IsLeftDockPanelVisible && !IsThemeEditorPanelVisible;
         public GridLength PianoRollSideColumnWidth => UsesExpandedPianoRollLayout ? new GridLength(0) : new GridLength(48);
         public GridLength PianoRollSideGapWidth => UsesExpandedPianoRollLayout ? new GridLength(0) : new GridLength(8);
-        [Reactive] public bool ShowAppearancePanel { get; set; }
-        [Reactive] public bool ShowDiffSingerPanel { get; set; }
-        [Reactive] public bool ShowExpressionDefaultsPanel { get; set; }
-        [Reactive] public bool IsDiffSingerTrack { get; private set; }
-        [Reactive] public bool ShowThemeEditorPanel { get; set; }
-        [Reactive] public string? ThemeEditorPath { get; set; }
-        [Reactive] public double AppearancePanelWidth { get; set; }
-        [Reactive] public double ThemeEditorPanelWidth { get; set; }
+        [Reactive] public partial bool ShowAppearancePanel { get; set; }
+        [Reactive] public partial bool ShowDiffSingerPanel { get; set; }
+        [Reactive] public partial bool ShowExpressionDefaultsPanel { get; set; }
+        [Reactive] public partial bool IsDiffSingerTrack { get; private set; }
+        [Reactive] public partial bool ShowThemeEditorPanel { get; set; }
+        [Reactive] public partial string? ThemeEditorPath { get; set; }
+        [Reactive] public partial double AppearancePanelWidth { get; set; }
+        [Reactive] public partial double ThemeEditorPanelWidth { get; set; }
         PreferencesViewModel? appearancePreferences;
         ExpressionDefaultsViewModel? expressionDefaults;
         static PreferencesViewModel? sharedAppearancePreferences;
@@ -133,12 +136,12 @@ namespace OpenUtau.App.ViewModels {
             !IsThemeEditorPanelVisible
                 ? new GridLength(0)
                 : new GridLength(WorkspaceDockPanelMetrics.ClampWidth(ThemeEditorPanelWidth));
-        public ReactiveCommand<Unit, Unit> ApplyDiffSingerQualityPresetCommand { get; }
-        public ReactiveCommand<Unit, Unit> ApplyDiffSingerMediumPresetCommand { get; }
-        public ReactiveCommand<Unit, Unit> ApplyDiffSingerLowPresetCommand { get; }
-        [Reactive] public bool DiffSingerHqPresetActive { get; private set; }
-        [Reactive] public bool DiffSingerMqPresetActive { get; private set; }
-        [Reactive] public bool DiffSingerLqPresetActive { get; private set; }
+        public ReactiveCommand<RxVoid, RxVoid> ApplyDiffSingerQualityPresetCommand { get; }
+        public ReactiveCommand<RxVoid, RxVoid> ApplyDiffSingerMediumPresetCommand { get; }
+        public ReactiveCommand<RxVoid, RxVoid> ApplyDiffSingerLowPresetCommand { get; }
+        [Reactive] public partial bool DiffSingerHqPresetActive { get; private set; }
+        [Reactive] public partial bool DiffSingerMqPresetActive { get; private set; }
+        [Reactive] public partial bool DiffSingerLqPresetActive { get; private set; }
         public bool ShowPhonemizerTags {
             get => Preferences.Default.ShowPhonemizerTags;
             set {
@@ -147,13 +150,13 @@ namespace OpenUtau.App.ViewModels {
                 this.RaisePropertyChanged(nameof(ShowPhonemizerTags));
             }
         }
-        [Reactive] public bool IsTikTokMode { get; set; }
+        [Reactive] public partial bool IsTikTokMode { get; set; }
 
         public EditTool EditTool { get; set; } = Preferences.Default.EditTool;
-        [Reactive] public int ToolIndex { get; set; } = Preferences.Default.EditTool.BaseTool;
-        [Reactive] public int PenToolIndex { get; set; } = Preferences.Default.EditTool.PenToolVariation;
-        [Reactive] public bool PitchOverwrite { get; set; } = Preferences.Default.EditTool.OverwritePitch;
-        [Reactive] public bool PitchFocusDim { get; private set; }
+        [Reactive] public partial int ToolIndex { get; set; } = Preferences.Default.EditTool.BaseTool;
+        [Reactive] public partial int PenToolIndex { get; set; } = Preferences.Default.EditTool.PenToolVariation;
+        [Reactive] public partial bool PitchOverwrite { get; set; } = Preferences.Default.EditTool.OverwritePitch;
+        [Reactive] public partial bool PitchFocusDim { get; private set; }
 
         public bool CursorTool => ToolIndex == 0;
         public bool PenTool => ToolIndex == 1 && PenToolIndex == 0;
@@ -176,26 +179,26 @@ namespace OpenUtau.App.ViewModels {
         public Dictionary<Key, MenuItemViewModel> LegacyPluginShortcuts { get; private set; }
             = new Dictionary<Key, MenuItemViewModel>();
 
-        [Reactive] public double Progress { get; set; }
-        [Reactive] public string ProgressText { get; set; } = string.Empty;
-        [Reactive] public bool CanUndo { get; set; } = false;
-        [Reactive] public bool CanRedo { get; set; } = false;
-        [Reactive] public string UndoText { get; set; } = ThemeManager.GetString("menu.edit.undo");
-        [Reactive] public string RedoText { get; set; } = ThemeManager.GetString("menu.edit.redo");
+        [Reactive] public partial double Progress { get; set; }
+        [Reactive] public partial string ProgressText { get; set; } = string.Empty;
+        [Reactive] public partial bool CanUndo { get; set; } = false;
+        [Reactive] public partial bool CanRedo { get; set; } = false;
+        [Reactive] public partial string UndoText { get; set; } = ThemeManager.GetString("menu.edit.undo");
+        [Reactive] public partial string RedoText { get; set; } = ThemeManager.GetString("menu.edit.redo");
 
-        public ReactiveCommand<NoteHitInfo, Unit> NoteDeleteCommand { get; set; }
-        public ReactiveCommand<NoteHitInfo, Unit> NoteCopyCommand { get; set; }
-        public ReactiveCommand<NoteHitInfo, Unit> ClearPhraseCacheCommand { get; set; }
-        public ReactiveCommand<PitchPointHitInfo, Unit> PitEaseInOutCommand { get; set; }
-        public ReactiveCommand<PitchPointHitInfo, Unit> PitLinearCommand { get; set; }
-        public ReactiveCommand<PitchPointHitInfo, Unit> PitEaseInCommand { get; set; }
-        public ReactiveCommand<PitchPointHitInfo, Unit> PitEaseOutCommand { get; set; }
-        public ReactiveCommand<PitchPointHitInfo, Unit> PitSplineCommand { get; set; }
-        public ReactiveCommand<PitchPointHitInfo, Unit> PitSnapCommand { get; set; }
-        public ReactiveCommand<PitchPointHitInfo, Unit> PitDelCommand { get; set; }
-        public ReactiveCommand<PitchPointHitInfo, Unit> PitAddCommand { get; set; }
+        public ReactiveCommand<NoteHitInfo, RxVoid> NoteDeleteCommand { get; set; }
+        public ReactiveCommand<NoteHitInfo, RxVoid> NoteCopyCommand { get; set; }
+        public ReactiveCommand<NoteHitInfo, RxVoid> ClearPhraseCacheCommand { get; set; }
+        public ReactiveCommand<PitchPointHitInfo, RxVoid> PitEaseInOutCommand { get; set; }
+        public ReactiveCommand<PitchPointHitInfo, RxVoid> PitLinearCommand { get; set; }
+        public ReactiveCommand<PitchPointHitInfo, RxVoid> PitEaseInCommand { get; set; }
+        public ReactiveCommand<PitchPointHitInfo, RxVoid> PitEaseOutCommand { get; set; }
+        public ReactiveCommand<PitchPointHitInfo, RxVoid> PitSplineCommand { get; set; }
+        public ReactiveCommand<PitchPointHitInfo, RxVoid> PitSnapCommand { get; set; }
+        public ReactiveCommand<PitchPointHitInfo, RxVoid> PitDelCommand { get; set; }
+        public ReactiveCommand<PitchPointHitInfo, RxVoid> PitAddCommand { get; set; }
 
-        private ReactiveCommand<Classic.Plugin, Unit> legacyPluginCommand;
+        private ReactiveCommand<Classic.Plugin, RxVoid> legacyPluginCommand;
 
         public void ReloadShortcuts() {
             var newHotkeys = new Dictionary<string, string>();
@@ -260,7 +263,7 @@ namespace OpenUtau.App.ViewModels {
                     p => p.DiffSingerSteps,
                     p => p.DiffSingerStepsVariance,
                     p => p.DiffSingerStepsPitch)
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(_ => UpdateDiffSingerPresetHighlight());
             UpdateDiffSingerPresetHighlight();
             this.WhenAnyValue(vm => vm.ShowAppearancePanel)
@@ -303,10 +306,10 @@ namespace OpenUtau.App.ViewModels {
             this.WhenAnyValue(vm => vm.ShowThemeEditorPanel)
                 .Subscribe(_ => RaiseThemeEditorLayoutProperties());
             MessageBus.Current.Listen<OpenDockedThemeEditorEvent>()
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(e => OpenThemeEditor(e.Path));
             MessageBus.Current.Listen<CloseDockedThemeEditorEvent>()
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(_ => CloseThemeEditor());
 
             this.WhenAnyValue(vm => vm.ToolIndex)

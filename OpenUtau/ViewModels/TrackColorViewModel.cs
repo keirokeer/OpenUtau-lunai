@@ -7,15 +7,15 @@ using OpenUtau.Colors;
 using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.SourceGenerators;
 
 namespace OpenUtau.App.ViewModels {
-    public class TrackColorViewModel : ViewModelBase {
+    public partial class TrackColorViewModel : ViewModelBase {
         readonly UTrack track;
         TrackColorPickerItemViewModel? previousSelection;
 
         public ObservableCollection<TrackColorPickerItemViewModel> Items { get; } = new();
-        [Reactive] public TrackColorPickerItemViewModel? SelectedItem { get; set; }
+        [Reactive] public partial TrackColorPickerItemViewModel? SelectedItem { get; set; }
 
         public TrackColorViewModel(UTrack track) {
             this.track = track;

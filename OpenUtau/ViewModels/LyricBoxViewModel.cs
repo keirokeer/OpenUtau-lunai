@@ -8,31 +8,31 @@ using OpenUtau.Core;
 using OpenUtau.Core.DiffSinger;
 using OpenUtau.Core.Ustx;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.SourceGenerators;
 
 namespace OpenUtau.App.ViewModels {
-    class LyricBoxViewModel : ViewModelBase {
-        public class SuggestionItem {
+    partial class LyricBoxViewModel : ViewModelBase {
+        public partial class SuggestionItem {
             public string Alias { get; set; } = string.Empty;
             public string Source { get; set; } = string.Empty;
         }
 
-        [Reactive] public UVoicePart? Part { get; set; }
-        [Reactive] public LyricBoxNoteOrPhoneme? NoteOrPhoneme { get; set; }
-        [Reactive] public bool IsVisible { get; set; }
-        [Reactive] public string? Text { get; set; }
+        [Reactive] public partial UVoicePart? Part { get; set; }
+        [Reactive] public partial LyricBoxNoteOrPhoneme? NoteOrPhoneme { get; set; }
+        [Reactive] public partial bool IsVisible { get; set; }
+        [Reactive] public partial string? Text { get; set; }
         /// <summary>When editing phoneme: true = editing only tag; commit builds full = Text + "/" + PhonemeOtherPart.</summary>
-        [Reactive] public bool EditPhonemeTagOnly { get; set; }
+        [Reactive] public partial bool EditPhonemeTagOnly { get; set; }
         /// <summary>When editing phoneme: true = editing only phoneme part; commit builds full = (PhonemeOtherPart + "/") + Text.</summary>
-        [Reactive] public bool EditPhonemePhonemeOnly { get; set; }
+        [Reactive] public partial bool EditPhonemePhonemeOnly { get; set; }
         /// <summary>The other part (phoneme-only when EditPhonemeTagOnly, tag when EditPhonemePhonemeOnly).</summary>
-        [Reactive] public string? PhonemeOtherPart { get; set; }
-        [Reactive] public string? BlendText { get; set; }
-        [Reactive] public int BlendWeight { get; set; }
+        [Reactive] public partial string? PhonemeOtherPart { get; set; }
+        [Reactive] public partial string? BlendText { get; set; }
+        [Reactive] public partial int BlendWeight { get; set; }
         /// <summary>When true, suggestion list updates/applies to the blend phoneme field.</summary>
-        [Reactive] public bool SuggestionFromBlend { get; set; }
-        [Reactive] public SuggestionItem? SelectedSuggestion { get; set; }
-        [Reactive] public ObservableCollectionExtended<SuggestionItem> Suggestions { get; set; }
+        [Reactive] public partial bool SuggestionFromBlend { get; set; }
+        [Reactive] public partial SuggestionItem? SelectedSuggestion { get; set; }
+        [Reactive] public partial ObservableCollectionExtended<SuggestionItem> Suggestions { get; set; }
 
         public bool IsAliasBox => isAliasBox.Value;
         private readonly ObservableAsPropertyHelper<bool> isAliasBox;
@@ -218,13 +218,13 @@ namespace OpenUtau.App.ViewModels {
         }
     }
 
-    public abstract class LyricBoxNoteOrPhoneme { }
-    public class LyricBoxNote : LyricBoxNoteOrPhoneme {
+    public abstract partial class LyricBoxNoteOrPhoneme { }
+    public partial class LyricBoxNote : LyricBoxNoteOrPhoneme {
         public UNote note;
         public LyricBoxNote(UNote note) { this.note = note; }
         public UNote Unwrap() => note;
     }
-    public class LyricBoxPhoneme : LyricBoxNoteOrPhoneme {
+    public partial class LyricBoxPhoneme : LyricBoxNoteOrPhoneme {
         public UPhoneme phoneme;
         public LyricBoxPhoneme(UPhoneme phoneme) { this.phoneme = phoneme; }
         public UPhoneme Unwrap() => phoneme;

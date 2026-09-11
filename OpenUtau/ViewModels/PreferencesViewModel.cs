@@ -6,13 +6,16 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Text.RegularExpressions;
 using OpenUtau.App;
+using OpenUtau.App.Helpers;
 using OpenUtau.Audio;
 using OpenUtau.Classic;
 using OpenUtau.Core;
 using OpenUtau.Core.Util;
 using OpenUtau.Colors;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using RxVoid = ReactiveUI.Primitives.RxVoid;
+using ReactiveUI.Avalonia;
+using ReactiveUI.SourceGenerators;
 using OpenUtau.Core.Render;
 using Serilog;
 using Avalonia.Input;
@@ -22,7 +25,7 @@ using OpenUtau.Core.Editing;
 using Avalonia.Media;
 
 namespace OpenUtau.App.ViewModels {
-    public class LyricsHelperOption {
+    public partial class LyricsHelperOption {
         public readonly Type klass;
         public LyricsHelperOption(Type klass) {
             this.klass = klass;
@@ -31,14 +34,14 @@ namespace OpenUtau.App.ViewModels {
             return klass.Name;
         }
     }
-    public class ShortcutsRefreshEvent { }
-    public class ShortcutItemViewModel : ViewModelBase {
+    public partial class ShortcutsRefreshEvent { }
+    public partial class ShortcutItemViewModel : ViewModelBase {
         public string ActionName { get; set; } = string.Empty;
         public string ActionId { get; set; } = string.Empty;
         
-        [Reactive] public Key Key { get; set; }
-        [Reactive] public KeyModifiers Modifiers { get; set; }
-        [Reactive] public bool IsListening { get; set; }
+        [Reactive] public partial Key Key { get; set; }
+        [Reactive] public partial KeyModifiers Modifiers { get; set; }
+        [Reactive] public partial bool IsListening { get; set; }
 
         public string DisplayString {
             get {
@@ -57,7 +60,7 @@ namespace OpenUtau.App.ViewModels {
             this.RaisePropertyChanged(nameof(DisplayString));
         }
     }
-    public class PreferencesViewModel : ViewModelBase {
+    public partial class PreferencesViewModel : ViewModelBase {
         // General
         private CultureInfo? language;
         private CultureInfo? sortingOrder;
@@ -72,10 +75,10 @@ namespace OpenUtau.App.ViewModels {
             get => sortingOrder;
             set => this.RaiseAndSetIfChanged(ref sortingOrder, value);
         }
-        [Reactive] public bool Beta { get; set; }
+        [Reactive] public partial bool Beta { get; set; }
 
         // DiffSinger voice color
-        [Reactive] public string VoiceColorCurveMaxText { get; set; } = "100";
+        [Reactive] public partial string VoiceColorCurveMaxText { get; set; } = "100";
 
         // Playback
         private List<AudioOutputDevice>? audioOutputDevices;
@@ -89,81 +92,81 @@ namespace OpenUtau.App.ViewModels {
             get => audioOutputDevice;
             set => this.RaiseAndSetIfChanged(ref audioOutputDevice, value);
         }
-        [Reactive] public bool UseSystemDefaultDevice { get; set; }
-        [Reactive] public uint AudioBackEnd { get; set; }
-        [Reactive] public int LockStartTime { get; set; }
-        [Reactive] public int PlaybackAutoScroll { get; set; }
-        [Reactive] public double PlayPosMarkerMargin { get; set; }
-        [Reactive] public bool UseModernPlayhead { get; set; }
-        [Reactive] public bool PlaybackPitchFollowEnabled { get; set; }
-        [Reactive] public int PlaybackPitchFollowSemitoneThreshold { get; set; }
-        [Reactive] public double PlaybackPitchFollowVerticalPosition { get; set; }
-        [Reactive] public double PlaybackPitchFollowFrameSmoothing { get; set; }
-        [Reactive] public bool PlaybackPitchFollowShowPath { get; set; }
-        [Reactive] public bool ExperimentalInvalidatePlaybackOnEdit { get; set; }
+        [Reactive] public partial bool UseSystemDefaultDevice { get; set; }
+        [Reactive] public partial uint AudioBackEnd { get; set; }
+        [Reactive] public partial int LockStartTime { get; set; }
+        [Reactive] public partial int PlaybackAutoScroll { get; set; }
+        [Reactive] public partial double PlayPosMarkerMargin { get; set; }
+        [Reactive] public partial bool UseModernPlayhead { get; set; }
+        [Reactive] public partial bool PlaybackPitchFollowEnabled { get; set; }
+        [Reactive] public partial int PlaybackPitchFollowSemitoneThreshold { get; set; }
+        [Reactive] public partial double PlaybackPitchFollowVerticalPosition { get; set; }
+        [Reactive] public partial double PlaybackPitchFollowFrameSmoothing { get; set; }
+        [Reactive] public partial bool PlaybackPitchFollowShowPath { get; set; }
+        [Reactive] public partial bool ExperimentalInvalidatePlaybackOnEdit { get; set; }
 
         // Paths
         public string SingerPath => PathManager.Inst.SingersPath;
         public string AdditionalSingersPath => !string.IsNullOrWhiteSpace(PathManager.Inst.AdditionalSingersPath) ? PathManager.Inst.AdditionalSingersPath : "(None)";
-        [Reactive] public bool InstallToAdditionalSingersPath { get; set; }
-        [Reactive] public bool LoadDeepFolders { get; set; }
+        [Reactive] public partial bool InstallToAdditionalSingersPath { get; set; }
+        [Reactive] public partial bool LoadDeepFolders { get; set; }
 
         // Editing
         public List<LyricsHelperOption> LyricsHelpers { get; } =
             ActiveLyricsHelper.Inst.Available
                 .Select(klass => new LyricsHelperOption(klass))
                 .ToList();
-        [Reactive] public LyricsHelperOption? LyricsHelper { get; set; }
-        [Reactive] public bool LyricsHelperBrackets { get; set; }
-        [Reactive] public bool PenPlusDefault { get; set; }
+        [Reactive] public partial LyricsHelperOption? LyricsHelper { get; set; }
+        [Reactive] public partial bool LyricsHelperBrackets { get; set; }
+        [Reactive] public partial bool PenPlusDefault { get; set; }
 
         // Render
-        [Reactive] public bool PreRender { get; set; }
-        [Reactive] public int NumRenderThreads { get; set; }
+        [Reactive] public partial bool PreRender { get; set; }
+        [Reactive] public partial int NumRenderThreads { get; set; }
         public int LogicalCoreCount {
             get => Environment.ProcessorCount;
         }
-        [Reactive] public bool HighThreads { get; set; }
+        [Reactive] public partial bool HighThreads { get; set; }
         public int SafeMaxThreadCount {
             get => Math.Min(8, LogicalCoreCount / 2);
         }
-        [Reactive] public bool SkipRenderingMutedTracks { get; set; }
-        [Reactive] public bool ClearCacheOnQuit { get; set; }
+        [Reactive] public partial bool SkipRenderingMutedTracks { get; set; }
+        [Reactive] public partial bool ClearCacheOnQuit { get; set; }
         public List<string> OnnxRunnerOptions { get; set; }
-        [Reactive] public string OnnxRunner { get; set; }
+        [Reactive] public partial string OnnxRunner { get; set; }
         public List<GpuInfo> OnnxGpuOptions { get; set; }
-        [Reactive] public GpuInfo OnnxGpu { get; set; }
-        [Reactive] public bool ShowOnnxGpu { get; set; }
+        [Reactive] public partial GpuInfo OnnxGpu { get; set; }
+        [Reactive] public partial bool ShowOnnxGpu { get; set; }
 
         // GAME backend (onnx / ggml)
         public List<string> GameBackendOptions { get; } = new() { "ONNX", "GGML" };
-        [Reactive] public string GameBackend { get; set; }
+        [Reactive] public partial string GameBackend { get; set; }
 
         // Appearance
-        [Reactive] public string ThemeName { get; set; }
+        [Reactive] public partial string ThemeName { get; set; }
         /// <summary>-100 cold … 0 … +100 warm. Stored as Preferences.ThemeTemperature.</summary>
-        [Reactive] public int ThemeColorTemperature { get; set; }
+        [Reactive] public partial int ThemeColorTemperature { get; set; }
         /// <summary>0…100 blend toward ThemeTintColor.</summary>
-        [Reactive] public int ThemeTintAmount { get; set; }
-        [Reactive] public Color ThemeTintColor { get; set; }
-        [Reactive] public int DegreeStyle { get; set; }
-        [Reactive] public bool UseTrackColor { get; set; }
-        [Reactive] public bool TintPianoRollBackgroundWithTrackColor { get; set; }
-        [Reactive] public TrackColor DefaultTrackColor { get; set; }
-        [Reactive] public bool ShowPortrait { get; set; }
-        [Reactive] public bool ShowIcon { get; set; }
-        [Reactive] public bool ShowGhostNotes { get; set; }
-        [Reactive] public bool NoteHoverGlow { get; set; }
-        [Reactive] public bool ShowPlaybackNoteHighlight { get; set; }
-        [Reactive] public bool ShowPlaybackNoteBounce { get; set; }
-        [Reactive] public bool DetachPianoRoll { get; set; }
-        [Reactive] public bool ShowNoteBorder { get; set; }
-        [Reactive] public double NoteBorderThickness { get; set; }
-        [Reactive] public bool SolidTickGridLines { get; set; }
-        [Reactive] public bool SolidExpPanelGridLines { get; set; }
-        [Reactive] public double NoteOpacity { get; set; }
-        [Reactive] public double NoteCornerRadius { get; set; }
-        [Reactive] public bool ThemeEditable { get; set; }
+        [Reactive] public partial int ThemeTintAmount { get; set; }
+        [Reactive] public partial Color ThemeTintColor { get; set; }
+        [Reactive] public partial int DegreeStyle { get; set; }
+        [Reactive] public partial bool UseTrackColor { get; set; }
+        [Reactive] public partial bool TintPianoRollBackgroundWithTrackColor { get; set; }
+        [Reactive] public partial TrackColor DefaultTrackColor { get; set; }
+        [Reactive] public partial bool ShowPortrait { get; set; }
+        [Reactive] public partial bool ShowIcon { get; set; }
+        [Reactive] public partial bool ShowGhostNotes { get; set; }
+        [Reactive] public partial bool NoteHoverGlow { get; set; }
+        [Reactive] public partial bool ShowPlaybackNoteHighlight { get; set; }
+        [Reactive] public partial bool ShowPlaybackNoteBounce { get; set; }
+        [Reactive] public partial bool DetachPianoRoll { get; set; }
+        [Reactive] public partial bool ShowNoteBorder { get; set; }
+        [Reactive] public partial double NoteBorderThickness { get; set; }
+        [Reactive] public partial bool SolidTickGridLines { get; set; }
+        [Reactive] public partial bool SolidExpPanelGridLines { get; set; }
+        [Reactive] public partial double NoteOpacity { get; set; }
+        [Reactive] public partial double NoteCornerRadius { get; set; }
+        [Reactive] public partial bool ThemeEditable { get; set; }
         public List<string> ThemeItems => ThemeManager.GetAvailableThemes();
         public ObservableCollection<ThemePickerItemViewModel> BuiltInThemePickerItems { get; } = new();
         public ObservableCollection<ThemePickerItemViewModel> BuiltInCustomThemePickerItems { get; } = new();
@@ -173,8 +176,8 @@ namespace OpenUtau.App.ViewModels {
 
         // UTAU
         public List<string> DefaultRendererOptions { get; set; }
-        [Reactive] public string DefaultRenderer { get; set; }
-        [Reactive] public int OtoEditor { get; set; }
+        [Reactive] public partial string DefaultRenderer { get; set; }
+        [Reactive] public partial int OtoEditor { get; set; }
         public string VLabelerPath => Preferences.Default.VLabelerPath;
         public string SetParamPath => Preferences.Default.SetParamPath;
 
@@ -185,33 +188,33 @@ namespace OpenUtau.App.ViewModels {
         public List<int> DiffSingerStepsOptions { get; } = DiffSingerStepsChoices;
         public List<int> DiffSingerStepsVarianceOptions { get; } = DiffSingerStepsChoices;
         public List<int> DiffSingerStepsPitchOptions { get; } = DiffSingerStepsChoices;
-        [Reactive] public int DiffSingerSteps { get; set; }
-        [Reactive] public int DiffSingerStepsVariance { get; set; }
-        [Reactive] public int DiffSingerStepsPitch { get; set; }
-        [Reactive] public double DiffSingerDepth { get; set; }
-        [Reactive] public bool DiffSingerTensorCache { get; set; }
-        [Reactive] public bool DiffSingerVarianceLocalPitchPatch { get; set; }
-        [Reactive] public bool DiffSingerAcousticLocalRetake { get; set; }
-        [Reactive] public bool DiffSingerUnvoicedConsonantAcousticF0Interpolate { get; set; }
-        [Reactive] public bool DiffSingerShowAcousticF0PatchPreview { get; set; }
-        [Reactive] public bool DiffSingerAcousticFlatPitch { get; set; }
-        [Reactive] public bool DiffSingerPhonemeVarianceRemap { get; set; }
-        [Reactive] public bool DiffSingerLangCodeHide { get; set; }
-        [Reactive] public bool DiffSingerPhonemePanelMode { get; set; }
-        [Reactive] public bool DiffSingerPhonemePanelAuto { get; set; }
-        [Reactive] public bool DiffSingerLocalRetaking { get; set; }
-        [Reactive] public bool DiffSingerShowRenderPhraseBoundaries { get; set; }
-        [Reactive] public bool DiffSingerMergeOverlappingPhrases { get; set; }
-        [Reactive] public bool DiffSingerShowPhonemeVarianceRemapPreview { get; set; }
+        [Reactive] public partial int DiffSingerSteps { get; set; }
+        [Reactive] public partial int DiffSingerStepsVariance { get; set; }
+        [Reactive] public partial int DiffSingerStepsPitch { get; set; }
+        [Reactive] public partial double DiffSingerDepth { get; set; }
+        [Reactive] public partial bool DiffSingerTensorCache { get; set; }
+        [Reactive] public partial bool DiffSingerVarianceLocalPitchPatch { get; set; }
+        [Reactive] public partial bool DiffSingerAcousticLocalRetake { get; set; }
+        [Reactive] public partial bool DiffSingerUnvoicedConsonantAcousticF0Interpolate { get; set; }
+        [Reactive] public partial bool DiffSingerShowAcousticF0PatchPreview { get; set; }
+        [Reactive] public partial bool DiffSingerAcousticFlatPitch { get; set; }
+        [Reactive] public partial bool DiffSingerPhonemeVarianceRemap { get; set; }
+        [Reactive] public partial bool DiffSingerLangCodeHide { get; set; }
+        [Reactive] public partial bool DiffSingerPhonemePanelMode { get; set; }
+        [Reactive] public partial bool DiffSingerPhonemePanelAuto { get; set; }
+        [Reactive] public partial bool DiffSingerLocalRetaking { get; set; }
+        [Reactive] public partial bool DiffSingerShowRenderPhraseBoundaries { get; set; }
+        [Reactive] public partial bool DiffSingerMergeOverlappingPhrases { get; set; }
+        [Reactive] public partial bool DiffSingerShowPhonemeVarianceRemapPreview { get; set; }
 
         // Advanced
-        [Reactive] public bool RememberMid { get; set; }
-        [Reactive] public bool RememberUst { get; set; }
-        [Reactive] public bool RememberVsqx { get; set; }
+        [Reactive] public partial bool RememberMid { get; set; }
+        [Reactive] public partial bool RememberUst { get; set; }
+        [Reactive] public partial bool RememberVsqx { get; set; }
         public string WinePath => Preferences.Default.WinePath;
 
         // Shortcuts
-        [Reactive] public ShortcutItemViewModel? ActiveShortcut { get; set; }
+        [Reactive] public partial ShortcutItemViewModel? ActiveShortcut { get; set; }
         public void ListenForShortcut(ShortcutItemViewModel item) {
             // Cancel any existing listening item
             if (ActiveShortcut != null) {
@@ -307,8 +310,8 @@ namespace OpenUtau.App.ViewModels {
         }
         private List<ShortcutItemViewModel> allShortcuts = new List<ShortcutItemViewModel>();
         public ObservableCollection<ShortcutItemViewModel> FilteredShortcuts { get; } = new ObservableCollection<ShortcutItemViewModel>();
-        [Reactive] public string ShortcutSearchText { get; set; } = string.Empty;
-        public ReactiveCommand<ShortcutItemViewModel, Unit> ListenForShortcutCommand { get; }
+        [Reactive] public partial string ShortcutSearchText { get; set; } = string.Empty;
+        public ReactiveCommand<ShortcutItemViewModel, RxVoid> ListenForShortcutCommand { get; }
 
         public PreferencesViewModel() {
             ListenForShortcutCommand = ReactiveCommand.Create<ShortcutItemViewModel>(ListenForShortcut);
@@ -605,7 +608,7 @@ namespace OpenUtau.App.ViewModels {
                 && !CustomTheme.IsHubTheme(ThemeName);
             RefreshThemePickerItems();
             MessageBus.Current.Listen<ThemeHubSyncedEvent>()
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(_ => RefreshThemes());
             PenPlusDefault = Preferences.Default.PenPlusDefault;
             DegreeStyle = Preferences.Default.DegreeStyle;
@@ -646,15 +649,15 @@ namespace OpenUtau.App.ViewModels {
             ClearCacheOnQuit = Preferences.Default.ClearCacheOnQuit;
 
             MessageBus.Current.Listen<ThemeEditorStateChangedEvent>()
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(_ => this.RaisePropertyChanged(nameof(IsThemeEditorOpen)));
 
             MessageBus.Current.Listen<ThemeEditorSavedEvent>()
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(_ => RefreshThemes());
 
             MessageBus.Current.Listen<NotesRefreshEvent>()
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(_ => {
                     if (DiffSingerPhonemePanelMode != Preferences.Default.DiffSingerPhonemePanelMode) {
                         DiffSingerPhonemePanelMode = Preferences.Default.DiffSingerPhonemePanelMode;
@@ -668,7 +671,7 @@ namespace OpenUtau.App.ViewModels {
                 });
             this.WhenAnyValue(vm => vm.AudioOutputDevice)
                 .WhereNotNull()
-                .SubscribeOn(RxApp.MainThreadScheduler)
+                .SubscribeOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(device => {
                     if (UseSystemDefaultDevice) {
                         return;
@@ -765,7 +768,7 @@ namespace OpenUtau.App.ViewModels {
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.Language)
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(lang => {
                     Preferences.Default.Language = lang?.Name ?? string.Empty;
                     Preferences.Save();
@@ -780,7 +783,7 @@ namespace OpenUtau.App.ViewModels {
                 .Subscribe(_ => SyncThemePickerSelection());
             this.WhenAnyValue(vm => vm.ThemeName)
                 .Skip(1)
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(themeName => {
                     ThemeEditable = !BuiltInThemeLoader.IsBuiltInTheme(themeName)
                         && !CustomTheme.IsPackageTheme(themeName)
@@ -793,7 +796,7 @@ namespace OpenUtau.App.ViewModels {
                 });
             this.WhenAnyValue(vm => vm.ThemeColorTemperature)
                 .Skip(1)
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(temp => {
                     var clamped = ThemeTemperature.Clamp(temp);
                     if (clamped != ThemeColorTemperature) {
@@ -809,7 +812,7 @@ namespace OpenUtau.App.ViewModels {
                 });
             this.WhenAnyValue(vm => vm.ThemeTintAmount)
                 .Skip(1)
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(amount => {
                     var clamped = ThemeTint.ClampAmount(amount);
                     if (clamped != ThemeTintAmount) {
@@ -825,7 +828,7 @@ namespace OpenUtau.App.ViewModels {
                 });
             this.WhenAnyValue(vm => vm.ThemeTintColor)
                 .Skip(1)
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(color => {
                     Preferences.Default.ThemeTintColor = ThemeColorStorage.ToStorageString(
                         Color.FromArgb(255, color.R, color.G, color.B));
@@ -836,21 +839,21 @@ namespace OpenUtau.App.ViewModels {
                     }
                 });
             this.WhenAnyValue(vm => vm.DegreeStyle)
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(degreeStyle => {
                     Preferences.Default.DegreeStyle = degreeStyle;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("Part"));
                 });
             this.WhenAnyValue(vm => vm.UseTrackColor)
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(trackColor => {
                     Preferences.Default.UseTrackColor = trackColor;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("TrackColor"));
                 });
             this.WhenAnyValue(vm => vm.TintPianoRollBackgroundWithTrackColor)
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(tint => {
                     Preferences.Default.TintPianoRollBackgroundWithTrackColor = tint;
                     Preferences.Save();
@@ -858,55 +861,55 @@ namespace OpenUtau.App.ViewModels {
                 });
             this.WhenAnyValue(vm => vm.DefaultTrackColor)
                 .WhereNotNull()
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(trackColor => {
                     Preferences.Default.DefaultTrackColor = trackColor.Name;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.ShowPortrait)
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(showPortrait => {
                     Preferences.Default.ShowPortrait = showPortrait;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("Portrait"));
                 });
             this.WhenAnyValue(vm => vm.ShowIcon)
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(showIcon => {
                     Preferences.Default.ShowIcon = showIcon;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("Portrait"));
                 });
             this.WhenAnyValue(vm => vm.ShowGhostNotes)
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(showGhostNotes => {
                     Preferences.Default.ShowGhostNotes = showGhostNotes;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("Part"));
                 });
             this.WhenAnyValue(vm => vm.NoteHoverGlow)
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(noteHoverGlow => {
                     Preferences.Default.NoteHoverGlow = noteHoverGlow;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new NotesRefreshEvent());
                 });
             this.WhenAnyValue(vm => vm.ShowPlaybackNoteHighlight)
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(showPlaybackNoteHighlight => {
                     Preferences.Default.ShowPlaybackNoteHighlight = showPlaybackNoteHighlight;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("PlaybackNoteHighlight"));
                 });
             this.WhenAnyValue(vm => vm.ShowPlaybackNoteBounce)
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(showPlaybackNoteBounce => {
                     Preferences.Default.ShowPlaybackNoteBounce = showPlaybackNoteBounce;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("PlaybackNoteBounce"));
                 });
             this.WhenAnyValue(vm => vm.DetachPianoRoll)
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(detachPianoRoll => {
                     if (Preferences.Default.DetachPianoRoll == detachPianoRoll) {
                         return;
@@ -916,14 +919,14 @@ namespace OpenUtau.App.ViewModels {
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("Attachment"));
                 });
             this.WhenAnyValue(vm => vm.ShowNoteBorder)
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(showNoteBorder => {
                     Preferences.Default.ShowNoteBorder = showNoteBorder;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new NotesRefreshEvent());
                 });
             this.WhenAnyValue(vm => vm.NoteBorderThickness)
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(thickness => {
                     var c = Math.Clamp(thickness, 0.5, 4);
                     Preferences.Default.NoteBorderThickness = c;
@@ -932,7 +935,7 @@ namespace OpenUtau.App.ViewModels {
                     MessageBus.Current.SendMessage(new NotesRefreshEvent());
                 });
             this.WhenAnyValue(vm => vm.NoteOpacity)
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(opacity => {
                     var c = Math.Clamp(opacity, 0.05, 1);
                     Preferences.Default.NoteOpacity = c;
@@ -941,21 +944,21 @@ namespace OpenUtau.App.ViewModels {
                     MessageBus.Current.SendMessage(new NotesRefreshEvent());
                 });
             this.WhenAnyValue(vm => vm.SolidTickGridLines)
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(solid => {
                     Preferences.Default.SolidTickGridLines = solid;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new TickGridLinesStyleChangedEvent());
                 });
             this.WhenAnyValue(vm => vm.SolidExpPanelGridLines)
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(solid => {
                     Preferences.Default.SolidExpPanelGridLines = solid;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new ExpressionCurveStyleChangedEvent());
                 });
             this.WhenAnyValue(vm => vm.NoteCornerRadius)
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(r => {
                     var c = Math.Clamp(r, 0, 12);
                     Preferences.Default.NoteCornerRadius = c;

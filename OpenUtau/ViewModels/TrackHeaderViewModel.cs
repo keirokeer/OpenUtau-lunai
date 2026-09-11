@@ -19,38 +19,39 @@ using OpenUtau.Core.Render;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using RxVoid = ReactiveUI.Primitives.RxVoid;
+using ReactiveUI.SourceGenerators;
 using Serilog;
 
 namespace OpenUtau.App.ViewModels {
-    public class TrackHeaderViewModel : ViewModelBase, IActivatableViewModel {
+    public partial class TrackHeaderViewModel : ViewModelBase, IActivatableViewModel {
         public int TrackNo => track.TrackNo + 1;
         public USinger Singer => track.Singer;
         public Phonemizer Phonemizer => track.Phonemizer;
         public string PhonemizerTag => track.Phonemizer.Tag;
         public IReadOnlyList<MenuItemViewModel>? SingerMenuItems { get; set; }
-        public ReactiveCommand<USinger, Unit> SelectSingerCommand { get; }
-        public ReactiveCommand<USinger?, Unit> AllSetSingerCommand { get; }
+        public ReactiveCommand<USinger, RxVoid> SelectSingerCommand { get; }
+        public ReactiveCommand<USinger?, RxVoid> AllSetSingerCommand { get; }
         public IReadOnlyList<MenuItemViewModel>? PhonemizerMenuItems { get; set; }
-        public ReactiveCommand<PhonemizerFactory, Unit> SelectPhonemizerCommand { get; }
-        public ReactiveCommand<PhonemizerFactory, Unit> AllSetPhonemizerCommand { get; }
-        [Reactive] public string TrackName { get; set; } = string.Empty;
-        [Reactive] public SolidColorBrush TrackAccentColor { get; set; } = ThemeManager.GetTrackColor("Blue").AccentColor;
-        [Reactive] public TrackColor TrackColor { get; set; } = ThemeManager.GetTrackColor("Blue");
-        [Reactive] public double Volume { get; set; }
-        [Reactive] public double Pan { get; set; }
-        [Reactive] public bool Mute { get; set; }
-        [Reactive] public bool Muted { get; set; }
-        [Reactive] public bool Solo { get; set; }
-        [Reactive] public bool IsSelected { get; set; }
-        [Reactive] public bool IsOpenInPianoRoll { get; set; }
-        [Reactive] public Bitmap? Avatar { get; set; }
-        [Reactive] public bool IsSingerVisible { get; set; }
-        [Reactive] public bool IsPhonemizerVisible { get; set; }
-        [Reactive] public bool IsTrackSettingsVisible { get; set; }
-        [Reactive] public bool MixFxEnabled { get; set; }
-        [Reactive] public IBrush HeaderBorderBrush { get; set; } = ThemeManager.NeutralAccentBrushSemi;
-        [Reactive] public IBrush HeaderBackgroundBrush { get; set; } = Brushes.Transparent;
+        public ReactiveCommand<PhonemizerFactory, RxVoid> SelectPhonemizerCommand { get; }
+        public ReactiveCommand<PhonemizerFactory, RxVoid> AllSetPhonemizerCommand { get; }
+        [Reactive] public partial string TrackName { get; set; } = string.Empty;
+        [Reactive] public partial SolidColorBrush TrackAccentColor { get; set; } = ThemeManager.GetTrackColor("Blue").AccentColor;
+        [Reactive] public partial TrackColor TrackColor { get; set; } = ThemeManager.GetTrackColor("Blue");
+        [Reactive] public partial double Volume { get; set; }
+        [Reactive] public partial double Pan { get; set; }
+        [Reactive] public partial bool Mute { get; set; }
+        [Reactive] public partial bool Muted { get; set; }
+        [Reactive] public partial bool Solo { get; set; }
+        [Reactive] public partial bool IsSelected { get; set; }
+        [Reactive] public partial bool IsOpenInPianoRoll { get; set; }
+        [Reactive] public partial Bitmap? Avatar { get; set; }
+        [Reactive] public partial bool IsSingerVisible { get; set; }
+        [Reactive] public partial bool IsPhonemizerVisible { get; set; }
+        [Reactive] public partial bool IsTrackSettingsVisible { get; set; }
+        [Reactive] public partial bool MixFxEnabled { get; set; }
+        [Reactive] public partial IBrush HeaderBorderBrush { get; set; } = ThemeManager.NeutralAccentBrushSemi;
+        [Reactive] public partial IBrush HeaderBackgroundBrush { get; set; } = Brushes.Transparent;
 
         public ViewModelActivator Activator { get; }
 

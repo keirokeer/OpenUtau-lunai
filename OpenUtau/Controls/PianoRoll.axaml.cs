@@ -25,6 +25,8 @@ using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using OpenUtau.ViewModels;
 using ReactiveUI;
+using RxVoid = ReactiveUI.Primitives.RxVoid;
+using ReactiveUI.Avalonia;
 using Serilog;
 
 namespace OpenUtau.App.Controls {
@@ -69,9 +71,9 @@ namespace OpenUtau.App.Controls {
         private Point rangeSelectStartPoint = default;
         private const double RangeSelectThreshold = 5; // pixels
 
-        private ReactiveCommand<Unit, Unit>? lyricsDialogCommand;
-        private ReactiveCommand<Unit, Unit>? noteDefaultsCommand;
-        private ReactiveCommand<BatchEdit, Unit>? noteBatchEditCommand;
+        private ReactiveCommand<RxVoid, RxVoid>? lyricsDialogCommand;
+        private ReactiveCommand<RxVoid, RxVoid>? noteDefaultsCommand;
+        private ReactiveCommand<BatchEdit, RxVoid>? noteBatchEditCommand;
         private MenuItemViewModel? lengthenCrossfadeMenuItem;
 
         private Window RootWindow => (Window)TopLevel.GetTopLevel(this)!;
@@ -97,13 +99,13 @@ namespace OpenUtau.App.Controls {
             penTool.AddHandler(PointerPressedEvent, OnToolButtonPointerPressed, RoutingStrategies.Tunnel | RoutingStrategies.Bubble, true);
 
             ViewModel.WhenAnyValue(x => x.ShowAppearancePanel, x => x.ShowDiffSingerPanel, x => x.ShowExpressionDefaultsPanel)
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(_ => ScheduleUpdateDetachedLayout());
             ViewModel.WhenAnyValue(x => x.ShowThemeEditorPanel, x => x.ThemeEditorPath)
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(_ => UpdateThemeEditorPane());
             ViewModel.NotesViewModel.WhenAnyValue(x => x.ShowNoteParams)
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(show => {
                     if (show) {
                         ScheduleRefreshNotePropertiesChrome();
@@ -137,13 +139,13 @@ namespace OpenUtau.App.Controls {
                     }
                 });
             ViewModel.NotesViewModel.WhenAnyValue(x => x.Portrait)
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(_ => QueueUpdatePortraitPosition());
             ViewModel.NotesViewModel.WhenAnyValue(
                     x => x.ShowExpressions,
                     x => x.PhonemePanelDetached,
                     x => x.PhonemePanelHeight)
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(_ => QueueUpdatePortraitPosition());
 
             ScheduleUpdateDetachedLayout();
@@ -785,7 +787,7 @@ namespace OpenUtau.App.Controls {
                 })
             };
             ViewModel.WhenAnyValue(x => x.IsDiffSingerTrack)
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(UpdateLengthenCrossfadeMenuVisibility);
             ViewModel.LyricBatchEdits.Add(new MenuItemViewModel() {
                 Header = ThemeManager.GetString("lyricsreplace.replace"),
@@ -1188,7 +1190,7 @@ namespace OpenUtau.App.Controls {
             dialog.ShowDialog(RootWindow);
         }
 
-        private void OnPianoRollFocus(object sender, GotFocusEventArgs e) {
+        private void OnPianoRollFocus(object sender, FocusChangedEventArgs e) {
             var input = e.Source as InputElement;
             if (input is TextBox or ComboBox or ComboBoxItem) {
                 input.Focus();

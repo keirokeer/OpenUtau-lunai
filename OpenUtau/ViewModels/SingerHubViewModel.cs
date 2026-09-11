@@ -13,17 +13,18 @@ using Avalonia.Threading;
 using OpenUtau.Core;
 using OpenUtau.Core.SingerHub;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using RxVoid = ReactiveUI.Primitives.RxVoid;
+using ReactiveUI.SourceGenerators;
 
 namespace OpenUtau.App.ViewModels {
 
-    public sealed class VersionStatusSegment {
+    public sealed partial class VersionStatusSegment {
         public string Text { get; init; } = string.Empty;
         public bool Bold { get; init; }
         public FontWeight SegmentFontWeight => Bold ? FontWeight.Bold : FontWeight.Normal;
     }
 
-    public class SingerHubRowViewModel : ViewModelBase {
+    public partial class SingerHubRowViewModel : ViewModelBase {
         public const string SingersBaseUrl = "https://lunaiproject.github.io/singers/";
         public const string UfrVoicebankBaseUrl = "https://utaufrance.com/voicebank/";
 
@@ -42,10 +43,10 @@ namespace OpenUtau.App.ViewModels {
         public string TosUrl { get; }
         /// <summary>Display type from registry: "DiffSinger" or "UTAU". Default DiffSinger for LUNAI.</summary>
         public string TypeDisplay { get; }
-        [Reactive] public Bitmap? IconBitmap { get; set; }
-        [Reactive] public bool IsInstalled { get; set; }
-        [Reactive] public string InstalledVersion { get; set; } = string.Empty;
-        [Reactive] public string FolderPath { get; set; } = string.Empty;
+        [Reactive] public partial Bitmap? IconBitmap { get; set; }
+        [Reactive] public partial bool IsInstalled { get; set; }
+        [Reactive] public partial string InstalledVersion { get; set; } = string.Empty;
+        [Reactive] public partial string FolderPath { get; set; } = string.Empty;
 
         public bool HasPageLink => !string.IsNullOrEmpty(PageUrl);
         public bool HasCompany => !string.IsNullOrEmpty(Company);
@@ -182,12 +183,12 @@ namespace OpenUtau.App.ViewModels {
     }
 
     /// <summary>Section header and its singer rows (e.g. "Updates available", "Installed", "Not installed").</summary>
-    public sealed class SingerHubSectionViewModel {
+    public sealed partial class SingerHubSectionViewModel {
         public string Header { get; init; } = string.Empty;
         public List<SingerHubRowViewModel> Rows { get; init; } = new List<SingerHubRowViewModel>();
     }
 
-    public class SingerHubViewModel : ViewModelBase {
+    public partial class SingerHubViewModel : ViewModelBase {
         readonly SingerHubClient client = new SingerHubClient();
         readonly ConcurrentDictionary<string, Bitmap> iconCache = new ConcurrentDictionary<string, Bitmap>(StringComparer.OrdinalIgnoreCase);
 
@@ -195,12 +196,12 @@ namespace OpenUtau.App.ViewModels {
         public ObservableCollection<SingerHubRowViewModel> FilteredRows { get; } = new ObservableCollection<SingerHubRowViewModel>();
         /// <summary>Grouped list for UI: Updates available, Installed, Not installed.</summary>
         public ObservableCollection<SingerHubSectionViewModel> Sections { get; } = new ObservableCollection<SingerHubSectionViewModel>();
-        [Reactive] public string Status { get; set; } = string.Empty;
-        [Reactive] public string SearchText { get; set; } = string.Empty;
-        [Reactive] public int SelectedTabIndex { get; set; }
-        public ReactiveCommand<Unit, Unit> RefreshCommand { get; }
-        public ReactiveCommand<SingerHubRowViewModel, Unit> InstallOrUpdateCommand { get; }
-        public ReactiveCommand<SingerHubRowViewModel, Unit> UninstallCommand { get; }
+        [Reactive] public partial string Status { get; set; } = string.Empty;
+        [Reactive] public partial string SearchText { get; set; } = string.Empty;
+        [Reactive] public partial int SelectedTabIndex { get; set; }
+        public ReactiveCommand<RxVoid, RxVoid> RefreshCommand { get; }
+        public ReactiveCommand<SingerHubRowViewModel, RxVoid> InstallOrUpdateCommand { get; }
+        public ReactiveCommand<SingerHubRowViewModel, RxVoid> UninstallCommand { get; }
 
         public SingerHubViewModel() {
             RefreshCommand = ReactiveCommand.CreateFromTask(RefreshAsync);

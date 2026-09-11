@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -6,13 +6,13 @@ using DynamicData.Binding;
 using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.SourceGenerators;
 
 namespace OpenUtau.App.ViewModels {
-    class LyricsReplaceViewModel : ViewModelBase {
-        [Reactive] public string OldValue { get; set; } = "";
-        [Reactive] public string NewValue { get; set; } = "";
-        [Reactive] public string Preview { get; set; } = "";
+    partial class LyricsReplaceViewModel : ViewModelBase {
+        [Reactive] public partial string OldValue { get; set; } = "";
+        [Reactive] public partial string NewValue { get; set; } = "";
+        [Reactive] public partial string Preview { get; set; } = "";
         public List<ReplacePreset> PresetList { get; } = new List<ReplacePreset>() { //Increase!
             new ReplacePreset("-", "", ""),
             new ReplacePreset(ThemeManager.GetString("lyricsreplace.preset.rmvalphabet"), @"[a-zA-Z]", ""),
@@ -21,7 +21,7 @@ namespace OpenUtau.App.ViewModels {
             new ReplacePreset(ThemeManager.GetString("lyricsreplace.preset.rmvtone"), @"_?[A-G](#|b)?[1-7]", ""),
             new ReplacePreset(ThemeManager.GetString("lyricsreplace.preset.rmvspace"), ".* ", "")
         };
-        [Reactive] public ReplacePreset SelectedPreset { get; set; } = new ReplacePreset();
+        [Reactive] public partial ReplacePreset SelectedPreset { get; set; } = new ReplacePreset();
         public string[] Lyrics { get; private set; }
 
         private UVoicePart part;
@@ -79,7 +79,7 @@ namespace OpenUtau.App.ViewModels {
         }
     }
 
-    public class ReplacePreset {
+    public partial class ReplacePreset {
         public string Name { get; private set; } = "";
         public string OldValue { get; private set; } = "";
         public string NewValue { get; private set; } = "";

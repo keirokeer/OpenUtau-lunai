@@ -8,7 +8,7 @@ using System.Text;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
-using Avalonia.ReactiveUI;
+using ReactiveUI.Avalonia;
 using OpenUtau.App.ViewModels;
 using OpenUtau.Core;
 using Serilog;
@@ -86,9 +86,9 @@ namespace OpenUtau.App {
             return AppBuilder.Configure<App>()
                 .UsePlatformDetect()
                 .LogToTrace()
-                .UseReactiveUI()
+                .UseReactiveUI(_ => { })
                 .With(fontOptions)
-                .With(new X11PlatformOptions {EnableIme = true});
+                .With(new X11PlatformOptions { EnableIme = true });
         }
 
         public static void Run(string[] args)

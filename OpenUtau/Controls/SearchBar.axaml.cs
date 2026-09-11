@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -56,7 +56,7 @@ namespace OpenUtau.App.Controls {
             }
         }
 
-        private void Box_GotFocus(object? sender, GotFocusEventArgs e) {
+        private void Box_GotFocus(object? sender, FocusChangedEventArgs e) {
             box.SelectAll();
         }
 

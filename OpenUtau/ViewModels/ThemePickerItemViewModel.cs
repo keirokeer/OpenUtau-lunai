@@ -1,10 +1,10 @@
 using Avalonia.Media;
 using OpenUtau.Colors;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.SourceGenerators;
 
 namespace OpenUtau.App.ViewModels {
-    public class ThemePickerItemViewModel : ViewModelBase {
+    public partial class ThemePickerItemViewModel : ViewModelBase {
         public string Name { get; init; } = string.Empty;
         public string DisplayName { get; init; } = string.Empty;
         public string Author { get; init; } = string.Empty;
@@ -16,7 +16,7 @@ namespace OpenUtau.App.ViewModels {
         public bool IsImportTile { get; init; }
         public bool IsActionTile => IsCreateTile || IsImportTile;
         public bool IsEditable => !IsBuiltIn && !IsPackageTheme && !IsHubTheme && !IsActionTile;
-        [Reactive] public bool IsSelected { get; set; }
+        [Reactive] public partial bool IsSelected { get; set; }
         public IBrush BackgroundBrush { get; init; } = Brushes.Transparent;
         public IBrush CanvasBrush { get; init; } = Brushes.Transparent;
         public IBrush CardBrush { get; init; } = Brushes.Transparent;

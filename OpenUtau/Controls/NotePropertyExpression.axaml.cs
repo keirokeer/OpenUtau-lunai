@@ -1,4 +1,4 @@
-﻿using Avalonia.Controls;
+using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using OpenUtau.App.ViewModels;
@@ -19,7 +19,7 @@ namespace OpenUtau.App.Controls {
 
         // textbox
         private string textBoxValue = string.Empty;
-        void OnTextBoxGotFocus(object? sender, GotFocusEventArgs args) {
+        void OnTextBoxGotFocus(object? sender, FocusChangedEventArgs args) {
             Log.Debug("Note property textbox got focus");
             if (sender is TextBox textBox) {
                 textBoxValue = textBox.Text ?? string.Empty;

@@ -10,11 +10,11 @@ using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.SourceGenerators;
 
 namespace OpenUtau.App.ViewModels {
-    public class TracksRefreshEvent { }
-    public class TracksSoloEvent {
+    public partial class TracksRefreshEvent { }
+    public partial class TracksSoloEvent {
         public readonly int trackNo;
         public readonly bool solo;
         public readonly bool additionally;
@@ -24,7 +24,7 @@ namespace OpenUtau.App.ViewModels {
             this.additionally = additionally;
         }
     }
-    public class TracksMuteEvent {
+    public partial class TracksMuteEvent {
         public readonly int trackNo;
         public readonly bool allmute; // use only when track number is -1
         public TracksMuteEvent(int trackNo, bool allmute) {
@@ -32,19 +32,19 @@ namespace OpenUtau.App.ViewModels {
             this.allmute = allmute;
         }
     }
-    public class MixFxChangedNotification {
+    public partial class MixFxChangedNotification {
         public readonly int trackNo;
         public MixFxChangedNotification(int trackNo) {
             this.trackNo = trackNo;
         }
     }
-    public class TrackSelectionEvent {
+    public partial class TrackSelectionEvent {
         public readonly UTrack[] selectedTracks;
         public TrackSelectionEvent(UTrack[] selectedTracks) {
             this.selectedTracks = selectedTracks;
         }
     }
-    public class PartsSelectionEvent {
+    public partial class PartsSelectionEvent {
         public readonly UPart[] selectedParts;
         public readonly UPart[] tempSelectedParts;
         public PartsSelectionEvent(UPart[] selectedParts, UPart[] tempSelectedParts) {
@@ -52,17 +52,17 @@ namespace OpenUtau.App.ViewModels {
             this.tempSelectedParts = tempSelectedParts;
         }
     }
-    public class PartRefreshEvent {
+    public partial class PartRefreshEvent {
         public readonly UPart part;
         public PartRefreshEvent(UPart part) { this.part = part; }
     }
-    public class PartRedrawEvent {
+    public partial class PartRedrawEvent {
         public readonly UPart part;
         public PartRedrawEvent(UPart part) { this.part = part; }
     }
 
     /// <summary>Raised when the voice part loaded in the piano roll changes (including null).</summary>
-    public class PianoRollOpenPartChangedEvent {
+    public partial class PianoRollOpenPartChangedEvent {
         public readonly UPart? Part;
         public PianoRollOpenPartChangedEvent(UPart? part) {
             Part = part;
@@ -70,7 +70,7 @@ namespace OpenUtau.App.ViewModels {
     }
 
     /// <summary>Raised when the piano roll horizontal viewport changes (part-local ticks).</summary>
-    public class PianoRollViewportChangedEvent {
+    public partial class PianoRollViewportChangedEvent {
         public readonly double TickOffset;
         public readonly double ViewportTicks;
         public PianoRollViewportChangedEvent(double tickOffset, double viewportTicks) {
@@ -79,26 +79,26 @@ namespace OpenUtau.App.ViewModels {
         }
     }
 
-    public class TracksViewModel : ViewModelBase, ICmdSubscriber {
+    public partial class TracksViewModel : ViewModelBase, ICmdSubscriber {
         public UProject Project => DocManager.Inst.Project;
-        [Reactive] public Rect Bounds { get; set; }
+        [Reactive] public partial Rect Bounds { get; set; }
         public int TickCount => Math.Max(Project.timeAxis.BarBeatToTickPos(32, 0), Project.EndTick + 23040);
         public int TrackCount => Math.Max(20, Project.tracks.Count + 1);
-        [Reactive] public double TickWidth { get; set; }
+        [Reactive] public partial double TickWidth { get; set; }
         public double TrackHeightMin => ViewConstants.TrackHeightMin;
         public double TrackHeightMax => ViewConstants.TrackHeightMax;
-        [Reactive] public double TrackHeight { get; set; }
-        [Reactive] public GridLength TrackHeaderColumnWidth { get; set; } = new GridLength(ViewConstants.TrackHeaderBaseWidth);
-        [Reactive] public double TickOffset { get; set; }
-        [Reactive] public double TrackOffset { get; set; }
-        [Reactive] public int SnapDiv { get; set; }
-        [Reactive] public int SnapUnit { get; set; }
+        [Reactive] public partial double TrackHeight { get; set; }
+        [Reactive] public partial GridLength TrackHeaderColumnWidth { get; set; } = new GridLength(ViewConstants.TrackHeaderBaseWidth);
+        [Reactive] public partial double TickOffset { get; set; }
+        [Reactive] public partial double TrackOffset { get; set; }
+        [Reactive] public partial int SnapDiv { get; set; }
+        [Reactive] public partial int SnapUnit { get; set; }
         public ObservableCollectionExtended<int> SnapTicks { get; } = new ObservableCollectionExtended<int>();
-        [Reactive] public double PlayPosX { get; set; }
-        [Reactive] public double PlayPosHighlightX { get; set; }
-        [Reactive] public double PlayPosHighlightWidth { get; set; }
-        [Reactive] public bool PlayPosWaitingRendering { get; set; }
-        [Reactive] public bool UseModernPlayhead { get; set; }
+        [Reactive] public partial double PlayPosX { get; set; }
+        [Reactive] public partial double PlayPosHighlightX { get; set; }
+        [Reactive] public partial double PlayPosHighlightWidth { get; set; }
+        [Reactive] public partial bool PlayPosWaitingRendering { get; set; }
+        [Reactive] public partial bool UseModernPlayhead { get; set; }
         public bool HasRangeSelection => DocManager.Inst.rangeEndTick > DocManager.Inst.rangeStartTick;
         public bool ShowPlaybackBarHighlight => !PlaybackManager.Inst.PlayingMaster || HasRangeSelection;
         public bool ShowClassicPlayPosMarker => !UseModernPlayhead;
@@ -122,13 +122,13 @@ namespace OpenUtau.App.ViewModels {
             this.RaisePropertyChanged(nameof(ShowThinPlayPosLine));
         }
         /// <summary>Track row that has the part currently open in the piano roll; -1 if none.</summary>
-        [Reactive] public int PianoRollHighlightTrackNo { get; set; } = -1;
+        [Reactive] public partial int PianoRollHighlightTrackNo { get; set; } = -1;
         /// <summary>Voice part currently open in the piano roll; null if none.</summary>
-        [Reactive] public UPart? PianoRollOpenPart { get; set; }
+        [Reactive] public partial UPart? PianoRollOpenPart { get; set; }
         /// <summary>Piano roll viewport start in part-local ticks.</summary>
-        [Reactive] public double PianoRollViewTickOffset { get; set; }
+        [Reactive] public partial double PianoRollViewTickOffset { get; set; }
         /// <summary>Piano roll viewport width in part-local ticks.</summary>
-        [Reactive] public double PianoRollViewViewportTicks { get; set; }
+        [Reactive] public partial double PianoRollViewViewportTicks { get; set; }
         public double ViewportTicks => viewportTicks.Value;
         public double ViewportTracks => viewportTracks.Value;
         public double SmallChangeX => smallChangeX.Value;

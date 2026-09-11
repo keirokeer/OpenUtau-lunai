@@ -4,15 +4,15 @@ using System.Reactive.Linq;
 using Avalonia.Media;
 using OpenUtau.Colors;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.SourceGenerators;
 
 namespace OpenUtau.App.ViewModels;
 
-public class ThemeColorFieldViewModel : ReactiveObject {
+public partial class ThemeColorFieldViewModel : ReactiveObject {
     public string Key { get; }
     public string DisplayName { get; }
 
-    [Reactive] public Color Color { get; set; }
+    [Reactive] public partial Color Color { get; set; }
     public string HexCode => ThemeColorStorage.ToStorageString(Color);
 
     public ThemeColorFieldViewModel(string key, Color color) {
@@ -24,7 +24,7 @@ public class ThemeColorFieldViewModel : ReactiveObject {
     }
 }
 
-public class ThemeColorSectionViewModel {
+public partial class ThemeColorSectionViewModel {
     public string Title { get; }
     public IList<ThemeColorFieldViewModel> Fields { get; }
 

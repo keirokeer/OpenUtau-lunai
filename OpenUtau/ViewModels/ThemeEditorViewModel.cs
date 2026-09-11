@@ -1,23 +1,23 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Reactive.Linq;
 using Avalonia.Media;
 using OpenUtau.Colors;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.SourceGenerators;
 
 namespace OpenUtau.App.ViewModels;
 
-public class ThemeEditorStateChangedEvent { }
+public partial class ThemeEditorStateChangedEvent { }
 
-public class ThemeEditorSavedEvent { }
+public partial class ThemeEditorSavedEvent { }
 
-public class OpenDockedThemeEditorEvent {
+public partial class OpenDockedThemeEditorEvent {
     public required string Path { get; init; }
 }
 
-public class CloseDockedThemeEditorEvent { }
+public partial class CloseDockedThemeEditorEvent { }
 
 public static class ThemeEditorDockState {
     public static bool IsOpen { get; private set; }
@@ -31,11 +31,11 @@ public static class ThemeEditorDockState {
     }
 }
 
-public class ThemeEditorViewModel : ViewModelBase {
+public partial class ThemeEditorViewModel : ViewModelBase {
     readonly string customThemePath;
     readonly string themeName;
 
-    [Reactive] public bool IsDarkMode { get; set; }
+    [Reactive] public partial bool IsDarkMode { get; set; }
     public ObservableCollection<ThemeColorSectionViewModel> Sections { get; } = [];
 
     public ThemeEditorViewModel(string customThemePath) {

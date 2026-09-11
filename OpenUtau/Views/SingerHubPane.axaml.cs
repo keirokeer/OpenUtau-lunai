@@ -59,7 +59,7 @@ namespace OpenUtau.App.Views {
         }
 
         static Window? GetOwnerWindow(Visual? visual) {
-            if (visual?.GetVisualRoot() is Window w) {
+            if (TopLevel.GetTopLevel(visual) is Window w) {
                 return w;
             }
             var lifetime = Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime;

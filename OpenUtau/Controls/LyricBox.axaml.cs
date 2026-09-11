@@ -68,7 +68,7 @@ namespace OpenUtau.App.Controls {
             WorkspaceScrollbarHelper.ApplyScrollViewer(scrollViewer, WorkspaceScrollbarHelper.UseClassicScrollbars);
         }
 
-        private void Box_GotFocus(object? sender, GotFocusEventArgs e) {
+        private void Box_GotFocus(object? sender, FocusChangedEventArgs e) {
             viewModel.SuggestionFromBlend = false;
             box.SelectAll();
         }
@@ -77,7 +77,7 @@ namespace OpenUtau.App.Controls {
             box.CaretIndex = 0;
         }
 
-        private void BlendBox_GotFocus(object? sender, GotFocusEventArgs e) {
+        private void BlendBox_GotFocus(object? sender, FocusChangedEventArgs e) {
             viewModel.SuggestionFromBlend = true;
             if (blendBox != null) {
                 blendBox.SelectAll();

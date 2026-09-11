@@ -5,16 +5,16 @@ using DynamicData.Binding;
 using OpenUtau.App.Models;
 using OpenUtau.App.Services;
 using OpenUtau.Core.Util;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.SourceGenerators;
 
 namespace OpenUtau.App.ViewModels {
-    public class AboutViewModel : ViewModelBase {
+    public partial class AboutViewModel : ViewModelBase {
         public const string LunaiRepository = "keirokeer/OpenUtau-lunai";
 
         public string AppVersion => $"v{System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version}";
         public bool IsDarkMode => ThemeManager.IsDarkMode;
-        [Reactive] public string SectionTitle { get; private set; } = string.Empty;
-        [Reactive] public string StatusText { get; private set; } = string.Empty;
+        [Reactive] public partial string SectionTitle { get; private set; } = string.Empty;
+        [Reactive] public partial string StatusText { get; private set; } = string.Empty;
         public ObservableCollectionExtended<ContributorEntry> Contributors { get; } = new();
 
         public AboutViewModel() {

@@ -1,18 +1,18 @@
-﻿using System;
+using System;
 using System.Linq;
 using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
+using ReactiveUI.SourceGenerators;
 
 namespace OpenUtau.App.ViewModels {
-    class LyricsViewModel : ViewModelBase {
-        [Reactive] public string? Text { get; set; } = string.Empty;
-        [Reactive] public int CurrentCount { get; set; }
-        [Reactive] public int TotalCount { get; set; }
-        [Reactive] public bool LivePreview { get; set; } = Preferences.Default.LyricLivePreview;
-        [Reactive] public bool ApplySelection { get; set; } = Preferences.Default.LyricApplySelectionOnly;
+    partial class LyricsViewModel : ViewModelBase {
+        [Reactive] public partial string? Text { get; set; } = string.Empty;
+        [Reactive] public partial int CurrentCount { get; set; }
+        [Reactive] public partial int TotalCount { get; set; }
+        [Reactive] public partial bool LivePreview { get; set; } = Preferences.Default.LyricLivePreview;
+        [Reactive] public partial bool ApplySelection { get; set; } = Preferences.Default.LyricApplySelectionOnly;
 
         private UVoicePart? part;
         private UNote[]? notes;

@@ -22,7 +22,7 @@ namespace OpenUtau.App.Controls {
         }
 
         public static bool IsInVisualTree(Control? control) =>
-            control != null && control.GetVisualRoot() != null;
+            control != null && control.IsAttachedToVisualTree();
 
         public static void ApplyHorizontalScrollBar(ScrollBar bar, bool classic) {
             if (!IsInVisualTree(bar)) {

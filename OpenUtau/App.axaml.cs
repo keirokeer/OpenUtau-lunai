@@ -8,9 +8,6 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
-#if DEBUG
-using Avalonia.Diagnostics;
-#endif
 using OpenUtau.App.Views;
 using OpenUtau.Colors;
 using Serilog;
@@ -21,7 +18,7 @@ namespace OpenUtau.App {
             Log.Information("Initializing application.");
             AvaloniaXamlLoader.Load(this);
 #if DEBUG
-            this.AttachDevTools();
+            this.AttachDeveloperTools();
 #endif
             InitializeCulture();
             InitializeTheme();
