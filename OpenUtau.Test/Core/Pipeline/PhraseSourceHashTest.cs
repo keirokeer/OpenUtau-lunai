@@ -198,15 +198,15 @@ namespace OpenUtau.Core.Pipeline {
         }
 
         // Recorded against the fork's live-document RenderPhrase.FromPart
-        // implementation, before the snapshot migration. These differ from
-        // upstream's golden values because the fork mixes the phoneme blend
-        // target into the phone hash and the vocoder pitch / mouth opening
-        // curves into the phrase hash.
+        // implementation. These differ from upstream's golden values because the
+        // fork mixes the phoneme blend target into the phone hash and the
+        // vocoder pitch / mouth opening / acoustic F0 zero (af0z) slots into
+        // the phrase post-effect hash (null af0z still changes the digest).
         const string GoldenHashes =
-            "p c8cf0aa0a7717bfb 19a2cb604e431840 960 1920\n" +
+            "p 1c341773fee2a48f 19a2cb604e431840 960 1920\n" +
             "h 72c43b32463b2a44 0 480\n" +
             "h ff87ee6436e77ece 480 960\n" +
-            "p e1f13f339cab5d53 e9d2f2af668ee941 2160 2880\n" +
+            "p 0e4dfcb012b43a14 e9d2f2af668ee941 2160 2880\n" +
             "h c3d4609f12365b58 0 480\n" +
             "h 975cd2f969187c56 480 720";
 
