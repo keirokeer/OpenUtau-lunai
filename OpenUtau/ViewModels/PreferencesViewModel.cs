@@ -208,6 +208,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public bool RememberMid { get; set; }
         [Reactive] public bool RememberUst { get; set; }
         [Reactive] public bool RememberVsqx { get; set; }
+        [Reactive] public bool DefaultSnapCurve { get; set; }
         public string WinePath => Preferences.Default.WinePath;
 
         // Shortcuts
@@ -643,6 +644,7 @@ namespace OpenUtau.App.ViewModels {
             RememberMid = Preferences.Default.RememberMid;
             RememberUst = Preferences.Default.RememberUst;
             RememberVsqx = Preferences.Default.RememberVsqx;
+            DefaultSnapCurve = Preferences.Default.DefaultSnapCurve;
             ClearCacheOnQuit = Preferences.Default.ClearCacheOnQuit;
 
             MessageBus.Current.Listen<ThemeEditorStateChangedEvent>()
@@ -1023,6 +1025,11 @@ namespace OpenUtau.App.ViewModels {
             this.WhenAnyValue(vm => vm.RememberVsqx)
                 .Subscribe(index => {
                     Preferences.Default.RememberVsqx = index;
+                    Preferences.Save();
+                });
+            this.WhenAnyValue(vm => vm.DefaultSnapCurve)
+                .Subscribe(value => {
+                    Preferences.Default.DefaultSnapCurve = value;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.ClearCacheOnQuit)
