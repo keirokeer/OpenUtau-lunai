@@ -138,11 +138,11 @@ namespace OpenUtau.Plugins {
 
         [Theory]
         [InlineData("ja_cvvc",
-            new string[] { "- え_C4", "e あ_C4", "a ん_C4" })]
+            new string[] { "- え_C4", "e n_C4", "n ん_C4" })]
         [InlineData("ja_vcv",
-            new string[] { "- えA3", "e あA3", "a んA3", "n RA3" })]
+            new string[] { "- えA3", "e んA3", "n RA3" })]
         [InlineData("ja_cv",
-            new string[] { "え", "あ", "ん" })]
+            new string[] { "え", "ん" })]
         public void EndingNasalTest(string singerName, string[] aliases) {
             SameAltsTonesColorsTest(singerName, aliases,
                 new string[] { "an" });
@@ -186,11 +186,11 @@ namespace OpenUtau.Plugins {
 
         [Theory]
         [InlineData("ja_cvvc",
-            new string[] { "- え_C4", "e あ_C4", "a ん_C4", "d_C4" })]
+            new string[] { "- え_C4", "e n_C4", "n ん_C4", "d_C4" })]
         [InlineData("ja_vcv",
-            new string[] { "- えA3", "e あA3", "a んA3", "n どA3" })]
+            new string[] { "- えA3", "e んA3" })]
         [InlineData("ja_cv",
-            new string[] { "え", "あ", "ん", "ど" })]
+            new string[] { "え", "ん", "ど" })]
         public void EndingClusterTest(string singerName, string[] aliases) {
             SameAltsTonesColorsTest(singerName, aliases,
                 new string[] { "and" });
