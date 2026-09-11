@@ -1049,13 +1049,35 @@
       </Transitions>
     </Setter>
   </Style>
-  <Style Selector="Button.trackFxChip:pressed TextBlock.fxLabel,
-          Button.trackFxChip.fxOn:pressed TextBlock.fxLabel">
+  <Style Selector="Button.trackFxChip:pressed:not(.fxOn) TextBlock.fxLabel">
     <Setter Property="Foreground" Value="{DynamicResource ToolbarToolIconOnAccentBrush}" />
   </Style>
+  <Style Selector="Button.trackFxChip.fxOn TextBlock.fxLabel,
+          Button.trackFxChip.fxOn:pointerover TextBlock.fxLabel,
+          Button.trackFxChip.fxOn:pressed TextBlock.fxLabel">
+    <Setter Property="Foreground" Value="{DynamicResource WhiteKeyNameBrush}" />
+  </Style>
+  <Style Selector="Button.trackFxChip.fxOn">
+    <Setter Property="CornerRadius" Value="2" />
+    <Setter Property="ClipToBounds" Value="True" />
+  </Style>
   <Style Selector="Button.trackFxChip.fxOn /template/ ContentPresenter#PART_ContentPresenter">
-    <Setter Property="Background" Value="{DynamicResource NeutralAccentBrushSemi}" />
+    <Setter Property="Margin" Value="2" />
+    <Setter Property="CornerRadius" Value="2" />
+    <Setter Property="Background" Value="{DynamicResource TrackAccentFxCheckedBrush}" />
+    <Setter Property="ClipToBounds" Value="True" />
+  </Style>
+  <Style Selector="Button.trackFxChip.fxOn:pointerover,
+          Button.trackFxChip.fxOn:pressed">
     <Setter Property="CornerRadius" Value="4" />
+  </Style>
+  <Style Selector="Button.trackFxChip.fxOn:pointerover /template/ ContentPresenter#PART_ContentPresenter,
+          Button.trackFxChip.fxOn:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Margin" Value="0" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="BorderThickness" Value="2" />
+    <Setter Property="BorderBrush" Value="{DynamicResource AppTopBarTransportStripBrush}" />
+    <Setter Property="Background" Value="{DynamicResource TrackAccentFxCheckedBrush}" />
   </Style>
 
   <Style Selector="Border.pianoRollToolbarStrip, Border.transportToolbarStrip">

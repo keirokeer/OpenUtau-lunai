@@ -44,6 +44,8 @@
   <SolidColorBrush x:Key="TrackAccentMuteCheckedBrush" Color="#E85A5A" Opacity="0.08"/>
   <SolidColorBrush x:Key="TrackAccentSoloBrush" Color="#4CBD6A"/>
   <SolidColorBrush x:Key="TrackAccentSoloCheckedBrush" Color="#4CBD6A" Opacity="0.08"/>
+  <!-- On-state fill: theme “soft white” (same token as transport :checked hover). -->
+  <SolidColorBrush x:Key="TrackAccentFxCheckedBrush" Color="{DynamicResource ToolbarCheckedHoverColor}"/>
   <SolidColorBrush x:Key="AppTopBarValueStripBrush"
                    Color="{DynamicResource AppTopBarValueStripColor}"/>
   <SolidColorBrush x:Key="AppTopBarValueDividerBrush"
