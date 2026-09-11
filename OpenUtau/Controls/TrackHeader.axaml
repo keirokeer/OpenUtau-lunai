@@ -248,7 +248,7 @@
       </ContextMenu.Styles>
       <ContextMenu.DataTemplates>
         <DataTemplate DataType="vm:MenuSeparatorViewModel">
-          <ContentPresenter Content="{Binding Header}"/>
+          <ContentPresenter Content="{Binding HeaderViewModel}"/>
         </DataTemplate>
         <DataTemplate DataType="vm:MenuItemViewModel">
           <TextBlock Text="{Binding Header}"

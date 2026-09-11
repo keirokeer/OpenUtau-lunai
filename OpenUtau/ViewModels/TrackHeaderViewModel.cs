@@ -9,6 +9,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Styling;
+using Avalonia.Threading;
 using OpenUtau.Api;
 using OpenUtau.App;
 using OpenUtau.App.Views;
@@ -526,9 +527,12 @@ namespace OpenUtau.App.ViewModels {
                 return list;
             });
 
-            SingerMenuItems = items;
-            singersMenuDirty = false;
-            this.RaisePropertyChanged(nameof(SingerMenuItems));
+            // Publish menu on UI thread — separators may still lazy-create visuals on bind.
+            await Dispatcher.UIThread.InvokeAsync(() => {
+                SingerMenuItems = items;
+                singersMenuDirty = false;
+                this.RaisePropertyChanged(nameof(SingerMenuItems));
+            });
         }
 
         public void RefreshSingers() {

@@ -40,33 +40,63 @@ namespace OpenUtau.App.ViewModels {
 
     public sealed class MenuSeparatorViewModel : MenuItemViewModel {
         public MenuSeparatorViewModel() {
-            Header = new Panel {
-                Height = 8,
-                Background = Brushes.Transparent,
-                IsHitTestVisible = false,
-            };
+            // Visual header is lazy: RefreshSingersAsync builds the menu on a
+            // worker thread, and Avalonia controls must be created on the UI thread.
             Height = 8;
             IsEnabled = false;
         }
 
-        public override object HeaderViewModel => Header!;
+        public override object HeaderViewModel => EnsureHeader();
+
+        object EnsureHeader() {
+            if (Header != null) {
+                return Header;
+            }
+            void Create() {
+                Header ??= new Panel {
+                    Height = 8,
+                    Background = Brushes.Transparent,
+                    IsHitTestVisible = false,
+                };
+            }
+            if (Dispatcher.UIThread.CheckAccess()) {
+                Create();
+            } else {
+                Dispatcher.UIThread.Invoke(Create);
+            }
+            return Header!;
+        }
     }
 
     public sealed class PhonemizerMenuSeparatorViewModel : MenuItemViewModel {
         public PhonemizerMenuSeparatorViewModel() {
-            Header = new Border {
-                Height = 1,
-                Margin = new Thickness(0),
-                Background = ThemeManager.MutedIconBrush,
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                VerticalAlignment = VerticalAlignment.Center,
-                IsHitTestVisible = false,
-            };
             Height = 1;
             IsEnabled = false;
         }
 
-        public override object HeaderViewModel => Header!;
+        public override object HeaderViewModel => EnsureHeader();
+
+        object EnsureHeader() {
+            if (Header != null) {
+                return Header;
+            }
+            void Create() {
+                Header ??= new Border {
+                    Height = 1,
+                    Margin = new Thickness(0),
+                    Background = ThemeManager.MutedIconBrush,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    IsHitTestVisible = false,
+                };
+            }
+            if (Dispatcher.UIThread.CheckAccess()) {
+                Create();
+            } else {
+                Dispatcher.UIThread.Invoke(Create);
+            }
+            return Header!;
+        }
     }
 
     public class PhonemizerMenuItemViewModel : MenuItemViewModel {
