@@ -110,7 +110,7 @@ namespace OpenUtau.Core.DiffSinger
             return token;
         }
         
-        public RenderPitchResult Process(RenderPhrase phrase, double? pitchStepsOverride = null, bool fastRealtime = false, HashSet<int>? retakeNoteIndexes = null, float[]? existingPitch = null) {
+        public RenderPitchResult Process(RenderPhrase phrase, double? pitchStepsOverride = null, bool fastRealtime = false, HashSet<int>? retakeNoteIndexes = null, float[]? existingPitch = null, uint? noiseSeed = null) {
             var startMs = phrase.phones[0].positionMs - DiffSingerUtils.GetHeadMs(frameMs);
             int headFrames = DiffSingerUtils.headFrames;
             int tailFrames = DiffSingerUtils.tailFrames;
@@ -359,7 +359,9 @@ namespace OpenUtau.Core.DiffSinger
                 BlendLength = totalFrames,
                 EncoderOut = encoder_out,
                 NoiseStage = DiffSingerNoise.StagePitch,
-                NoiseSeed = unchecked((uint)(phrase.hash & 0xFFFFFFFFUL)) | 1u,
+                // Manual Ctrl+R passes a fresh seed so each press is a new retake;
+                // live/auto paths keep phrase.hash for stable regeneration.
+                NoiseSeed = noiseSeed ?? (unchecked((uint)(phrase.hash & 0xFFFFFFFFUL)) | 1u),
             });
             Onnx.VerifyInputNames(pitchModel, pitchInputs);
             var pitchOutputs = pitchModel.Run(pitchInputs);

@@ -548,8 +548,16 @@ namespace OpenUtau.App.ViewModels {
                 });
             MessageBus.Current.Listen<CurveSelectionEvent>()
                 .Subscribe(e => {
-                    Selection.SelectNone();
-                    MessageBus.Current.SendMessage(new NotesSelectionEvent(Selection));
+                    // Only a non-empty curve selection displaces note selection.
+                    // Clearing the curve (empty event) must not wipe selected notes —
+                    // otherwise Ctrl+R / batch edits that briefly touch curves leave
+                    // the user unable to press the shortcut again without re-selecting.
+                    if (!e.selection.HasValue()) {
+                        return;
+                    }
+                    if (Selection.SelectNone()) {
+                        MessageBus.Current.SendMessage(new NotesSelectionEvent(Selection));
+                    }
                 });
             MessageBus.Current.Listen<CurveCopyEvent>()
                 .Subscribe(e => {

@@ -125,8 +125,9 @@ namespace OpenUtau.Core.DiffSinger {
                         depth = 1.0;
                     }
                     var wavName = Preferences.Default.DiffSingerAcousticFlatPitch
-                        ? $"ds-{phrase.hash:x16}-depth{depth:f2}-steps{steps}-flatac.wav"
-                        : $"ds-{phrase.hash:x16}-depth{depth:f2}-steps{steps}.wav";
+                        ? $"ds-{phrase.hash:x16}-depth{depth:f2}-steps{steps}-flatac"
+                        : $"ds-{phrase.hash:x16}-depth{depth:f2}-steps{steps}";
+                    wavName += ".wav";
                     var wavPath = Path.Join(PathManager.Inst.CachePath, wavName);
                     phrase.AddCacheFile(wavPath);
                     string progressInfo = $"Track {trackNo + 1}: {this} depth={depth:f2} steps={steps} \"{string.Join(" ", phrase.phones.Select(p => p.phoneme))}\"";
@@ -749,13 +750,15 @@ namespace OpenUtau.Core.DiffSinger {
         }
 
         public RenderPitchResult LoadRenderedPitch(RenderPhrase phrase, HashSet<int> selectedNotePositions) {
-            return LoadRenderedPitch(phrase, selectedNotePositions, pitchSteps: null, fastRealtime: false, forceLocalRetake: false);
+            // Manual Ctrl+R / menu: new diffusion noise each time so repeated presses retake pitch.
+            uint seed = (uint)Random.Shared.Next(1, int.MaxValue);
+            return LoadRenderedPitch(phrase, selectedNotePositions, pitchSteps: null, fastRealtime: false, forceLocalRetake: false, noiseSeed: seed);
         }
 
         /// <summary>Live pitch: partial retake for changed notes with fast sampling settings.</summary>
         internal RenderPitchResult LoadRenderedPitchLive(
             RenderPhrase phrase, HashSet<int> selectedNotePositions, double pitchSteps, bool fastRealtime) {
-            return LoadRenderedPitch(phrase, selectedNotePositions, pitchSteps, fastRealtime, forceLocalRetake: true);
+            return LoadRenderedPitch(phrase, selectedNotePositions, pitchSteps, fastRealtime, forceLocalRetake: true, noiseSeed: null);
         }
 
         RenderPitchResult LoadRenderedPitch(
@@ -763,9 +766,17 @@ namespace OpenUtau.Core.DiffSinger {
             HashSet<int> selectedNotePositions,
             double? pitchSteps,
             bool fastRealtime,
-            bool forceLocalRetake) {
+            bool forceLocalRetake,
+            uint? noiseSeed) {
             if (!forceLocalRetake && !Preferences.Default.DiffSingerLocalRetaking) {
-                return LoadRenderedPitch(phrase, pitchSteps, fastRealtime);
+                DiffSingerSinger singerFull = (DiffSingerSinger) phrase.singer;
+                if (!singerFull.HasPitchPredictor) {
+                    throw new Exception("This singer has no pitch predictor.");
+                }
+                var pitchFull = singerFull.getPitchPredictor()!;
+                lock (singerFull.SessionLock) {
+                    return pitchFull.Process(phrase, pitchSteps, fastRealtime, noiseSeed: noiseSeed);
+                }
             }
             DiffSingerSinger singer = (DiffSingerSinger) phrase.singer;
             if (!singer.HasPitchPredictor) {
@@ -780,7 +791,7 @@ namespace OpenUtau.Core.DiffSinger {
                 phrase.position, noteRelativePositions, selectedNotePositions);
             if (retakeNoteIndexes.Count == 0 || retakeNoteIndexes.Count == phrase.notes.Length) {
                 lock (singer.SessionLock) {
-                    return pitchPredictor.Process(phrase, pitchSteps, fastRealtime);
+                    return pitchPredictor.Process(phrase, pitchSteps, fastRealtime, noiseSeed: noiseSeed);
                 }
             }
             var frameMs = pitchPredictor.FrameMs;
@@ -793,7 +804,7 @@ namespace OpenUtau.Core.DiffSinger {
             lock (singer.SessionLock) {
                 return pitchPredictor.Process(
                     phrase, pitchSteps, fastRealtime,
-                    retakeNoteIndexes: retakeNoteIndexes, existingPitch: existingPitch);
+                    retakeNoteIndexes: retakeNoteIndexes, existingPitch: existingPitch, noiseSeed: noiseSeed);
             }
         }
 

@@ -602,6 +602,8 @@ namespace OpenUtau.App.Controls {
                     return;
                 }
                 try {
+                    // Snapshot selection: dialog focus / curve events must not empty the list mid-run.
+                    var selectedNotes = NotesVm.Selection.ToList();
                     if (edit.IsAsync) {
                         var mainWindow =
                             (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)
@@ -611,7 +613,7 @@ namespace OpenUtau.App.Controls {
                             ThemeManager.GetString("pianoroll.menu.batch.running"),
                             (messageBox, cancellationToken) => {
                                 edit.RunAsync(NotesVm.Project, NotesVm.Part,
-                                    NotesVm.Selection.ToList(), DocManager.Inst,
+                                    selectedNotes, DocManager.Inst,
                                     (current, total) => {
                                         messageBox.SetText($"{name}: {current} / {total}");
                                     }, cancellationToken);
@@ -628,8 +630,16 @@ namespace OpenUtau.App.Controls {
                                 }
                             }
                         );
+                        // Processing dialog steals focus; curve-selection bus may clear notes.
+                        // Restore both so Ctrl+R can be pressed repeatedly.
+                        if (NotesVm.Selection.IsEmpty && selectedNotes.Count > 0) {
+                            if (NotesVm.Selection.Select(selectedNotes)) {
+                                MessageBus.Current.SendMessage(new NotesSelectionEvent(NotesVm.Selection));
+                            }
+                        }
+                        this.Focus();
                     } else {
-                        edit.Run(NotesVm.Project, NotesVm.Part, NotesVm.Selection.ToList(),
+                        edit.Run(NotesVm.Project, NotesVm.Part, selectedNotes,
                             DocManager.Inst);
                     }
                 } catch (Exception e) {
