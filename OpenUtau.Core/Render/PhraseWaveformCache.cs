@@ -55,6 +55,60 @@ namespace OpenUtau.Core.Render {
             return false;
         }
 
+        /// <summary>
+        /// Zero piano-roll display samples over absolute-ms ranges, keeping the rest
+        /// of the phrase visible (e.g. during acoustic retake of selected notes).
+        /// Does not drop the entry or touch play-seed <see cref="CacheEntry.Samples"/>.
+        /// </summary>
+        public static bool ClearDisplayRanges(
+            ulong phraseHash,
+            IEnumerable<(double startMs, double endMs)> absoluteRanges) {
+            if (!entries.TryGetValue(phraseHash.ToString(), out var entry)) {
+                return false;
+            }
+            float[] source = entry.WaveformSamples ?? entry.Samples;
+            if (source.Length == 0) {
+                return false;
+            }
+            float[] display = (float[])source.Clone();
+            bool any = false;
+            foreach (var (startMs, endMs) in absoluteRanges) {
+                if (!(endMs > startMs)) {
+                    continue;
+                }
+                int start = (int)Math.Floor((startMs - entry.PosMs) * 44100.0 / 1000.0);
+                int end = (int)Math.Ceiling((endMs - entry.PosMs) * 44100.0 / 1000.0);
+                start = Math.Clamp(start, 0, display.Length);
+                end = Math.Clamp(end, 0, display.Length);
+                if (end > start) {
+                    Array.Clear(display, start, end - start);
+                    any = true;
+                }
+            }
+            if (!any) {
+                return false;
+            }
+            entry.WaveformSamples = display;
+            Changed?.Invoke();
+            return true;
+        }
+
+        /// <summary>Zero the entire piano-roll display buffer for a phrase.</summary>
+        public static bool ClearDisplayAll(ulong phraseHash) {
+            if (!entries.TryGetValue(phraseHash.ToString(), out var entry)) {
+                return false;
+            }
+            float[] source = entry.WaveformSamples ?? entry.Samples;
+            if (source.Length == 0) {
+                return false;
+            }
+            float[] display = (float[])source.Clone();
+            Array.Clear(display, 0, display.Length);
+            entry.WaveformSamples = display;
+            Changed?.Invoke();
+            return true;
+        }
+
         public static bool TryGet(ulong phraseHash, out Entry entry) {
             if (entries.TryGetValue(phraseHash.ToString(), out var cached)) {
                 entry = new Entry(cached);

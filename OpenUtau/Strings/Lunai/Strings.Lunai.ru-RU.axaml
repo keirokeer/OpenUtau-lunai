@@ -6,6 +6,7 @@
 
   <system:String x:Key="context.part.generateharmonies">Создать гармонии...</system:String>
   <system:String x:Key="context.note.acousticretake">Ретейк акустики</system:String>
+  <system:String x:Key="shortcut.context.note.acousticretake">Ретейк акустики</system:String>
 
   <system:String x:Key="dialogs.about.close">Закрыть</system:String>
   <system:String x:Key="dialogs.about.contributors.embedded">Показан встроенный список контрибьюторов.</system:String>

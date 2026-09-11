@@ -6,6 +6,7 @@
 
   <system:String x:Key="context.part.generateharmonies">Generate harmonies...</system:String>
   <system:String x:Key="context.note.acousticretake">Acoustic Retake</system:String>
+  <system:String x:Key="shortcut.context.note.acousticretake">Acoustic Retake</system:String>
 
   <system:String x:Key="dialogs.about.close">Close</system:String>
   <system:String x:Key="dialogs.about.contributors.embedded">Showing the embedded contributor list.</system:String>

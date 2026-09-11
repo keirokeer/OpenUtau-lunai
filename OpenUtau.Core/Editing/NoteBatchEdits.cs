@@ -927,9 +927,22 @@ namespace OpenUtau.Core.Editing {
                 phrases.Select(p => (p.position, p.end)),
                 positions);
             var planner = PlaybackManager.Inst.MixPlanner;
+            double holePadMs = DiffSinger.DiffSingerAcousticRetake.PadMs
+                + DiffSinger.DiffSingerAcousticRetake.SampleCrossfadeMs;
             foreach (var phrase in phrases) {
                 phrase.DeleteCacheFiles();
-                PhraseWaveformCache.Remove(phrase.hash);
+                var selectedInPhrase = phrase.notes
+                    .Where(n => positions.Contains(phrase.position + n.position))
+                    .ToArray();
+                if (selectedInPhrase.Length >= phrase.notes.Length) {
+                    PhraseWaveformCache.ClearDisplayAll(phrase.hash);
+                } else if (selectedInPhrase.Length > 0) {
+                    PhraseWaveformCache.ClearDisplayRanges(
+                        phrase.hash,
+                        selectedInPhrase.Select(n => (
+                            n.positionMs - holePadMs,
+                            n.endMs + holePadMs)));
+                }
                 planner.MarkFailed(part, phrase.hash);
             }
             part.SetRenderMixComplete(false);

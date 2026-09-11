@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -230,7 +231,39 @@ namespace OpenUtau.Core.Util {
                 Log.Error(e, "Failed to load prefs.");
                 Default = new SerializablePreferences();
             }
+            EnsureMissingDefaultShortcuts();
             EnsureOverlayScrollbars();
+        }
+
+        /// <summary>
+        /// Inserts newly shipped default shortcut actions into an existing prefs file
+        /// without overwriting user-customized bindings for actions already present.
+        /// </summary>
+        static void EnsureMissingDefaultShortcuts() {
+            if (Default?.Shortcuts == null) {
+                return;
+            }
+            var shipped = new SerializablePreferences().Shortcuts;
+            if (shipped == null || shipped.Count == 0) {
+                return;
+            }
+            var have = new HashSet<string>(Default.Shortcuts.Select(s => s.ActionId));
+            bool added = false;
+            foreach (var binding in shipped) {
+                if (have.Contains(binding.ActionId)) {
+                    continue;
+                }
+                Default.Shortcuts.Add(new ShortcutBinding {
+                    ActionId = binding.ActionId,
+                    KeyName = binding.KeyName,
+                    ModifiersName = binding.ModifiersName,
+                });
+                have.Add(binding.ActionId);
+                added = true;
+            }
+            if (added) {
+                Save();
+            }
         }
 
         private static bool ValidString(Action action) {
@@ -523,6 +556,7 @@ namespace OpenUtau.Core.Util {
                 
                 new ShortcutBinding { ActionId = "pianoroll.menu.notes.loadrenderedpitch", KeyName = "R", ModifiersName = "Control" },
                 new ShortcutBinding { ActionId = "pianoroll.menu.notes.refreshrealcurves", KeyName = "R", ModifiersName = "Control, Shift" },
+                new ShortcutBinding { ActionId = "context.note.acousticretake", KeyName = "R", ModifiersName = "Shift" },
                 new ShortcutBinding { ActionId = "pianoroll.menu.notes.bakepitch", KeyName = "K", ModifiersName = "Alt" },
 
                 // Tails and Overlap

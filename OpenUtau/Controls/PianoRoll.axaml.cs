@@ -1622,6 +1622,7 @@ namespace OpenUtau.App.Controls {
                                 DocManager.Inst.Project.tracks[part.trackNo].Singer)) {
                             ViewModel.NotesContextMenuItems.Add(new MenuItemViewModel() {
                                 Header = ThemeManager.GetString("context.note.acousticretake"),
+                                InputGesture = KeyTranslator.GetGesture("context.note.acousticretake"),
                                 Command = noteBatchEditCommand,
                                 CommandParameter = new AcousticRetakeNotes(),
                             });
@@ -2408,6 +2409,9 @@ namespace OpenUtau.App.Controls {
                 case "Use Track Color": OnMenuUseTrackColor(this, new RoutedEventArgs()); return true;
                 case "Detach Piano Roll": OnMenuDetachPianoRoll(this, new RoutedEventArgs()); return true;
                 case "Hide Piano Roll": OnMenuHidePianoRoll(this, new RoutedEventArgs()); return true;
+                case "context.note.acousticretake":
+                    noteBatchEditCommand?.Execute(new AcousticRetakeNotes()).Subscribe();
+                    return true;
             }
             // External and batch note edits
             if (!string.IsNullOrEmpty(action)) {
