@@ -5,8 +5,6 @@
         xmlns:vm="using:OpenUtau.App.ViewModels"
         xmlns:c="using:OpenUtau.App.Controls"
         xmlns:views="clr-namespace:OpenUtau.App.Views"
-        xmlns:controls="clr-namespace:Material.Styles.Controls;assembly=Material.Styles"
-        xmlns:styles="clr-namespace:Material.Styles;assembly=Material.Styles"
         mc:Ignorable="d" d:DesignWidth="700" d:DesignHeight="460"
         x:Class="OpenUtau.App.Views.PreferencesDialog"
         Icon="/Assets/open-utau.ico"
