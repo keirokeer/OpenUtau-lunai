@@ -215,6 +215,7 @@ namespace OpenUtau.Core.Render {
         /// </summary>
         public readonly PhraseLayout Layout;
 
+        private readonly object cacheFilesLock = new object();
         private List<string> cacheFiles = new List<string>();
 
         /// <summary>
@@ -599,13 +600,20 @@ namespace OpenUtau.Core.Render {
         public void AddCacheFile(string file) {
             if (string.IsNullOrWhiteSpace(file)) return;
             var filename = Path.GetFileNameWithoutExtension(file);
-            if (!cacheFiles.Contains(filename)) {
-                cacheFiles.Add(filename);
+            lock (cacheFilesLock) {
+                if (!cacheFiles.Contains(filename)) {
+                    cacheFiles.Add(filename);
+                }
             }
         }
 
         public void DeleteCacheFiles() {
-            foreach (var filename in cacheFiles) {
+            string[] filenames;
+            lock (cacheFilesLock) {
+                filenames = cacheFiles.ToArray();
+                cacheFiles.Clear();
+            }
+            foreach (var filename in filenames) {
                 var files = Directory.EnumerateFiles(PathManager.Inst.CachePath, $"{filename}*");
                 foreach (var file in files) {
                     try {
@@ -615,7 +623,6 @@ namespace OpenUtau.Core.Render {
                     }
                 }
             }
-            cacheFiles.Clear();
 
             if (singer is ClassicSinger cSinger && cSinger.Frqs != null) {
                 foreach (var oto in phones.Select(p => p.oto).Distinct()) {
