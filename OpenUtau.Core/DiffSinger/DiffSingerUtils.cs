@@ -7,6 +7,7 @@ using Microsoft.ML.OnnxRuntime.Tensors;
 using Newtonsoft.Json;
 using OpenUtau.Core.Render;
 using OpenUtau.Core.Ustx;
+using OpenUtau.Core.Util;
 
 namespace OpenUtau.Core.DiffSinger {
     public static class DiffSingerUtils {
@@ -15,6 +16,8 @@ namespace OpenUtau.Core.DiffSinger {
         public const string PEXP = "pexp";
         /// <summary>Vocoder-only pitch offset curve (cents). Melodyne-style heard-pitch tuning.</summary>
         public const string VPIT = "vpit";
+        /// <summary>Acoustic F0 zero amount (0=off, 100=full Zero). DiffSinger-only whisper-ish control.</summary>
+        public const string AF0Z = "af0z";
         public const string VoiceColorHeader = "cl";
         public const string VoiceColorNamePrefix = "voice color ";
         public const int headFrames = 8;
@@ -50,6 +53,7 @@ namespace OpenUtau.Core.DiffSinger {
             }
             return abbr switch {
                 Format.Ustx.DYN or Format.Ustx.PITD or Format.Ustx.CLR or Format.Ustx.SHFC or VPIT => true,
+                AF0Z => Preferences.Default.DiffSingerAcousticF0ZeroEnabled,
                 Format.Ustx.BREC => dsSinger.dsConfig.useBreathinessEmbed,
                 ENE => dsSinger.dsConfig.useEnergyEmbed,
                 Format.Ustx.VOIC => dsSinger.dsConfig.useVoicingEmbed,
@@ -309,6 +313,23 @@ namespace OpenUtau.Core.DiffSinger {
                 result[i] = baseF0Hz[i];
             }
             return result;
+        }
+
+        /// <summary>
+        /// Scale acoustic F0 toward zero by AF0Z amount (0=unchanged, 100=full Zero). In-place.
+        /// </summary>
+        public static void ApplyAcousticF0ZeroAmount(float[] f0Hz, double[] amount0To100) {
+            if (f0Hz == null || f0Hz.Length == 0 || amount0To100 == null || amount0To100.Length == 0) {
+                return;
+            }
+            int n = Math.Min(f0Hz.Length, amount0To100.Length);
+            for (int i = 0; i < n; i++) {
+                double amount = Math.Clamp(amount0To100[i], 0, 100);
+                if (amount <= 1e-6) {
+                    continue;
+                }
+                f0Hz[i] *= (float)(1.0 - amount / 100.0);
+            }
         }
 
         //MusicMath.Linear, but float numbers are used instead of double

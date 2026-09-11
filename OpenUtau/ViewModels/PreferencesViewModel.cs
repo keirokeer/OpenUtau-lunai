@@ -10,6 +10,7 @@ using OpenUtau.App.Helpers;
 using OpenUtau.Audio;
 using OpenUtau.Classic;
 using OpenUtau.Core;
+using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
 using OpenUtau.Colors;
 using ReactiveUI;
@@ -198,6 +199,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool DiffSingerUnvoicedConsonantAcousticF0Interpolate { get; set; }
         [Reactive] public partial bool DiffSingerShowAcousticF0PatchPreview { get; set; }
         [Reactive] public partial bool DiffSingerAcousticFlatPitch { get; set; }
+        [Reactive] public partial bool DiffSingerAcousticF0ZeroEnabled { get; set; }
         [Reactive] public partial bool DiffSingerPhonemeVarianceRemap { get; set; }
         [Reactive] public partial bool DiffSingerLangCodeHide { get; set; }
         [Reactive] public partial bool DiffSingerPhonemePanelMode { get; set; }
@@ -592,6 +594,7 @@ namespace OpenUtau.App.ViewModels {
             DiffSingerUnvoicedConsonantAcousticF0Interpolate = Preferences.Default.DiffSingerUnvoicedConsonantAcousticF0Interpolate;
             DiffSingerShowAcousticF0PatchPreview = Preferences.Default.DiffSingerShowAcousticF0PatchPreview;
             DiffSingerAcousticFlatPitch = Preferences.Default.DiffSingerAcousticFlatPitch;
+            DiffSingerAcousticF0ZeroEnabled = Preferences.Default.DiffSingerAcousticF0ZeroEnabled;
             DiffSingerPhonemeVarianceRemap = Preferences.Default.DiffSingerPhonemeVarianceRemap;
             DiffSingerLangCodeHide = Preferences.Default.DiffSingerLangCodeHide;
             DiffSingerPhonemePanelMode = Preferences.Default.DiffSingerPhonemePanelMode;
@@ -1173,6 +1176,14 @@ namespace OpenUtau.App.ViewModels {
                 .Subscribe(enabled => {
                     Preferences.Default.DiffSingerAcousticFlatPitch = enabled;
                     Preferences.Save();
+                });
+            this.WhenAnyValue(vm => vm.DiffSingerAcousticF0ZeroEnabled)
+                .Skip(1)
+                .Subscribe(enabled => {
+                    Preferences.Default.DiffSingerAcousticF0ZeroEnabled = enabled;
+                    Preferences.Save();
+                    // Only refresh expression picker visibility — do not force project re-render.
+                    DocManager.Inst.ExecuteCmd(new ExpressionsSuggestedNotification());
                 });
             this.WhenAnyValue(vm => vm.DiffSingerPhonemeVarianceRemap)
                 .Skip(1)

@@ -71,6 +71,7 @@ namespace OpenUtau.Core.Format {
             project.RegisterExpression(new UExpressionDescriptor("energy (curve)", DiffSinger.DiffSingerUtils.ENE, -100, 100, 0) { type = UExpressionType.Curve });
             project.RegisterExpression(new UExpressionDescriptor("pitch expressiveness (curve)", DiffSinger.DiffSingerUtils.PEXP, 0, 100, 100) { type = UExpressionType.Curve });
             project.RegisterExpression(new UExpressionDescriptor("vocoder pitch (curve)", DiffSinger.DiffSingerUtils.VPIT, -1200, 1200, 0) { type = UExpressionType.Curve });
+            project.RegisterExpression(new UExpressionDescriptor("acoustic f0 zero (curve)", DiffSinger.DiffSingerUtils.AF0Z, 0, 100, 0) { type = UExpressionType.Curve });
 
             string message = string.Empty;
             if (ValidateExpression(project, "g", GEN)) {

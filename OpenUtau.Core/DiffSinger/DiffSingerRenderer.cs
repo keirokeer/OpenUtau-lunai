@@ -36,6 +36,7 @@ namespace OpenUtau.Core.DiffSinger {
             PEXP,
             Format.Ustx.SHFC,
             DiffSingerUtils.VPIT,
+            DiffSingerUtils.AF0Z,
         };
 
         private static readonly Dictionary<string, Func<float, float, float>> varianceDeltaFunctions =
@@ -295,6 +296,12 @@ namespace OpenUtau.Core.DiffSinger {
                 x => MusicMath.ToneToFreq(x * 0.01))
                 .Select(f => (float)f).ToArray();
             DiffSingerUnvoicedConsonantPatch.ApplyAcousticF0(phrase, durations, (float)frameMs, acousticF0);
+            if (Preferences.Default.DiffSingerAcousticF0ZeroEnabled) {
+                DiffSingerUtils.ApplyAcousticF0ZeroAmount(
+                    acousticF0,
+                    DiffSingerUtils.SampleCurve(
+                        phrase, phrase.acousticF0Zero, 0, frameMs, totalFrames, headFrames, tailFrames, x => x));
+            }
             float[] shiftedF0 = acousticF0.Zip(DiffSingerUtils.SampleCurve(phrase, phrase.toneShift, 0, frameMs, totalFrames,
                 headFrames, tailFrames, x => x),
                 (x, d) => x * (float) Math.Pow(2, d / 1200)).ToArray();
@@ -952,6 +959,18 @@ namespace OpenUtau.Core.DiffSinger {
                 defaultValue = 0,
                 isFlag = false,
             });
+            // acoustic F0 zero (opt-in via prefs; DiffSinger-only)
+            if (Preferences.Default.DiffSingerAcousticF0ZeroEnabled) {
+                result.Add(new UExpressionDescriptor {
+                    name = "acoustic f0 zero (curve)",
+                    abbr = DiffSingerUtils.AF0Z,
+                    type = UExpressionType.Curve,
+                    min = 0,
+                    max = 100,
+                    defaultValue = 0,
+                    isFlag = false,
+                });
+            }
             //speakers
             if (dsSinger != null && dsSinger.dsConfig.speakers != null) {
                 float voiceColorCeiling = Preferences.GetVoiceColorCurveMax();

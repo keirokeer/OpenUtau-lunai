@@ -342,6 +342,11 @@ namespace OpenUtau.Core.Util {
             /// Vocoder still receives full pitch + VPIT. Emulates NNSVS/Voisona-style resampling.
             /// </summary>
             public bool DiffSingerAcousticFlatPitch = false;
+            /// <summary>
+            /// When true, DiffSinger shows the acoustic f0 zero (af0z) curve and applies it at render.
+            /// Off by default — enable in DiffSinger Render Settings → Pitch &amp; F0.
+            /// </summary>
+            public bool DiffSingerAcousticF0ZeroEnabled = false;
             public bool DiffSingerPhonemeVarianceRemap = true;
             public bool DiffSingerLangCodeHide = false;
             public bool DiffSingerPhonemePanelMode = true;

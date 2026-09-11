@@ -197,6 +197,7 @@ namespace OpenUtau.Core.Render {
         public readonly float[] breathiness;
         public readonly float[] toneShift;
         public readonly float[] vocoderPitch;
+        public readonly float[] acousticF0Zero;
         public readonly float[] tension;
         public readonly float[] mouthOpening;
         public readonly float[] voicing;
@@ -472,6 +473,7 @@ namespace OpenUtau.Core.Render {
                     case Format.Ustx.DYN : dynamics = curveSampled; break;
                     case Format.Ustx.SHFC: toneShift = curveSampled; break;
                     case DiffSinger.DiffSingerUtils.VPIT: vocoderPitch = curveSampled; break;
+                    case DiffSinger.DiffSingerUtils.AF0Z: acousticF0Zero = curveSampled; break;
                     case Format.Ustx.GENC: gender = curveSampled; break;
                     case Format.Ustx.TENC: tension = curveSampled; break;
                     case Format.Ustx.OPEC: mouthOpening = curveSampled; break;
@@ -546,7 +548,7 @@ namespace OpenUtau.Core.Render {
                         writer.Write(phone.hash);
                     }
                     if (postEffect) {
-                        foreach (var array in new float[][] { pitches, dynamics, gender, breathiness, toneShift, vocoderPitch, tension, mouthOpening, voicing, xsy }) {
+                        foreach (var array in new float[][] { pitches, dynamics, gender, breathiness, toneShift, vocoderPitch, acousticF0Zero, tension, mouthOpening, voicing, xsy }) {
                             if (array == null) {
                                 writer.Write("null");
                             } else {
