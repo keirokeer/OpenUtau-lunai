@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using OpenUtau.Api;
 using OpenUtau.Core.G2p;
 using OpenUtau.Core.Ustx;
@@ -80,37 +81,51 @@ namespace OpenUtau.Plugin.Builtin {
                 string globalFile = Path.Combine(PluginDir, YamlFileName);
                 string singerFile = Path.Combine(this.singer.Location, YamlFileName);
 
-                var filesToParse = new List<string>();
-                if (File.Exists(globalFile)) filesToParse.Add(globalFile);
-                if (File.Exists(singerFile) && globalFile != singerFile) filesToParse.Add(singerFile);
-
                 WanaKanaDictionary.Clear();
 
-                foreach (var file in filesToParse) {
-                    try {
-                        var data = Core.Yaml.DefaultDeserializer.Deserialize<ChildYAMLData>(File.ReadAllText(file));
+                void AddWanaKana(ChildYAMLData data) {
+                    if (data?.wanakana == null) {
+                        return;
+                    }
+                    foreach (var entry in data.wanakana) {
+                        string key = string.Join("", entry.FromList);
+                        string value = string.Join(" ", entry.ToList);
 
-                        if (data?.wanakana != null) {
-                            foreach (var entry in data.wanakana) {
-                                string key = string.Join("", entry.FromList);
-                                string value = string.Join(" ", entry.ToList);
-
-                                if (!WanaKanaDictionary.ContainsKey(key)) {
-                                    WanaKanaDictionary.Add(key, new List<string>());
-                                }
-                                
-                                if (!WanaKanaDictionary[key].Contains(value)) {
-                                    WanaKanaDictionary[key].Add(value); 
-                                }
-                                
-                                // Add the romaji (key) as a fallback at the very end of the candidates
-                                if (!WanaKanaDictionary[key].Contains(key)) {
-                                    WanaKanaDictionary[key].Add(key); 
-                                }
-                            }
+                        if (!WanaKanaDictionary.ContainsKey(key)) {
+                            WanaKanaDictionary.Add(key, new List<string>());
                         }
+
+                        if (!WanaKanaDictionary[key].Contains(value)) {
+                            WanaKanaDictionary[key].Add(value);
+                        }
+
+                        if (!WanaKanaDictionary[key].Contains(key)) {
+                            WanaKanaDictionary[key].Add(key);
+                        }
+                    }
+                }
+
+                // Prefer embedded template in tests to avoid racing shared Plugins/en2ja.yaml
+                if (Testing && YamlTemplate != null) {
+                    try {
+                        AddWanaKana(Core.Yaml.DefaultDeserializer.Deserialize<ChildYAMLData>(
+                            Encoding.UTF8.GetString(YamlTemplate)));
                     } catch (Exception ex) {
-                        Log.Error($"Failed to parse wanakana from {file}: {ex.Message}");
+                        Log.Error($"Failed to parse embedded wanakana from {YamlFileName}: {ex.Message}");
+                    }
+                } else if (File.Exists(globalFile)) {
+                    try {
+                        AddWanaKana(Core.Yaml.DefaultDeserializer.Deserialize<ChildYAMLData>(File.ReadAllText(globalFile)));
+                    } catch (Exception ex) {
+                        Log.Error($"Failed to parse wanakana from {globalFile}: {ex.Message}");
+                    }
+                }
+
+                if (File.Exists(singerFile) && !(Testing && globalFile == singerFile)) {
+                    try {
+                        AddWanaKana(Core.Yaml.DefaultDeserializer.Deserialize<ChildYAMLData>(File.ReadAllText(singerFile)));
+                    } catch (Exception ex) {
+                        Log.Error($"Failed to parse wanakana from {singerFile}: {ex.Message}");
                     }
                 }
             }

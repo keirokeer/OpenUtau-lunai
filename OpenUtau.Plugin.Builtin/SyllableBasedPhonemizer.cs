@@ -418,6 +418,22 @@ namespace OpenUtau.Plugin.Builtin {
             }
         }
 
+        private static YAMLData LoadYamlFromBytes(byte[] bytes) {
+            if (bytes == null || bytes.Length == 0) {
+                return null;
+            }
+            try {
+                using var stream = new MemoryStream(bytes);
+                using var reader = new StreamReader(stream, Encoding.UTF8);
+                return TolerantDeserializer.Deserialize<YAMLData>(reader);
+            } catch (Exception ex) {
+                Log.Error(ex, "Failed to deserialize embedded YAML template");
+                return null;
+            }
+        }
+
+        private static readonly object YamlUpdateLock = new object();
+
         public override void SetSinger(USinger singer) {
             if (this.singer != singer) {
                 this.singer = singer;
@@ -516,13 +532,38 @@ namespace OpenUtau.Plugin.Builtin {
                     }
                 }
 
-                UpdateYamlIfNeeded(globalFile, true);
-                UpdateYamlIfNeeded(singerFile, false);
-
-                // add to parsing list (Global first, Singer second)
-                var filesToParse = new List<string>();
-                if (File.Exists(globalFile)) filesToParse.Add(globalFile);
-                if (!string.IsNullOrEmpty(singerFile) && File.Exists(singerFile)) filesToParse.Add(singerFile);
+                // In unit tests, never rewrite the shared Plugins/*.yaml — parallel
+                // phonemizer tests race on Move/Write and can leave a corrupt/partial file.
+                var datasToParse = new List<YAMLData>();
+                if (Testing && YamlTemplate != null) {
+                    var embedded = LoadYamlFromBytes(YamlTemplate);
+                    if (embedded != null) {
+                        datasToParse.Add(embedded);
+                    }
+                    if (!string.IsNullOrEmpty(singerFile) && File.Exists(singerFile)) {
+                        var singerData = LoadYamlCached(singerFile);
+                        if (singerData != null) {
+                            datasToParse.Add(singerData);
+                        }
+                    }
+                } else {
+                    lock (YamlUpdateLock) {
+                        UpdateYamlIfNeeded(globalFile, true);
+                        UpdateYamlIfNeeded(singerFile, false);
+                    }
+                    if (File.Exists(globalFile)) {
+                        var globalData = LoadYamlCached(globalFile);
+                        if (globalData != null) {
+                            datasToParse.Add(globalData);
+                        }
+                    }
+                    if (!string.IsNullOrEmpty(singerFile) && File.Exists(singerFile)) {
+                        var singerData = LoadYamlCached(singerFile);
+                        if (singerData != null) {
+                            datasToParse.Add(singerData);
+                        }
+                    }
+                }
 
                 // backups of hardcoded defaults exist
                 if (backupVowels == null) backupVowels = GetVowels() ?? Array.Empty<string>();
@@ -563,10 +604,12 @@ namespace OpenUtau.Plugin.Builtin {
                 foreach (var kvp in backupVowelSustains) vowelSustains[kvp.Key] = kvp.Value;
 
                 // parse the files sequentially (Singer configs seamlessly overwrite global configs)
-                foreach (var file in filesToParse) {
+                foreach (var data in datasToParse) {
                     try {
-                        var data = LoadYamlCached(file);
-                        
+                        if (data == null) {
+                            continue;
+                        }
+
                         if (data.symbols != null && data.symbols.Length > 0) {
                             var symbolLookup = data.symbols
                                 .Where(s => !string.IsNullOrEmpty(s.symbol) && !string.IsNullOrEmpty(s.type))
@@ -695,7 +738,7 @@ namespace OpenUtau.Plugin.Builtin {
                         }
 
                     } catch (Exception ex) {
-                        Log.Error($"Failed to parse {file}: {ex.Message}");
+                        Log.Error($"Failed to parse {YamlFileName}: {ex.Message}");
                     }
                 }
 
@@ -1260,8 +1303,8 @@ namespace OpenUtau.Plugin.Builtin {
             if (!string.IsNullOrEmpty(YamlFileName)) {
                 string path = Path.Combine(PluginDir, YamlFileName);
                 
-                // Write template if missing
-                if (!File.Exists(path) && YamlTemplate != null) {
+                // Write template if missing (skip during tests — shared Plugins dir races)
+                if (!Testing && !File.Exists(path) && YamlTemplate != null) {
                     Directory.CreateDirectory(PluginDir);
                     File.WriteAllBytes(path, YamlTemplate);
                 }
@@ -1278,8 +1321,14 @@ namespace OpenUtau.Plugin.Builtin {
                     }
                 }
 
-                // Load dictionary from Plugin Folder (Fallback Priority)
-                if (File.Exists(path)) {
+                // Load dictionary from Plugin Folder (Fallback Priority), or embedded template in tests
+                if (Testing && YamlTemplate != null) {
+                    try {
+                        g2ps.Add(G2pDictionary.NewBuilder().Load(Encoding.UTF8.GetString(YamlTemplate)).Build());
+                    } catch (Exception e) {
+                        Log.Error(e, $"Failed to load embedded {YamlFileName}");
+                    }
+                } else if (File.Exists(path)) {
                     try {
                         g2ps.Add(G2pDictionary.NewBuilder().Load(File.ReadAllText(path)).Build());
                     } catch (Exception e) {
