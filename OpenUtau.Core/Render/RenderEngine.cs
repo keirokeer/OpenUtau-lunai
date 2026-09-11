@@ -369,6 +369,18 @@ namespace OpenUtau.Core.Render {
                 }
                 var phrase = tuple.phrase;
                 var request = tuple.request;
+                // BeginSession already seeded Ready slots from the MixPlanner cache.
+                // Re-rendering + RegisterPcm would only RebuildAll under the playhead
+                // (extra load / crackle) while the PCM is already playable.
+                if (planner.TryGetPhrasePcm(request.part, phrase.hash, out _)) {
+                    progress.Complete(phrase.phones.Length, string.Empty);
+                    if (++request.completedPhrases == request.phrases.Length) {
+                        planner.MarkPartComplete(request.part, request.phrases.Select(p => p.hash));
+                        request.part.SetRenderMixComplete(true);
+                        DocManager.Inst.ExecuteCmd(new PartRenderedNotification(request.part));
+                    }
+                    continue;
+                }
                 bool realCurvesPublished = false;
                 var renderEvents = phrase.renderer.SupportsRealCurve
                     ? new RenderPhraseEvents(realCurves => {

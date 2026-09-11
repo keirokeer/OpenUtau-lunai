@@ -641,8 +641,23 @@ namespace OpenUtau.Core {
         public void OnNext(UCommand cmd, bool isUndo) {
             if (cmd is SeekPlayPosTickNotification) {
                 var _cmd = cmd as SeekPlayPosTickNotification;
-                StopPlayback();
                 int tick = _cmd!.playPosTick;
+                bool forceFresh = Preferences.Default.ExperimentalInvalidatePlaybackOnEdit && playbackMixDirty;
+                // Playhead-only seek: keep a warm masterMix (same as Pause) so the next
+                // Play can resume without re-running RenderRequests. StopPlayback only
+                // when there is no mix or the mix is dirty after edits.
+                if (!forceFresh && masterMix != null) {
+                    var timeAxis = DocManager.Inst.Project.timeAxis;
+                    startMs = timeAxis.TickPosToMsPos(tick);
+                    masterMix.SetPosition((int)(startMs * 44100 / 1000) * 2);
+                    AudioOutput.Stop();
+                    pausedWithMix = true;
+                    PlayingMaster = false;
+                    metronomeEngine.Stop();
+                    loopEndTick = -1;
+                } else {
+                    StopPlayback();
+                }
                 DocManager.Inst.ExecuteCmd(new SetPlayPosTickNotification(tick, false, _cmd.pause));
             } else if (cmd is VolumeChangeNotification) {
                 var _cmd = cmd as VolumeChangeNotification;

@@ -51,6 +51,11 @@ namespace OpenUtau.Core.SignalChain {
                 IsWaiting = true;
                 return count;
             } else {
+                // Silence → audio (render caught up): reuse the edge fade so the
+                // first non-silent buffer does not click/crackle under the playhead.
+                if (IsWaiting) {
+                    startPosition = position;
+                }
                 int readPosition = position;
                 int pos = source.Mix(position, buffer, offset, count);
                 int n = Math.Max(0, pos - position);
