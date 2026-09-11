@@ -114,7 +114,7 @@ namespace OpenUtau.Plugins {
                         },
                     }
                 }
-            }, new string[] { "-hhI", "I-_H" });
+            }, new string[] { "-hI", "I-_H" });
         }
 
         [Theory]

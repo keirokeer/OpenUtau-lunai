@@ -444,9 +444,9 @@
             <Button Grid.Column="4" Content="{DynamicResource prefs.paths.detect}"
                     HorizontalAlignment="Stretch" Click="DetectWinePath"/>
           </Grid>
-          <Grid IsVisible="{OnPlatform Default=False, Linux=True}" Margin="0,10,0,0">
-            <TextBlock Text="{DynamicResource prefs.advanced.wayland}" HorizontalAlignment="Left"/>
-            <ToggleSwitch IsChecked="{Binding Wayland}"/>
+          <Grid ColumnDefinitions="*,Auto" IsVisible="{OnPlatform Default=False, Linux=True}" Margin="0,10,0,0">
+            <TextBlock Text="{DynamicResource prefs.advanced.wayland}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+            <ToggleSwitch Grid.Column="1" IsChecked="{Binding Wayland}"/>
           </Grid>
           <TextBlock Classes="restart" IsVisible="{OnPlatform Default=False, Linux=True}"/>
         </StackPanel>
