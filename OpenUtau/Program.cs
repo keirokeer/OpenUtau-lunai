@@ -83,12 +83,15 @@ namespace OpenUtau.App {
                 //Due to the specification of AvaloniaUI, this only affects when the language is set to Japanese.
                 fontOptions.DefaultFamilyName = "Hiragino Sans, Segoe UI, San Francisco, Helvetica Neue";
             }
-            return AppBuilder.Configure<App>()
+            var builder = AppBuilder.Configure<App>()
                 .UsePlatformDetect()
                 .LogToTrace()
                 .UseReactiveUI(_ => { })
-                .With(fontOptions)
-                .With(new X11PlatformOptions { EnableIme = true });
+                .With(fontOptions);
+            if (OS.IsLinux() && Core.Util.Preferences.Default.UseWayland) {
+                builder.UseWaylandWithFallback();
+            }
+            return builder.With(new X11PlatformOptions { EnableIme = true });
         }
 
         public static void Run(string[] args)

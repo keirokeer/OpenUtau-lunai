@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -48,7 +47,9 @@ namespace OpenUtau.Core {
                 ShareLegacySingers = true;
                 HomePathIsAscii = true;
             } else {
-                string exePath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
+                // AppContext.BaseDirectory resolves to the app output dir in normal runs and
+                // during dotnet test; Process.MainModule points at testhost.exe under xunit.
+                string exePath = Path.TrimEndingDirectorySeparator(AppContext.BaseDirectory);
                 // NSIS marker and/or Velopack layout (%LocalAppData%\OpenUtau.Lunai\current + Update.exe).
                 IsInstalled = IsWindowsInstalledLayout(exePath);
                 string dataHome = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
@@ -233,7 +234,7 @@ namespace OpenUtau.Core {
                 if (!IsPortableTfmSiblingDataPath(DataPath)) {
                     return;
                 }
-                string? exePath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule?.FileName);
+                string? exePath = Path.TrimEndingDirectorySeparator(AppContext.BaseDirectory);
                 if (string.IsNullOrEmpty(exePath) || !TryGetDotnetTfmOutputParent(exePath, out var configDir)) {
                     return;
                 }

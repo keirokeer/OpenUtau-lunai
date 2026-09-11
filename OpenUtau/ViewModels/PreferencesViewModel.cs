@@ -211,6 +211,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool RememberMid { get; set; }
         [Reactive] public partial bool RememberUst { get; set; }
         [Reactive] public partial bool RememberVsqx { get; set; }
+        [Reactive] public partial bool Wayland { get; set; }
         public string WinePath => Preferences.Default.WinePath;
 
         // Shortcuts
@@ -646,6 +647,7 @@ namespace OpenUtau.App.ViewModels {
             RememberMid = Preferences.Default.RememberMid;
             RememberUst = Preferences.Default.RememberUst;
             RememberVsqx = Preferences.Default.RememberVsqx;
+            Wayland = Preferences.Default.UseWayland;
             ClearCacheOnQuit = Preferences.Default.ClearCacheOnQuit;
 
             MessageBus.Current.Listen<ThemeEditorStateChangedEvent>()
@@ -1026,6 +1028,11 @@ namespace OpenUtau.App.ViewModels {
             this.WhenAnyValue(vm => vm.RememberVsqx)
                 .Subscribe(index => {
                     Preferences.Default.RememberVsqx = index;
+                    Preferences.Save();
+                });
+            this.WhenAnyValue(vm => vm.Wayland)
+                .Subscribe(wayland => {
+                    Preferences.Default.UseWayland = wayland;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.ClearCacheOnQuit)
