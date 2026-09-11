@@ -74,6 +74,7 @@
               <MenuItem Header="{DynamicResource menu.tools.layout.hsplit13}" Click="OnMenuLayoutHSplit13"/>
             </MenuItem>
             <MenuItem Header="{DynamicResource menu.tools.fullscreen}" InputGesture="F11" Click="OnMenuFullScreen"/>
+            <MenuItem Header="{DynamicResource menu.tools.dawintegration}" Click="OnMenuDawIntegration"/>
             <MenuItem Header="{Binding ClearCacheHeader}" Click="OnMenuClearCache"/>
             <MenuItem Header="{DynamicResource menu.tools.debugwindow}" Click="OnMenuDebugWindow"/>
             <MenuItem Header="{DynamicResource phoneticassistant.caption}" Click="OnMenuPhoneticAssistant"/>
@@ -154,7 +155,7 @@
             <Border Classes="appTopBarValueStrip" MinWidth="200">
               <Grid ColumnDefinitions="*,Auto,*,Auto,*">
                 <Border Grid.Column="0" Classes="transportStripCell appTopBarBpmCell" Cursor="Hand"
-                        PointerPressed="OnEditBpm">
+                        PointerPressed="OnEditBpm" PointerWheelChanged="OnEditBpmScroll">
                   <TextBlock Classes="appTopBarLabel">
                     <TextBlock.Text>
                       <MultiBinding StringFormat="{}{0:#0.00}">
