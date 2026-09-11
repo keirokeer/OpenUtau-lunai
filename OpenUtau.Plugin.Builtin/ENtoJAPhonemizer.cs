@@ -22,11 +22,24 @@ namespace OpenUtau.Plugin.Builtin {
                 "a", "e", "i", "o", "u"
             };
             this.consonants = "b,ch,d,dh,dr,dx,f,g,hh,jh,k,l,m,n,ng,p,q,r,s,sh,t,th,tr,v,w,y,z".Split(',');
+            // Built-in arpabet→romaji map so CV building still works if en2ja.yaml
+            // is missing/corrupt (parallel tests can race on shared Plugins/en2ja.yaml).
+            // Keep this minimal: only mappings that yaml splitting also applies as
+            // 1:1 and that break CV assembly when missing (notably uw→u for "vu").
+            foreach (var kvp in BuiltInDictionaryReplacements) {
+                dictionaryReplacements[kvp.Key] = kvp.Value;
+            }
         }
         protected override string[] GetVowels() => vowels;
         protected override string[] GetConsonants() => consonants;
         protected override string GetDictionaryName() => "";
         protected override bool EnablePhonemeTokenization => true;
+        protected override Dictionary<string, string> GetDictionaryPhonemesReplacement() => BuiltInDictionaryReplacements;
+
+        private static readonly Dictionary<string, string> BuiltInDictionaryReplacements = new Dictionary<string, string> {
+            { "uw", "u" },
+            { "hh", "h" },
+        };
 
         public Dictionary<string, List<string>> WanaKanaDictionary = new Dictionary<string, List<string>>();
 
@@ -136,6 +149,18 @@ namespace OpenUtau.Plugin.Builtin {
             {"hu", "holu" },
             {"yi", "i" }, {"wu", "u" }, {"rra", "wa" },
             {"rri", "wi" }, {"rru", "ru" }, {"rre", "we" }, {"rro", "ulo" },
+        };
+
+        // Fallback when bank has ふ but not ヴ (classic CV), etc.
+        private Dictionary<string, string> ConditionalAlt => conditionalAlt;
+        private static readonly Dictionary<string, string> conditionalAlt = new Dictionary<string, string> {
+            {"ulo", "wo"},
+            {"va", "fa"},
+            {"vi", "fi"},
+            {"vu", "fu"},
+            {"ヴ", "ふ"},
+            {"ve", "fe"},
+            {"vo", "fo"},
         };
 
         private Dictionary<string, string[]> ExtraCv => extraCv;
@@ -438,6 +463,8 @@ namespace OpenUtau.Plugin.Builtin {
                     );
                 }
                 phonemes.Add(finalAlias);
+            } else if (TryConditionalAlt(cv, hiraganaCv, prevV, syllable.vowelTone, phonemes)) {
+                // e.g. vu/ヴ → fu/ふ when the bank has no ヴ
             } else {
                 split = true;
             }
@@ -445,8 +472,14 @@ namespace OpenUtau.Plugin.Builtin {
             if (split) {
                 bool handledByAlt = false;
 
+                // ConditionalAlt before AltCv (vu→fu for banks without ヴ)
+                if (TryConditionalAlt(cv, hiraganaCv, prevV, syllable.vowelTone, phonemes)) {
+                    handledByAlt = true;
+                }
+
                 // Try AltCv substitution first
-                if (AltCv.TryGetValue(cv, out var substituteCv)) {
+                string substituteCv = null;
+                if (!handledByAlt && AltCv.TryGetValue(cv, out substituteCv)) {
                     var altKana = ToHiragana(substituteCv, syllable.vowelTone);
                     var altVcv = TryVcv(prevV, altKana, syllable.vowelTone);
 
@@ -1050,6 +1083,42 @@ namespace OpenUtau.Plugin.Builtin {
             else if (HasOto(ValidateAlias(altNoSpace), tone)) { return ValidateAlias(altNoSpace); }
             
             return cv;
+        }
+
+        /// <summary>
+        /// Apply ConditionalAlt (vu→fu, ヴ→ふ, …) when the preferred alias is missing from the bank.
+        /// </summary>
+        private bool TryConditionalAlt(string cv, string hiraganaCv, string prevV, int tone, List<string> phonemes) {
+            string altCv = null;
+            if (ConditionalAlt.TryGetValue(cv, out var fromCv)) {
+                altCv = fromCv;
+            } else if (!string.IsNullOrEmpty(hiraganaCv) && ConditionalAlt.TryGetValue(hiraganaCv, out var fromKana)) {
+                altCv = fromKana;
+            }
+            if (altCv == null) {
+                return false;
+            }
+
+            var altKana = ToHiragana(altCv, tone);
+            var tryVcv = TryVcv(prevV, altKana, tone);
+            if (HasOto(tryVcv, tone) || HasOto(ValidateAlias(tryVcv, tone), tone)) {
+                phonemes.Add(HasOto(tryVcv, tone) ? tryVcv : ValidateAlias(tryVcv, tone));
+                return true;
+            }
+            if (HasOto(altKana, tone) || HasOto(ValidateAlias(altKana, tone), tone)) {
+                phonemes.Add(FixCv(altKana, tone));
+                return true;
+            }
+            if (HasOto(altCv, tone) || HasOto(ValidateAlias(altCv, tone), tone)) {
+                phonemes.Add(FixCv(altCv, tone));
+                return true;
+            }
+            // altCv may already be kana (ふ)
+            if (HasOto(altCv, tone)) {
+                phonemes.Add(altCv);
+                return true;
+            }
+            return false;
         }
 
         private string ToHiragana(string alias, int tone) {
