@@ -94,6 +94,60 @@ namespace OpenUtau.Plugins {
             SameAltsTonesColorsTest(singerName, lyrics, aliases, "", "C4", "");
         }
 
+        // Regression: keirokeer/OpenUtau-lunai#17 / openutau#2313 — coda [p,th,s] + next word
+        // used to IndexOutOfRange in ProcessSyllable (fixed via openutau#2210).
+        [Fact]
+        public void DepthsFollowedByWordDoesNotThrow() {
+            var aliases = PhonemizeAliases("en_vccv", new[] { "depths", "of" });
+            Assert.NotEmpty(aliases);
+            Assert.All(aliases, a => Assert.False(string.IsNullOrEmpty(a)));
+        }
+
+        string[] PhonemizeAliases(string singerName, string[] lyrics) {
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+            var dir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var file = Path.Join(dir, "Files", singerName, "character.txt");
+
+            VoicebankLoader.IsTest = true;
+            var voicebank = new Voicebank() { File = file, BasePath = dir };
+            VoicebankLoader.LoadVoicebank(voicebank);
+            var singer = new ClassicSinger(voicebank);
+            singer.EnsureLoaded();
+
+            var project = new UProject();
+            Ustx.AddDefaultExpressions(project);
+            var track = project.tracks[0];
+            var timeAxis = new TimeAxis();
+            timeAxis.BuildSegments(project);
+
+            var groups = lyrics.Select((lyric, i) => new Phonemizer.Note[] {
+                new Phonemizer.Note {
+                    lyric = lyric, duration = 240, position = 240 + i * 240,
+                    tone = MusicMath.NameToTone("C4"),
+                    phonemeAttributes = new[] {
+                        new Phonemizer.PhonemeAttributes { index = 0, consonantStretchRatio = 1 }
+                    },
+                }
+            }).ToList();
+
+            var phonemizer = new EnglishVCCVPhonemizer();
+            phonemizer.Testing = true;
+            phonemizer.SetSinger(singer);
+            phonemizer.SetTiming(timeAxis);
+            phonemizer.SetUp(groups.ToArray(), project, track);
+
+            return groups.Select((g, i) => phonemizer.Process(
+                g,
+                i > 0 ? groups[i - 1][0] : null,
+                i < groups.Count - 1 ? groups[i + 1][0] : null,
+                i > 0 ? groups[i - 1][0] : null,
+                i < groups.Count - 1 ? groups[i + 1][0] : null,
+                i > 0 ? groups[i - 1] : null))
+                .SelectMany(r => r.phonemes)
+                .Select(p => p.phoneme)
+                .ToArray();
+        }
+
         [Fact]
         public void ToneShiftTest() {
             RunPhonemizeTest("en_vccv", new NoteParams[] {
