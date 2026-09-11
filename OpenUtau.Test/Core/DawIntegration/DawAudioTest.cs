@@ -30,6 +30,8 @@ namespace OpenUtau.Core.DawIntegration {
                     ramp[i] = i;
                 }
                 planner.RegisterPcm(part, 1, 0, RampDurationMs, 2, ramp);
+                // Content-keyed IsPartReady requires the render-pass completeness mark.
+                planner.MarkPartComplete(part, new[] { 1UL });
             }
             return planner;
         }
@@ -229,6 +231,7 @@ namespace OpenUtau.Core.DawIntegration {
             var planner = new MixPlanner();
             planner.BeginSession(new[] { new MixPlanner.SlotSpec(part, 0, 1, 0, 500, 2) });
             planner.RegisterPcm(part, 1, 0, 500, 2, samples);
+            planner.MarkPartComplete(part, new[] { 1UL });
 
             Assert.True(DawAudio.TryExtractPart(project, part, planner, new[] { (1UL, 0.0, 500.0) }, out float[] extracted));
 

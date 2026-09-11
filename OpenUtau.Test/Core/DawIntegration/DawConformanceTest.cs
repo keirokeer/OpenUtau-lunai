@@ -127,7 +127,9 @@ namespace OpenUtau.Core.DawIntegration {
                 for (int i = 0; i < length; i++) {
                     ramp[i] = i;
                 }
-                planner.RegisterPcm(part, part.renderPhrases[0].hash, 0, 2000, 2, ramp);
+                var hash = part.renderPhrases[0].hash;
+                planner.RegisterPcm(part, hash, 0, 2000, 2, ramp);
+                planner.MarkPartComplete(part, new[] { hash });
             }
             return built;
         }
