@@ -54,7 +54,8 @@ namespace OpenUtau.Core {
                 string dataHome = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
                 LegacyDataPath = Path.Combine(dataHome, LegacyDataFolderName);
                 if (!IsInstalled) {
-                    DataPath = exePath;
+                    // Keep prefs out of TFM output folders (net8.0-windows → net10.0-windows would reset them).
+                    DataPath = ResolveWindowsPortableDataPath(exePath);
                     ShareLegacySingers = false;
                 } else {
                     // Never store prefs under Velopack's current\ (replaced on every update).
@@ -99,6 +100,45 @@ namespace OpenUtau.Core {
             }
             var parent = Directory.GetParent(exePath)?.FullName;
             return parent != null && File.Exists(Path.Combine(parent, "Update.exe"));
+        }
+
+        /// <summary>
+        /// Portable / Debug / Release: keep user data beside the configuration folder, not inside
+        /// <c>netX.Y-windows</c>, so TFM bumps do not create a fresh empty prefs.json.
+        /// True zip-portable layouts (exe not under a TFM folder) still use the exe directory.
+        /// </summary>
+        public static string ResolveWindowsPortableDataPath(string? exePath) {
+            if (string.IsNullOrEmpty(exePath)) {
+                return exePath ?? string.Empty;
+            }
+            if (TryGetDotnetTfmOutputParent(exePath, out var configDir)) {
+                return Path.Combine(configDir, PortableDataFolderName);
+            }
+            return exePath;
+        }
+
+        public const string PortableDataFolderName = AppDataFolderName + "-Data";
+
+        /// <summary>net8.0 / net8.0-windows / net10.0-windows under bin/Debug|Release.</summary>
+        public static bool IsDotnetTfmOutputFolderName(string? folderName) {
+            if (string.IsNullOrEmpty(folderName)) {
+                return false;
+            }
+            return Regex.IsMatch(folderName, @"^net\d+(\.\d+)*(-[A-Za-z0-9]+)?$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        }
+
+        static bool TryGetDotnetTfmOutputParent(string exePath, out string configDir) {
+            configDir = string.Empty;
+            var folderName = Path.GetFileName(exePath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            if (!IsDotnetTfmOutputFolderName(folderName)) {
+                return false;
+            }
+            var parent = Directory.GetParent(exePath);
+            if (parent == null) {
+                return false;
+            }
+            configDir = parent.FullName;
+            return true;
         }
 
         string SingersRoot => ShareLegacySingers ? LegacyDataPath : DataPath;
@@ -171,6 +211,64 @@ namespace OpenUtau.Core {
                 Log.Information($"Migrated prefs/themes from {LegacyDataPath} to {DataPath}");
             } catch (Exception e) {
                 Log.Error(e, "Failed to migrate prefs from legacy OpenUtau data folder.");
+            }
+        }
+
+        /// <summary>
+        /// Portable Debug/Release: adopt prefs (and missing companion files) from sibling
+        /// <c>net*-windows</c> output folders after a TFM bump.
+        /// </summary>
+        public void TryMigratePortableFromTfmOutputFolders() {
+            try {
+                if (IsInstalled || OS.IsMacOS() || OS.IsLinux()) {
+                    return;
+                }
+                string? exePath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule?.FileName);
+                if (string.IsNullOrEmpty(exePath) || !TryGetDotnetTfmOutputParent(exePath, out var configDir)) {
+                    return;
+                }
+
+                var sources = Directory.GetDirectories(configDir)
+                    .Where(d => IsDotnetTfmOutputFolderName(Path.GetFileName(d)))
+                    .Where(d => File.Exists(Path.Combine(d, "prefs.json")))
+                    .Select(d => (
+                        Dir: d,
+                        Prefs: Path.Combine(d, "prefs.json"),
+                        Info: new FileInfo(Path.Combine(d, "prefs.json"))))
+                    .Where(x => x.Info.Exists)
+                    .OrderByDescending(x => x.Info.Length)
+                    .ThenByDescending(x => x.Info.LastWriteTimeUtc)
+                    .ToList();
+                if (sources.Count == 0) {
+                    return;
+                }
+
+                var best = sources[0];
+                Directory.CreateDirectory(DataPath);
+
+                bool destMissing = !File.Exists(PrefsFilePath);
+                bool destThinner = !destMissing
+                    && new FileInfo(PrefsFilePath).Length + 1024 < best.Info.Length;
+                if (destMissing || destThinner) {
+                    File.Copy(best.Prefs, PrefsFilePath, overwrite: true);
+                    Log.Information(
+                        $"Adopted portable prefs from {best.Dir} → {DataPath} (tfm-folder migration)");
+                }
+
+                CopyFileIfMissing(Path.Combine(best.Dir, "notepresets.json"), NotePresetsFilePath);
+                CopyDirectoryContentsIfMissing(Path.Combine(best.Dir, "Themes"), ThemesPath);
+                CopyDirectoryContentsIfMissing(Path.Combine(best.Dir, "TrackColors"), TrackColorsPath);
+                CopyDirectoryContentsIfMissing(Path.Combine(best.Dir, "ExpressionStyles"), ExpressionStylesPath);
+                // Portable layout keeps singers/tools next to prefs; bring them along on TFM moves.
+                CopyDirectoryContentsIfMissing(Path.Combine(best.Dir, "Singers"), SingersPath);
+                CopyDirectoryContentsIfMissing(Path.Combine(best.Dir, "Plugins"), PluginsPath);
+                CopyDirectoryContentsIfMissing(Path.Combine(best.Dir, "Resamplers"), ResamplersPath);
+                CopyDirectoryContentsIfMissing(Path.Combine(best.Dir, "Wavtools"), WavtoolsPath);
+                CopyDirectoryContentsIfMissing(Path.Combine(best.Dir, "Dictionaries"), DictionariesPath);
+                CopyDirectoryContentsIfMissing(Path.Combine(best.Dir, "Templates"), TemplatesPath);
+                CopyDirectoryContentsIfMissing(Path.Combine(best.Dir, "Dependencies"), DependencyPath);
+            } catch (Exception e) {
+                Log.Error(e, "Failed to migrate portable prefs from TFM output folders.");
             }
         }
 

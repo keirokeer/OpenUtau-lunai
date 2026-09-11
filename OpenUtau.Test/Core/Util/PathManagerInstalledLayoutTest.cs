@@ -41,5 +41,39 @@ namespace OpenUtau.Test.Core.Util {
                 Directory.Delete(root, recursive: true);
             }
         }
+
+        [Theory]
+        [InlineData("net8.0-windows", true)]
+        [InlineData("net10.0-windows", true)]
+        [InlineData("net10.0", true)]
+        [InlineData("Debug", false)]
+        [InlineData("OpenUtau-Lunai-Data", false)]
+        public void DetectsDotnetTfmOutputFolderNames(string name, bool expected) {
+            Assert.Equal(expected, PathManager.IsDotnetTfmOutputFolderName(name));
+        }
+
+        [Fact]
+        public void PortableDataPathUsesStableFolderBesideTfmOutput() {
+            string config = Path.Combine(Path.GetTempPath(), "ou-tfm-" + Path.GetRandomFileName());
+            string tfm = Path.Combine(config, "net10.0-windows");
+            Directory.CreateDirectory(tfm);
+            try {
+                string data = PathManager.ResolveWindowsPortableDataPath(tfm);
+                Assert.Equal(Path.Combine(config, PathManager.PortableDataFolderName), data);
+            } finally {
+                Directory.Delete(config, recursive: true);
+            }
+        }
+
+        [Fact]
+        public void PortableZipLayoutKeepsDataNextToExe() {
+            string root = Path.Combine(Path.GetTempPath(), "ou-zip-" + Path.GetRandomFileName());
+            Directory.CreateDirectory(root);
+            try {
+                Assert.Equal(root, PathManager.ResolveWindowsPortableDataPath(root));
+            } finally {
+                Directory.Delete(root, recursive: true);
+            }
+        }
     }
 }
