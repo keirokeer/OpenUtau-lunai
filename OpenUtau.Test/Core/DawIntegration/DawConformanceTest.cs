@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using OpenUtau.Core.Render;
 using OpenUtau.Core.SignalChain;
 using OpenUtau.Core.Ustx;
 using Xunit;
@@ -48,23 +49,31 @@ namespace OpenUtau.Core.DawIntegration {
             }
         }
 
-        /// <summary>Writes each slot's absolute sample index, so a pulled window describes itself.</summary>
-        private sealed class RampSource : ISignalSource {
-            public bool IsReady(int position, int count) => true;
-
-            public int Mix(int position, float[] buffer, int index, int count) {
-                for (int i = 0; i < count; i++) {
-                    buffer[index + i] += position + i;
-                }
-                return position + count;
-            }
-        }
-
         /// <summary>An edit that is not a notification, i.e. something that changed the document.</summary>
         private sealed class FakeEdit : UCommand {
             public override void Execute() { }
             public override void Unexecute() { }
             public override string ToString() => "fake edit";
+        }
+
+        /// <summary>
+        /// The minimal singer phrase construction needs: phoneme → render phrase runs
+        /// against it, but no voicebank file is ever opened (the test never renders).
+        /// </summary>
+        class TestSinger : USinger {
+            private readonly string displayName;
+            public TestSinger(string name) {
+                displayName = name;
+                found = true;
+                loaded = true;
+            }
+            public override string Id => "test-singer";
+            public override string Name => displayName;
+            public override IList<USubbank> Subbanks => new USubbank[0];
+            public override bool TryGetOto(string phoneme, out UOto oto) {
+                oto = UOto.OfDummy(phoneme);
+                return true;
+            }
         }
 
         /// <summary>
@@ -76,24 +85,68 @@ namespace OpenUtau.Core.DawIntegration {
             // v1.1 refuses to sync an unsaved project (the USTX serializer needs a FilePath
             // for relative paths), so give the test project a plausible save location.
             built.FilePath = Path.Combine(Path.GetTempPath(), "conformance-test.ustx");
+            // The expression descriptors phrase construction reads.
+            built.RegisterExpression(new UExpressionDescriptor("engine", "eng", 0, 100, 0) { options = new[] { "" } });
+            built.RegisterExpression(new UExpressionDescriptor("volume", "vol", 0, 100, 100));
+            built.RegisterExpression(new UExpressionDescriptor("velocity", "vel", 0, 100, 100));
+            built.RegisterExpression(new UExpressionDescriptor("modulation", "mod", 0, 100, 0));
+            built.RegisterExpression(new UExpressionDescriptor("direct", "dir", 0, 100, 0));
+            built.RegisterExpression(new UExpressionDescriptor("shift", "shft", 0, 100, 0));
+            built.RegisterExpression(new UExpressionDescriptor("attack", "atk", 0, 100, 100));
+            built.RegisterExpression(new UExpressionDescriptor("decay", "dec", 0, 100, 0));
             built.tracks.Clear();
             built.tracks.Add(new UTrack("Lead") { TrackNo = 0, Volume = -3, Pan = -20 });
             // v1.2: the singer/engine informational fields travel on updateTracks. The values
             // are read straight off the track, so plain assignments exercise the wire format
             // without spinning up real voicebank or renderer infrastructure.
-            built.tracks[0].Singer = USinger.CreateMissing("Test Singer");
+            built.tracks[0].Singer = new TestSinger("Test Singer");
             built.tracks[0].RendererSettings.renderer = "DIFFSINGER";
             // Muted, so the effective-mute field is exercised rather than defaulted; the
-            // second track has no singer, so the empty-string defaults are exercised too.
+            // second track's empty singer name exercises the empty-string default.
             built.tracks.Add(new UTrack("Harmony") { TrackNo = 1, Volume = 0, Pan = 15, Muted = true });
+            built.tracks[1].Singer = new TestSinger("");
             var lead = new UVoicePart { name = "Lead A", trackNo = 0, position = 0, duration = 480 };
-            lead.SetMix(new RampSource());
             built.parts.Add(lead);
             var harmony = new UVoicePart { name = "Harmony A", trackNo = 1, position = 480, duration = 960 };
-            harmony.SetMix(new RampSource());
             built.parts.Add(harmony);
             built.timeAxis.BuildSegments(built);
+            // Extraction follows the document: each part carries one real phrase, and the
+            // planner holds its "rendered" pcm under that phrase's hash. The pcm is the
+            // absolute sample index, so a pulled window describes itself. Both the
+            // manager's response path and the test's expected bytes read this planner.
+            AddPhrase(built, built.tracks[0], lead, 0, 480);
+            AddPhrase(built, built.tracks[1], harmony, 0, 960);
+            var planner = PlaybackManager.Inst.MixPlanner;
+            planner.BeginSession(new[] {
+                new MixPlanner.SlotSpec(lead, 0, lead.renderPhrases[0].hash, 0, 2000, 2),
+                new MixPlanner.SlotSpec(harmony, 1, harmony.renderPhrases[0].hash, 0, 2000, 2),
+            });
+            foreach (var part in new[] { lead, harmony }) {
+                int length = 2000 * DawAudio.SampleRate / 1000 * DawAudio.Channels;
+                var ramp = new float[length];
+                for (int i = 0; i < length; i++) {
+                    ramp[i] = i;
+                }
+                planner.RegisterPcm(part, part.renderPhrases[0].hash, 0, 2000, 2, ramp);
+            }
             return built;
+        }
+
+        static void AddPhrase(UProject project, UTrack track, UVoicePart part, int pos, int dur) {
+            var note = UNote.Create();
+            note.position = pos;
+            note.duration = dur;
+            note.tone = 60;
+            note.lyric = "a";
+            note.ExtendedDuration = dur;
+            part.notes.Add(note);
+            var phoneme = new UPhoneme { position = pos, phoneme = "A", Parent = note };
+            part.phonemes.Add(phoneme);
+            phoneme.Validate(new ValidateOptions(), project, track, part, note);
+            if (phoneme.Error) {
+                throw new Exception($"phoneme failed to validate: {phoneme.ErrorException}");
+            }
+            part.renderPhrases.AddRange(RenderPhrase.FromPart(project, track, part));
         }
 
         /// <summary>

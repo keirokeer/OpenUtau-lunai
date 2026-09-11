@@ -201,6 +201,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public bool DiffSingerPhonemePanelAuto { get; set; }
         [Reactive] public bool DiffSingerLocalRetaking { get; set; }
         [Reactive] public bool DiffSingerShowRenderPhraseBoundaries { get; set; }
+        [Reactive] public bool DiffSingerMergeOverlappingPhrases { get; set; }
         [Reactive] public bool DiffSingerShowPhonemeVarianceRemapPreview { get; set; }
 
         // Advanced
@@ -592,6 +593,7 @@ namespace OpenUtau.App.ViewModels {
             DiffSingerPhonemePanelAuto = Preferences.Default.DiffSingerPhonemePanelAuto;
             DiffSingerLocalRetaking = Preferences.Default.DiffSingerLocalRetaking;
             DiffSingerShowRenderPhraseBoundaries = Preferences.Default.DiffSingerShowRenderPhraseBoundaries;
+            DiffSingerMergeOverlappingPhrases = Preferences.Default.DiffSingerMergeOverlappingPhrases;
             DiffSingerShowPhonemeVarianceRemapPreview = Preferences.Default.DiffSingerShowPhonemeVarianceRemapPreview;
             SkipRenderingMutedTracks = Preferences.Default.SkipRenderingMutedTracks;
             ThemeName = Preferences.Default.ThemeName;
@@ -1113,6 +1115,13 @@ namespace OpenUtau.App.ViewModels {
                 .Subscribe(showBoundaries => {
                     Preferences.Default.DiffSingerShowRenderPhraseBoundaries = showBoundaries;
                     Preferences.Save();
+                    MessageBus.Current.SendMessage(new NotesRefreshEvent());
+                });
+            this.WhenAnyValue(vm => vm.DiffSingerMergeOverlappingPhrases)
+                .Subscribe(merge => {
+                    Preferences.Default.DiffSingerMergeOverlappingPhrases = merge;
+                    Preferences.Save();
+                    DocManager.Inst.ExecuteCmd(new ValidateProjectNotification());
                     MessageBus.Current.SendMessage(new NotesRefreshEvent());
                 });
             this.WhenAnyValue(vm => vm.DiffSingerShowPhonemeVarianceRemapPreview)

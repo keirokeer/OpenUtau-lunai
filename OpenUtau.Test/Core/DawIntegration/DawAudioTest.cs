@@ -10,18 +10,33 @@ namespace OpenUtau.Core.DawIntegration {
     /// <summary>Data-plane contract: index space, PCM encoding, hashing and frame headers (§5.2, §6.1).</summary>
     [Collection(DawIntegrationCollection.Name)]
     public class DawAudioTest {
-        /// <summary>Writes each slot's absolute sample index, so any extracted window describes itself.</summary>
-        private sealed class RampSource : ISignalSource {
-            public bool Ready = true;
+        private const int RampDurationMs = 2000;
 
-            public bool IsReady(int position, int count) => Ready;
-
-            public int Mix(int position, float[] buffer, int index, int count) {
-                for (int i = 0; i < count; i++) {
-                    buffer[index + i] += position + i;
+        /// <summary>
+        /// The part's audio as a planner session: one stereo slot at 0 ms whose pcm is the
+        /// absolute sample index, so any extracted window describes itself (the old
+        /// RampSource, re-expressed as rendered pcm). When ready is false the slot stays
+        /// Pending, i.e. the part is unrendered.
+        /// </summary>
+        private static MixPlanner NewPlanner(UVoicePart part, bool ready = true) {
+            var planner = new MixPlanner();
+            planner.BeginSession(new[] {
+                new MixPlanner.SlotSpec(part, part.trackNo, 1, 0, RampDurationMs, 2),
+            });
+            if (ready) {
+                int length = RampDurationMs * DawAudio.SampleRate / 1000 * DawAudio.Channels;
+                var ramp = new float[length];
+                for (int i = 0; i < length; i++) {
+                    ramp[i] = i;
                 }
-                return position + count;
+                planner.RegisterPcm(part, 1, 0, RampDurationMs, 2, ramp);
             }
+            return planner;
+        }
+
+        static (ulong hash, double startMs, double endMs)[] Placements() {
+            // The fake part's one phrase, matching the hash NewPlanner registers under.
+            return new[] { (1UL, 0.0, (double)RampDurationMs) };
         }
 
         private static UProject NewProject() {
@@ -167,9 +182,8 @@ namespace OpenUtau.Core.DawIntegration {
         public void ExtractionReadsThePartsOwnAbsoluteWindow() {
             var project = NewProject();
             var part = new UVoicePart { trackNo = 0, position = 480, duration = 480 };
-            part.SetMix(new RampSource());
 
-            Assert.True(DawAudio.TryExtractPart(project, part, out float[] samples));
+            Assert.True(DawAudio.TryExtractPart(project, part, NewPlanner(part), Placements(), out float[] samples));
 
             // 480 ticks in, 480 ticks long: 500 ms to 1000 ms of the project timeline.
             // §6.1: extraction applies the pre-fader output trim (√0.5), so the ramp values
@@ -186,10 +200,10 @@ namespace OpenUtau.Core.DawIntegration {
             // ISignalSource.Mix adds rather than assigns, so a reused buffer would double the signal.
             var project = NewProject();
             var part = new UVoicePart { trackNo = 0, position = 0, duration = 480 };
-            part.SetMix(new RampSource());
+            var planner = NewPlanner(part);
 
-            Assert.True(DawAudio.TryExtractPart(project, part, out float[] first));
-            Assert.True(DawAudio.TryExtractPart(project, part, out float[] second));
+            Assert.True(DawAudio.TryExtractPart(project, part, planner, Placements(), out float[] first));
+            Assert.True(DawAudio.TryExtractPart(project, part, planner, Placements(), out float[] second));
 
             Assert.Equal(first, second);
         }
@@ -199,26 +213,24 @@ namespace OpenUtau.Core.DawIntegration {
             var project = NewProject();
             var empty = new UVoicePart { trackNo = 0, position = 0, duration = 480 };
             var unfinished = new UVoicePart { trackNo = 0, position = 0, duration = 480 };
-            unfinished.SetMix(new RampSource { Ready = false });
             var zeroLength = new UVoicePart { trackNo = 0, position = 0, duration = 0 };
-            zeroLength.SetMix(new RampSource());
 
-            Assert.False(DawAudio.TryExtractPart(project, empty, out _));
-            Assert.False(DawAudio.TryExtractPart(project, unfinished, out _));
-            Assert.False(DawAudio.TryExtractPart(project, zeroLength, out _));
+            Assert.False(DawAudio.TryExtractPart(project, empty, new MixPlanner(), Placements(), out _));
+            Assert.False(DawAudio.TryExtractPart(project, unfinished, NewPlanner(unfinished, ready: false), Placements(), out _));
+            Assert.False(DawAudio.TryExtractPart(project, zeroLength, NewPlanner(zeroLength), Placements(), out _));
         }
 
         [Fact]
-        public void ExtractionMatchesTheEngineWaveSource() {
+        public void ExtractionMatchesTheEnginePlacement() {
             var project = NewProject();
-            var samples = Enumerable.Range(0, 44100 * 2).Select(i => i / 100000f).ToArray();
-            // WaveSource is what RenderEngine hands to a part, addressed in absolute project ms.
-            var source = new WaveSource(0, 500, 0, 2);
-            source.SetSamples(samples);
             var part = new UVoicePart { trackNo = 0, position = 0, duration = 480 };
-            part.SetMix(source);
+            // A stereo slot at 0 ms, 500 ms, exactly what the engine would place for this part.
+            var samples = Enumerable.Range(0, 44100 * 2).Select(i => i / 100000f).ToArray();
+            var planner = new MixPlanner();
+            planner.BeginSession(new[] { new MixPlanner.SlotSpec(part, 0, 1, 0, 500, 2) });
+            planner.RegisterPcm(part, 1, 0, 500, 2, samples);
 
-            Assert.True(DawAudio.TryExtractPart(project, part, out float[] extracted));
+            Assert.True(DawAudio.TryExtractPart(project, part, planner, new[] { (1UL, 0.0, 500.0) }, out float[] extracted));
 
             Assert.Equal(DawAudio.MsToInterleavedIndex(500), extracted.Length);
             // §6.1: extraction applies the pre-fader output trim (√0.5), so what is served

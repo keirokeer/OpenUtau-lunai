@@ -281,10 +281,16 @@ namespace OpenUtau.Core {
 
     public class PreRenderNotification : UNotification {
         public readonly int focusTick;
+        /// <summary>
+        /// When true, schedule pre-render even if the PreRender preference is off
+        /// (e.g. explicit DiffSinger acoustic retake).
+        /// </summary>
+        public readonly bool force;
 
-        public PreRenderNotification(UPart part = null, int focusTick = -1) {
+        public PreRenderNotification(UPart part = null, int focusTick = -1, bool force = false) {
             this.part = part;
             this.focusTick = focusTick;
+            this.force = force;
         }
 
         public override string ToString() => "Pre-render notification.";

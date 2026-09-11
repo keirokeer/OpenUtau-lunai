@@ -239,6 +239,8 @@ namespace OpenUtau.Core {
                     Log.Error(e, $"Failed to delete dir {dir}");
                 }
             }
+            // Drop the slot registry's cache and session: everything below is re-rendered.
+            OpenUtau.Core.PlaybackManager.Inst.MixPlanner.Clear();
         }
 
         readonly static string[] sizes = { "B", "KB", "MB", "GB", "TB", "PB", "EB" };

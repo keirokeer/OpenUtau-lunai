@@ -75,9 +75,7 @@ namespace OpenUtau.Core.Vogen {
                     }
                     if (result.samples == null) {
                         result.samples = InvokeVogen(phrase);
-                        var source = new WaveSource(0, 0, 0, 1);
-                        source.SetSamples(result.samples);
-                        WaveFileWriter.CreateWaveFile16(wavPath, new ExportAdapter(source).ToMono(1, 0));
+                        Wave.WriteMono16Wav(wavPath, result.samples);
                     }
                     if (result.samples != null) {
                         Renderers.ApplyDynamics(phrase, result);

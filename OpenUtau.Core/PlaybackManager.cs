@@ -247,14 +247,23 @@ namespace OpenUtau.Core {
         List<Fader> faders;
         MasterAdapter masterMix;
         MasterAdapter editingMix;
-        
+
+        /// <summary>
+        /// The frozen-slot transport: phrase pcm cache (document lifetime) and the
+        /// active playback session's per-track slot sources. See MixPlanner.
+        /// </summary>
+        public MixPlanner MixPlanner { get; } = new MixPlanner();
+
         double startMs;
         int playbackStartTick;
         public int StartTick => DocManager.Inst.Project.timeAxis.MsPosToTickPos(startMs);
         /// <summary>Tick where the current playback session started (for lock start time on pause).</summary>
         public int PlaybackStartTick => playbackStartTick;
+        // One cancellation source per render lane so starting playback, pre-rendering
+        // or exporting no longer cancel each other in flight.
         CancellationTokenSource renderCancellation;
         CancellationTokenSource preRenderCancellation;
+        CancellationTokenSource exportCancellation;
         bool pausedWithMix;
         int playbackRenderGeneration;
         bool playbackMixDirty;
@@ -452,11 +461,16 @@ namespace OpenUtau.Core {
             Task.Run(() => {
                 try {
                     RenderEngine engine = new RenderEngine(project, startTick: tick, endTick: endTick, trackNo: trackNo);
-                    var result = engine.RenderMixdown(DocManager.Inst.MainScheduler, ref renderCancellation, wait: false);
+                    var result = engine.RenderMixdown(
+                        DocManager.Inst.MainScheduler, ref renderCancellation, wait: false, applyMixFx: true, planner: MixPlanner);
                     if (sessionGeneration != playbackRenderGeneration) {
                         return;
                     }
                     var playbackAdapter = new MasterAdapter(new PlaybackMix(result.Item1, metronomeEngine));
+                    // Hold mode: wait for pending phrases (today's behaviour), except
+                    // in loop mode where a pending phrase must not stall the clock.
+                    // Failed phrases never hold in either mode.
+                    playbackAdapter.HoldWhenUnready = loopEndTick <= 0;
                     playbackAdapter.SetPosition((int)(project.timeAxis.TickPosToMsPos(tick) * 44100 / 1000) * 2);
                     faders = result.Item2;
                     PlayingMaster = true;
@@ -549,7 +563,11 @@ namespace OpenUtau.Core {
             await Task.Run(() => {
                 try {
                     RenderEngine engine = new RenderEngine(project);
-                    var projectMix = engine.RenderMixdown(DocManager.Inst.MainScheduler, ref renderCancellation, wait: true).Item1;
+                    // A throwaway planner: the export session must not clobber a live
+                    // playback session on the shared planner.
+                    var planner = new MixPlanner();
+                    var projectMix = engine.RenderMixdown(
+                        DocManager.Inst.MainScheduler, ref exportCancellation, wait: true, applyMixFx: true, planner).Item1;
                     DocManager.Inst.ExecuteCmd(new ProgressBarNotification(0, $"Exporting to {exportPath}."));
 
                     CheckFileWritable(exportPath);
@@ -573,7 +591,10 @@ namespace OpenUtau.Core {
                 string file = "";
                 try {
                     RenderEngine engine = new RenderEngine(project);
-                    var trackMixes = engine.RenderTracks(DocManager.Inst.MainScheduler, ref renderCancellation);
+                    // A throwaway planner: the export session must not clobber a live
+                    // playback session on the shared planner.
+                    var planner = new MixPlanner();
+                    var trackMixes = engine.RenderTracks(DocManager.Inst.MainScheduler, ref exportCancellation, planner);
                     for (int i = 0; i < trackMixes.Count; ++i) {
                         if (trackMixes[i] == null || i >= project.tracks.Count || project.tracks[i].Muted) {
                             continue;
@@ -612,7 +633,7 @@ namespace OpenUtau.Core {
                 DocManager.Inst.Project,
                 focusPart: preRenderFocusPart,
                 focusTick: preRenderFocusTick);
-            engine.PreRenderProject(ref preRenderCancellation);
+            engine.PreRenderProject(ref preRenderCancellation, MixPlanner);
         }
 
         #region ICmdSubscriber
@@ -649,6 +670,9 @@ namespace OpenUtau.Core {
             } else if (cmd is LoadProjectNotification) {
                 StopPlayback();
                 renderCancellation?.Cancel();
+                preRenderCancellation?.Cancel();
+                exportCancellation?.Cancel();
+                MixPlanner.Clear();
                 playbackRenderGeneration++;
                 preRenderFocusPart = null;
                 preRenderFocusTick = -1;
@@ -671,7 +695,8 @@ namespace OpenUtau.Core {
                 }
             }
             if (cmd is PreRenderNotification || cmd is LoadProjectNotification) {
-                if (Util.Preferences.Default.PreRender) {
+                bool force = cmd is PreRenderNotification pre && pre.force;
+                if (force || Util.Preferences.Default.PreRender) {
                     SchedulePreRender();
                 }
             }

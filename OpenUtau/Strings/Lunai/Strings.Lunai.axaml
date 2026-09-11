@@ -238,6 +238,8 @@
   <system:String x:Key="prefs.diffsinger.phonemepanel">DiffSinger-friendly phoneme panel</system:String>
   <system:String x:Key="prefs.diffsinger.phonemepanel.auto">Automatically switch DiffSinger-friendly phoneme panel</system:String>
   <system:String x:Key="prefs.diffsinger.renderphraseboundaries">Show render phrase boundaries</system:String>
+  <system:String x:Key="prefs.diffsinger.mergeoverlappingphrases">Merge overlapping DiffSinger phrases</system:String>
+  <system:String x:Key="prefs.diffsinger.mergeoverlappingphrases.hint">When nearby phrases would overlap because of DiffSinger head/tail padding, render them as one phrase (upstream behavior). Off by default in Lunai.</system:String>
   <system:String x:Key="prefs.diffsinger.section.cache">Cache</system:String>
   <system:String x:Key="prefs.diffsinger.section.debug">Debug</system:String>
   <system:String x:Key="prefs.diffsinger.section.general">General</system:String>

@@ -109,8 +109,10 @@ namespace OpenUtau.Core {
             }
         }
 
-        //Check which singers are in use and free memory for those that are not
+        //Check which singers are in use and free memory for those that are not.
+        //UI thread only: it mutates the singer map the UI reads.
         public void ReleaseSingersNotInUse(UProject project) {
+            Util.ThreadGuard.AssertUi();
             //Check which singers are in use
             var singersInUse = new HashSet<USinger>();
             foreach (var track in project.tracks) {

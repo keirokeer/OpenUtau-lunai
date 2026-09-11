@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using OpenUtau.Core.SignalChain;
 using OpenUtau.Core.Ustx;
 using Xunit;
 
@@ -28,17 +27,6 @@ namespace OpenUtau.Core.DawIntegration {
         /// <summary>Bounded, unlike the ramp the other tests use: the plugin's peak meter is read
         /// as a number here, so the signal has to mean something at the far end.</summary>
         private const float Level = 0.25f;
-
-        private sealed class ConstantSource : ISignalSource {
-            public bool IsReady(int position, int count) => true;
-
-            public int Mix(int position, float[] buffer, int index, int count) {
-                for (int i = 0; i < count; i++) {
-                    buffer[index + i] += Level;
-                }
-                return position + count;
-            }
-        }
 
         /// <summary>An edit that is not a notification, i.e. something that changed the document.</summary>
         private sealed class FakeEdit : UCommand {
@@ -66,7 +54,13 @@ namespace OpenUtau.Core.DawIntegration {
             built.tracks.Clear();
             built.tracks.Add(new UTrack("Live") { TrackNo = 0, Volume = 0, Pan = 0 });
             var live = new UVoicePart { name = "Live A", trackNo = 0, position = 1920, duration = 960 };
-            live.SetMix(new ConstantSource());
+            // Seed the transport's slot registry: one Ready slot of constant level
+            // covering the part's 2000 ms .. 3000 ms range.
+            var planner = PlaybackManager.Inst.MixPlanner;
+            planner.BeginSession(new[] {
+                new MixPlanner.SlotSpec(live, 0, 1, 2000, 1000, 1),
+            });
+            planner.RegisterPcm(live, 1, 2000, 1000, 1, Enumerable.Repeat(Level, 44100).ToArray());
             built.parts.Add(live);
             built.timeAxis.BuildSegments(built);
             return built;

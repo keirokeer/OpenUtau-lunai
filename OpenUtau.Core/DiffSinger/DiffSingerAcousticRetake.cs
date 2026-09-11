@@ -174,6 +174,17 @@ namespace OpenUtau.Core.DiffSinger {
         }
 
         /// <summary>
+        /// Whether an explicit acoustic retake is queued for this phrase (does not consume).
+        /// Used to bypass on-disk wav cache so retake always re-runs the acoustic model.
+        /// </summary>
+        public static bool HasPendingForceRetake(RenderPhrase phrase) {
+            lock (forceLock) {
+                return pendingForce.Exists(
+                    r => r.PhrasePosition == phrase.position && r.PhraseEnd == phrase.end);
+            }
+        }
+
+        /// <summary>
         /// If a force-retake was queued for this phrase, build a padded frame mask and noise nonce.
         /// </summary>
         public static bool TryConsumeForceRetake(

@@ -127,6 +127,9 @@ namespace OpenUtau.Core.DiffSinger
             var tokens = segments.Select(x => (Int64)PhonemeTokenize(x.Phoneme)).ToArray();
             var ph_dur = DiffSingerUtils.PaddedPhoneDurations(phrase, frameMs, headFrames, tailFrames);
             int totalFrames = ph_dur.Sum();
+            // Head/tail padding and inter-phoneme gaps are silence: whatever the
+            // pitch model emits for those frames must not become curve points.
+            var voicedFrames = DiffSingerUtils.PaddedVoicedMask(segments, ph_dur);
             Func<string, int?> tryBlendToken = p =>
                 phonemeTokens.TryGetValue(p, out int tok) ? tok : null;
             var segmentPhoneIndexes = segments.Select(s => s.PhoneIndex).ToArray();
@@ -370,6 +373,9 @@ namespace OpenUtau.Core.DiffSinger
                     .ToArray(),
                     tones = pitch_out.Append(pitch_out[^1]).ToArray(),
                     retakeMask = retakeNoteIndexes != null ? retake.Append(retake[^1]).ToArray() : null,
+                    voiced = voicedFrames.Length > 0
+                        ? voicedFrames.Append(voicedFrames[^1]).ToArray()
+                        : voicedFrames,
                 };
             }else{
                 return new RenderPitchResult{
@@ -378,6 +384,7 @@ namespace OpenUtau.Core.DiffSinger
                     .ToArray(),
                     tones = pitch_out,
                     retakeMask = retakeNoteIndexes != null ? retake : null,
+                    voiced = voicedFrames,
                 };
             }
         }

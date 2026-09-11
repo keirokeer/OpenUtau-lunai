@@ -90,6 +90,19 @@ namespace OpenUtau.Core.DiffSinger {
             return (DiffSingerUtils.GetHeadMs(frameMs), DiffSingerUtils.GetTailMs(frameMs));
         }
 
+        public bool ShouldMergePhrases(UProject project, UTrack track, UPhoneme prev, UPhoneme next) {
+            if (!Preferences.Default.DiffSingerMergeOverlappingPhrases) {
+                return false;
+            }
+            if (prev == null || next == null) {
+                return false;
+            }
+            double gapMs = next.PositionMs - prev.EndMs;
+            var (_, tailMs) = PhrasePadding(track.Singer, new[] { prev });
+            var (headMs, _) = PhrasePadding(track.Singer, new[] { next });
+            return gapMs < headMs + tailMs;
+        }
+
         public Task<RenderResult> Render(RenderPhrase phrase, Progress progress, int trackNo, CancellationTokenSource cancellation, bool isPreRender, RenderPhraseEvents? renderEvents = null) {
             var task = Task.Run(() => {
                 lock (lockObj) {
@@ -117,7 +130,8 @@ namespace OpenUtau.Core.DiffSinger {
                     var wavPath = Path.Join(PathManager.Inst.CachePath, wavName);
                     phrase.AddCacheFile(wavPath);
                     string progressInfo = $"Track {trackNo + 1}: {this} depth={depth:f2} steps={steps} \"{string.Join(" ", phrase.phones.Select(p => p.phoneme))}\"";
-                    if (File.Exists(wavPath)) {
+                    bool skipWavCache = DiffSingerAcousticRetake.HasPendingForceRetake(phrase);
+                    if (!skipWavCache && File.Exists(wavPath)) {
                         try {
                             using (var waveStream = Wave.OpenFile(wavPath)) {
                                 result.samples = Wave.GetSamples(waveStream.ToSampleProvider().ToMono(1, 0));
@@ -130,9 +144,7 @@ namespace OpenUtau.Core.DiffSinger {
                         result.samples = InvokeDiffsinger(phrase, depth, steps, cancellation, renderEvents, out var waveformSamples);
                         result.waveformSamples = waveformSamples;
                         if (result.samples != null) {
-                            var source = new WaveSource(0, 0, 0, 1);
-                            source.SetSamples(result.samples);
-                            WaveFileWriter.CreateWaveFile16(wavPath, new ExportAdapter(source).ToMono(1, 0));
+                            Wave.WriteMono16Wav(wavPath, result.samples);
                         }
                     }
                     if (result.samples != null) {

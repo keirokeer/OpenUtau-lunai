@@ -307,6 +307,12 @@ namespace OpenUtau.Core.Util {
             public bool DiffSingerPhonemePanelAuto = true;
             public bool DiffSingerLocalRetaking = true;
             public bool DiffSingerShowRenderPhraseBoundaries = false;
+            /// <summary>
+            /// When true, DiffSinger merges adjacent render phrases whose head/tail
+            /// padding would overlap (upstream default). Lunai defaults to false so
+            /// nearby notes keep separate phrase boundaries unless the user opts in.
+            /// </summary>
+            public bool DiffSingerMergeOverlappingPhrases = false;
             public bool DiffSingerShowPhonemeVarianceRemapPreview = false;
             public bool SkipRenderingMutedTracks = false;
             public string Language = string.Empty;

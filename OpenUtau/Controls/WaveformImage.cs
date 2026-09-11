@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Avalonia;
@@ -7,8 +8,11 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using OpenUtau.App;
 using OpenUtau.App.ViewModels;
+using OpenUtau.Core;
 using OpenUtau.Core.Render;
+using OpenUtau.Core.SignalChain;
 using OpenUtau.Core.Ustx;
+using OpenUtau.Core.Util;
 using ReactiveUI;
 using Serilog;
 
@@ -58,8 +62,8 @@ namespace OpenUtau.App.Controls {
 
         public WaveformImage() {
             PhraseWaveformCache.Changed += OnPhraseWaveformCacheChanged;
-            MessageBus.Current.Listen<WaveformRefreshEvent>()
-                .Subscribe(e => RequestRedraw());
+            // The projection payload is not read here; deliveries are repaint signals.
+            RenderView.Inst.Observe(_ => RequestRedraw());
             MessageBus.Current.Listen<ThemeChangedEvent>()
                 .Subscribe(e => RequestRedraw());
         }
@@ -110,11 +114,33 @@ namespace OpenUtau.App.Controls {
                         Array.Clear(sampleData, 0, sampleData.Length);
 
                         bool isRendering = OpenUtau.Core.PlaybackManager.Inst.StartingToPlay;
-                        bool useAuthoritativeMix = part.Mix != null
-                            && part.RenderMixComplete
-                            && !isRendering;
-                        if (useAuthoritativeMix) {
-                            part.Mix!.Mix(samplePos, sampleData, 0, sampleCount);
+                        var planner = OpenUtau.Core.PlaybackManager.Inst.MixPlanner;
+                        // The part's current projection: phrase hashes and
+                        // precomputed layouts, shared by the placement list below
+                        // and the draw coverage further down.
+                        var projection = RenderView.Inst.Current(part);
+                        var phraseView = new (ulong hash, double startMs, double endMs)[projection.Phrases.Count];
+                        for (int p = 0; p < projection.Phrases.Count; ++p) {
+                            var view = projection.Phrases[p];
+                            phraseView[p] = (view.Hash, view.Layout.StartMs, view.Layout.EndMs);
+                        }
+                        bool useAuthoritativeMix = false;
+                        List<(double posMs, double durMs, int channels, Frozen<float> pcm)>? pcmList = null;
+                        if (part.RenderMixComplete && !isRendering
+                            && MixPlanner.TryGetPartPlacements(planner, part, phraseView, out var placements)
+                            && placements.Count == phraseView.Length) {
+                            useAuthoritativeMix = true;
+                            pcmList = placements;
+                        }
+                        if (useAuthoritativeMix && pcmList != null) {
+                            var slots = new SampleSlot[pcmList.Count];
+                            for (int i = 0; i < pcmList.Count; ++i) {
+                                var p = pcmList[i];
+                                slots[i] = new SampleSlot(p.posMs, p.durMs, 0, p.channels, p.pcm, SlotState.Ready);
+                            }
+                            var source = new SlotMixSource();
+                            source.SetSlots(slots);
+                            source.Mix(samplePos, sampleData, 0, sampleCount);
                         } else {
                             FillFromPhraseCache(part.trackNo, leftMs, ref needsAnotherFrame);
                         }

@@ -527,6 +527,12 @@ namespace OpenUtau.Core.Editing {
                     if (result.retakeMask != null && i < result.retakeMask.Length && !result.retakeMask[i]) {
                         continue;
                     }
+                    // Padding and inter-phoneme gap frames are silence: the
+                    // pitch model's output there is an artifact, and writing
+                    // it back produces a spike at the phrase/gap boundary.
+                    if (result.voiced != null && i < result.voiced.Length && !result.voiced[i]) {
+                        continue;
+                    }
                     int x = phrase.position - part.position + (int)result.ticks[i];
                     if (result.ticks[i] < 0) {
                         if (i + 1 < result.ticks.Length && result.ticks[i + 1] > 0) { } else
@@ -920,11 +926,16 @@ namespace OpenUtau.Core.Editing {
             DiffSinger.DiffSingerAcousticRetake.QueueForceRetake(
                 phrases.Select(p => (p.position, p.end)),
                 positions);
+            var planner = PlaybackManager.Inst.MixPlanner;
             foreach (var phrase in phrases) {
                 phrase.DeleteCacheFiles();
                 PhraseWaveformCache.Remove(phrase.hash);
+                planner.MarkFailed(part, phrase.hash);
             }
-            docManager.ExecuteCmd(new PreRenderNotification());
+            part.SetRenderMixComplete(false);
+            planner.InvalidatePartCompleteness(part);
+            int focusTick = notes[0].position + part.position;
+            docManager.ExecuteCmd(new PreRenderNotification(part, focusTick, force: true));
         }
     }
 }

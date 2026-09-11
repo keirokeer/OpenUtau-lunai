@@ -400,6 +400,10 @@
             <TextBlock Text="{DynamicResource prefs.diffsinger.renderphraseboundaries}" HorizontalAlignment="Left" />
             <ToggleSwitch IsChecked="{Binding DiffSingerShowRenderPhraseBoundaries}" />
           </Grid>
+          <Grid Margin="0,5,0,0" ToolTip.Tip="{DynamicResource prefs.diffsinger.mergeoverlappingphrases.hint}">
+            <TextBlock Text="{DynamicResource prefs.diffsinger.mergeoverlappingphrases}" HorizontalAlignment="Left" />
+            <ToggleSwitch IsChecked="{Binding DiffSingerMergeOverlappingPhrases}" />
+          </Grid>
           <Grid Margin="0,5,0,0" IsEnabled="{Binding DiffSingerPhonemeVarianceRemap}">
             <TextBlock Text="{DynamicResource prefs.diffsinger.showphonemevarianceremappreview}" HorizontalAlignment="Left" />
             <ToggleSwitch IsChecked="{Binding DiffSingerShowPhonemeVarianceRemapPreview}" />

@@ -189,6 +189,11 @@
               <ToggleSwitch IsChecked="{Binding DiffSingerShowRenderPhraseBoundaries}"/>
             </Grid>
             <Grid Classes="prefRow" ColumnDefinitions="*,Auto"
+                  ToolTip.Tip="{DynamicResource prefs.diffsinger.mergeoverlappingphrases.hint}">
+              <TextBlock Text="{DynamicResource prefs.diffsinger.mergeoverlappingphrases}"/>
+              <ToggleSwitch IsChecked="{Binding DiffSingerMergeOverlappingPhrases}"/>
+            </Grid>
+            <Grid Classes="prefRow" ColumnDefinitions="*,Auto"
                   IsEnabled="{Binding DiffSingerPhonemeVarianceRemap}">
               <TextBlock Text="{DynamicResource prefs.diffsinger.showphonemevarianceremappreview}"/>
               <ToggleSwitch IsChecked="{Binding DiffSingerShowPhonemeVarianceRemapPreview}"/>
