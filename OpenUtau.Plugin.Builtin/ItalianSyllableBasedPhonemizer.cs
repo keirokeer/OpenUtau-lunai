@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using OpenUtau.Api;
 using OpenUtau.Core.G2p;
@@ -219,6 +219,15 @@ namespace OpenUtau.Plugin.Builtin {
         }
 
         protected override string ValidateAlias(string alias, int tone = 0) {
+            if (HasOto(alias, tone)) return alias;
+
+            string baseResolved = base.ValidateAlias(alias, tone);
+            if (!string.IsNullOrEmpty(baseResolved) && baseResolved != alias) {
+                if (HasOto(baseResolved, tone)) {
+                    return baseResolved;
+                }
+                alias = baseResolved;
+            }
             if (isFallBack) {
                 foreach (var fb in fallBacks) {
                     alias = alias.Replace(fb.Key,fb.Value);

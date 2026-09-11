@@ -224,8 +224,15 @@ namespace OpenUtau.Core.Util {
                         Default.PreferPortAudio = null;
                     }
                     Default.MigrateRealTimePitchMode();
-                    MigrateLegacyPreferences(json);
-                } else {
+                    Default.RecentSingers = Default.RecentSingers?
+                        .Where(s => !string.IsNullOrWhiteSpace(s))
+                        .ToList()
+                        ?? new List<string>();
+                    Default.FavoriteSingers = Default.FavoriteSingers?
+                        .Where(s => !string.IsNullOrWhiteSpace(s))
+                        .ToList()
+                        ?? new List<string>();
+                    MigrateLegacyPreferences(json);                } else {
                     Reset();
                 }
             } catch (Exception e) {
@@ -437,6 +444,7 @@ namespace OpenUtau.Core.Util {
             /// <summary>Linux: prefer Wayland when available (falls back to X11).</summary>
             public bool UseWayland = Environment.GetEnvironmentVariable("WAYLAND_DISPLAY") != null
                 || Environment.GetEnvironmentVariable("XDG_SESSION_TYPE") == "wayland";
+            public bool DefaultSnapCurve = true;
             public string PhoneticAssistant = string.Empty;
             public string RecentOpenSingerDirectory = string.Empty;
             public string RecentOpenProjectDirectory = string.Empty;

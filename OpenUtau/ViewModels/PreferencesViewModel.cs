@@ -212,6 +212,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool RememberUst { get; set; }
         [Reactive] public partial bool RememberVsqx { get; set; }
         [Reactive] public partial bool Wayland { get; set; }
+        [Reactive] public partial bool DefaultSnapCurve { get; set; }
         public string WinePath => Preferences.Default.WinePath;
 
         // Shortcuts
@@ -648,6 +649,7 @@ namespace OpenUtau.App.ViewModels {
             RememberUst = Preferences.Default.RememberUst;
             RememberVsqx = Preferences.Default.RememberVsqx;
             Wayland = Preferences.Default.UseWayland;
+            DefaultSnapCurve = Preferences.Default.DefaultSnapCurve;
             ClearCacheOnQuit = Preferences.Default.ClearCacheOnQuit;
 
             MessageBus.Current.Listen<ThemeEditorStateChangedEvent>()
@@ -667,11 +669,13 @@ namespace OpenUtau.App.ViewModels {
                 });
             
             this.WhenAnyValue(vm => vm.UseSystemDefaultDevice)
+                .Skip(1)
                 .Subscribe(useDefault => {
                     Preferences.Default.UseSystemDefaultAudioDevice = useDefault;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.AudioOutputDevice)
+                .Skip(1)
                 .WhereNotNull()
                 .SubscribeOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(device => {
@@ -687,21 +691,25 @@ namespace OpenUtau.App.ViewModels {
                     }
                 });
             this.WhenAnyValue(vm => vm.AudioBackEnd)
+                .Skip(1)
                 .Subscribe(index => {
                     Preferences.Default.AudioBackEnd = index;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.PlaybackAutoScroll)
+                .Skip(1)
                 .Subscribe(autoScroll => {
                     Preferences.Default.PlaybackAutoScroll = autoScroll;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.PlayPosMarkerMargin)
+                .Skip(1)
                 .Subscribe(playPosMarkerMargin => {
                     Preferences.Default.PlayPosMarkerMargin = playPosMarkerMargin;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.PlaybackPitchFollowEnabled)
+                .Skip(1)
                 .Subscribe(enabled => {
                     Preferences.Default.PlaybackPitchFollowEnabled = enabled;
                     if (!enabled) {
@@ -712,24 +720,28 @@ namespace OpenUtau.App.ViewModels {
                     MessageBus.Current.SendMessage(new PlaybackPitchFollowSettingsChangedEvent());
                 });
             this.WhenAnyValue(vm => vm.PlaybackPitchFollowSemitoneThreshold)
+                .Skip(1)
                 .Subscribe(threshold => {
                     Preferences.Default.PlaybackPitchFollowSemitoneThreshold = Math.Clamp(threshold, 0, 24);
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PlaybackPitchFollowSettingsChangedEvent());
                 });
             this.WhenAnyValue(vm => vm.PlaybackPitchFollowVerticalPosition)
+                .Skip(1)
                 .Subscribe(position => {
                     Preferences.Default.PlaybackPitchFollowVerticalPosition = Math.Clamp(position, 0.15, 0.85);
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PlaybackPitchFollowSettingsChangedEvent());
                 });
             this.WhenAnyValue(vm => vm.PlaybackPitchFollowFrameSmoothing)
+                .Skip(1)
                 .Subscribe(smoothing => {
                     Preferences.Default.PlaybackPitchFollowFrameSmoothing = Math.Clamp(smoothing, 0.05, 1);
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new PlaybackPitchFollowSettingsChangedEvent());
                 });
             this.WhenAnyValue(vm => vm.PlaybackPitchFollowShowPath)
+                .Skip(1)
                 .Subscribe(showPath => {
                     if (!Preferences.Default.PlaybackPitchFollowEnabled) {
                         return;
@@ -739,37 +751,44 @@ namespace OpenUtau.App.ViewModels {
                     MessageBus.Current.SendMessage(new PlaybackPitchFollowSettingsChangedEvent());
                 });
             this.WhenAnyValue(vm => vm.UseModernPlayhead)
+                .Skip(1)
                 .Subscribe(useModernPlayhead => {
                     Preferences.Default.UseModernPlayhead = useModernPlayhead;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new NotesViewModel.PlayheadModeChangedEvent(useModernPlayhead));
                 });
             this.WhenAnyValue(vm => vm.ExperimentalInvalidatePlaybackOnEdit)
+                .Skip(1)
                 .Subscribe(experimentalInvalidatePlaybackOnEdit => {
                     Preferences.Default.ExperimentalInvalidatePlaybackOnEdit = experimentalInvalidatePlaybackOnEdit;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.LockStartTime)
+                .Skip(1)
                 .Subscribe(lockStartTime => {
                     Preferences.Default.LockStartTime = lockStartTime;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.InstallToAdditionalSingersPath)
+                .Skip(1)
                 .Subscribe(additionalSingersPath => {
                     Preferences.Default.InstallToAdditionalSingersPath = additionalSingersPath;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.LoadDeepFolders)
+                .Skip(1)
                 .Subscribe(loadDeepFolders => {
                     Preferences.Default.LoadDeepFolderSinger = loadDeepFolders;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.PreRender)
+                .Skip(1)
                 .Subscribe(preRender => {
                     Preferences.Default.PreRender = preRender;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.Language)
+                .Skip(1)
                 .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(lang => {
                     Preferences.Default.Language = lang?.Name ?? string.Empty;
@@ -777,6 +796,7 @@ namespace OpenUtau.App.ViewModels {
                     App.SetLanguage(Preferences.Default.Language);
                 });
             this.WhenAnyValue(vm => vm.SortingOrder)
+                .Skip(1)
                 .Subscribe(so => {
                     Preferences.Default.SortingOrder = so?.Name ?? null;
                     Preferences.Save();
@@ -841,6 +861,7 @@ namespace OpenUtau.App.ViewModels {
                     }
                 });
             this.WhenAnyValue(vm => vm.DegreeStyle)
+                .Skip(1)
                 .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(degreeStyle => {
                     Preferences.Default.DegreeStyle = degreeStyle;
@@ -848,6 +869,7 @@ namespace OpenUtau.App.ViewModels {
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("Part"));
                 });
             this.WhenAnyValue(vm => vm.UseTrackColor)
+                .Skip(1)
                 .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(trackColor => {
                     Preferences.Default.UseTrackColor = trackColor;
@@ -855,6 +877,7 @@ namespace OpenUtau.App.ViewModels {
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("TrackColor"));
                 });
             this.WhenAnyValue(vm => vm.TintPianoRollBackgroundWithTrackColor)
+                .Skip(1)
                 .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(tint => {
                     Preferences.Default.TintPianoRollBackgroundWithTrackColor = tint;
@@ -862,6 +885,7 @@ namespace OpenUtau.App.ViewModels {
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("TrackColor"));
                 });
             this.WhenAnyValue(vm => vm.DefaultTrackColor)
+                .Skip(1)
                 .WhereNotNull()
                 .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(trackColor => {
@@ -869,6 +893,7 @@ namespace OpenUtau.App.ViewModels {
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.ShowPortrait)
+                .Skip(1)
                 .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(showPortrait => {
                     Preferences.Default.ShowPortrait = showPortrait;
@@ -876,6 +901,7 @@ namespace OpenUtau.App.ViewModels {
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("Portrait"));
                 });
             this.WhenAnyValue(vm => vm.ShowIcon)
+                .Skip(1)
                 .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(showIcon => {
                     Preferences.Default.ShowIcon = showIcon;
@@ -883,6 +909,7 @@ namespace OpenUtau.App.ViewModels {
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("Portrait"));
                 });
             this.WhenAnyValue(vm => vm.ShowGhostNotes)
+                .Skip(1)
                 .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(showGhostNotes => {
                     Preferences.Default.ShowGhostNotes = showGhostNotes;
@@ -890,6 +917,7 @@ namespace OpenUtau.App.ViewModels {
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("Part"));
                 });
             this.WhenAnyValue(vm => vm.NoteHoverGlow)
+                .Skip(1)
                 .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(noteHoverGlow => {
                     Preferences.Default.NoteHoverGlow = noteHoverGlow;
@@ -897,6 +925,7 @@ namespace OpenUtau.App.ViewModels {
                     MessageBus.Current.SendMessage(new NotesRefreshEvent());
                 });
             this.WhenAnyValue(vm => vm.ShowPlaybackNoteHighlight)
+                .Skip(1)
                 .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(showPlaybackNoteHighlight => {
                     Preferences.Default.ShowPlaybackNoteHighlight = showPlaybackNoteHighlight;
@@ -904,6 +933,7 @@ namespace OpenUtau.App.ViewModels {
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("PlaybackNoteHighlight"));
                 });
             this.WhenAnyValue(vm => vm.ShowPlaybackNoteBounce)
+                .Skip(1)
                 .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(showPlaybackNoteBounce => {
                     Preferences.Default.ShowPlaybackNoteBounce = showPlaybackNoteBounce;
@@ -911,6 +941,7 @@ namespace OpenUtau.App.ViewModels {
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("PlaybackNoteBounce"));
                 });
             this.WhenAnyValue(vm => vm.DetachPianoRoll)
+                .Skip(1)
                 .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(detachPianoRoll => {
                     if (Preferences.Default.DetachPianoRoll == detachPianoRoll) {
@@ -921,6 +952,7 @@ namespace OpenUtau.App.ViewModels {
                     MessageBus.Current.SendMessage(new PianorollRefreshEvent("Attachment"));
                 });
             this.WhenAnyValue(vm => vm.ShowNoteBorder)
+                .Skip(1)
                 .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(showNoteBorder => {
                     Preferences.Default.ShowNoteBorder = showNoteBorder;
@@ -928,6 +960,7 @@ namespace OpenUtau.App.ViewModels {
                     MessageBus.Current.SendMessage(new NotesRefreshEvent());
                 });
             this.WhenAnyValue(vm => vm.NoteBorderThickness)
+                .Skip(1)
                 .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(thickness => {
                     var c = Math.Clamp(thickness, 0.5, 4);
@@ -937,6 +970,7 @@ namespace OpenUtau.App.ViewModels {
                     MessageBus.Current.SendMessage(new NotesRefreshEvent());
                 });
             this.WhenAnyValue(vm => vm.NoteOpacity)
+                .Skip(1)
                 .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(opacity => {
                     var c = Math.Clamp(opacity, 0.05, 1);
@@ -946,6 +980,7 @@ namespace OpenUtau.App.ViewModels {
                     MessageBus.Current.SendMessage(new NotesRefreshEvent());
                 });
             this.WhenAnyValue(vm => vm.SolidTickGridLines)
+                .Skip(1)
                 .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(solid => {
                     Preferences.Default.SolidTickGridLines = solid;
@@ -953,6 +988,7 @@ namespace OpenUtau.App.ViewModels {
                     MessageBus.Current.SendMessage(new TickGridLinesStyleChangedEvent());
                 });
             this.WhenAnyValue(vm => vm.SolidExpPanelGridLines)
+                .Skip(1)
                 .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(solid => {
                     Preferences.Default.SolidExpPanelGridLines = solid;
@@ -960,6 +996,7 @@ namespace OpenUtau.App.ViewModels {
                     MessageBus.Current.SendMessage(new ExpressionCurveStyleChangedEvent());
                 });
             this.WhenAnyValue(vm => vm.NoteCornerRadius)
+                .Skip(1)
                 .ObserveOn(AvaloniaUiScheduler.Instance)
                 .Subscribe(r => {
                     var c = Math.Clamp(r, 0, 12);
@@ -968,110 +1005,137 @@ namespace OpenUtau.App.ViewModels {
                     MessageBus.Current.SendMessage(new NotesRefreshEvent());
                 });
             this.WhenAnyValue(vm => vm.Beta)
+                .Skip(1)
                 .Subscribe(beta => {
                     Preferences.Default.Beta = beta;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.LyricsHelper)
+                .Skip(1)
                 .Subscribe(option => {
                     ActiveLyricsHelper.Inst.Set(option?.klass);
                     Preferences.Default.LyricHelper = option?.klass?.Name ?? string.Empty;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.LyricsHelperBrackets)
+                .Skip(1)
                 .Subscribe(brackets => {
                     Preferences.Default.LyricsHelperBrackets = brackets;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.OtoEditor)
+                .Skip(1)
                 .Subscribe(index => {
                     Preferences.Default.OtoEditor = index;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.NumRenderThreads)
+                .Skip(1)
                 .Subscribe(index => {
                     Preferences.Default.NumRenderThreads = index;
                     HighThreads = index > SafeMaxThreadCount ? true : false;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.DefaultRenderer)
+                .Skip(1)
                 .Subscribe(index => {
                     Preferences.Default.DefaultRenderer = index;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.OnnxRunner)
+                .Skip(1)
                 .Subscribe(index => {
                     Preferences.Default.OnnxRunner = index;
                     Preferences.Save();
                     ToggleOnnxGpuDisplay(index == "DirectML" || index == "CUDA");
                 });
             this.WhenAnyValue(vm => vm.OnnxGpu)
+                .Skip(1)
                 .Subscribe(index => {
                     Preferences.Default.OnnxGpu = index.deviceId;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.GameBackend)
+                .Skip(1)
                 .Subscribe(index => {
                     Preferences.Default.GameBackend = index == "GGML" ? "ggml" : "onnx";
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.RememberMid)
+                .Skip(1)
                 .Subscribe(index => {
                     Preferences.Default.RememberMid = index;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.RememberUst)
+                .Skip(1)
                 .Subscribe(index => {
                     Preferences.Default.RememberUst = index;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.RememberVsqx)
+                .Skip(1)
                 .Subscribe(index => {
                     Preferences.Default.RememberVsqx = index;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.Wayland)
+                .Skip(1)
                 .Subscribe(wayland => {
                     Preferences.Default.UseWayland = wayland;
                     Preferences.Save();
                 });
+            this.WhenAnyValue(vm => vm.DefaultSnapCurve)
+                .Skip(1)
+                .Subscribe(value => {
+                    Preferences.Default.DefaultSnapCurve = value;
+                    Preferences.Save();
+                });
             this.WhenAnyValue(vm => vm.ClearCacheOnQuit)
+                .Skip(1)
                 .Subscribe(index => {
                     Preferences.Default.ClearCacheOnQuit = index;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.DiffSingerSteps)
+                .Skip(1)
                 .Subscribe(index => {
                     Preferences.Default.DiffSingerSteps = index;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.DiffSingerStepsVariance)
+                 .Skip(1)
                  .Subscribe(index => {
                      Preferences.Default.DiffSingerStepsVariance = index;
                      Preferences.Save();
                  });
             this.WhenAnyValue(vm => vm.DiffSingerStepsPitch)
+                .Skip(1)
                 .Subscribe(index => {
                     Preferences.Default.DiffSingerStepsPitch = index;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.DiffSingerDepth)
+                .Skip(1)
                 .Subscribe(index => {
                     Preferences.Default.DiffSingerDepth = index / 100;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.DiffSingerTensorCache)
+                .Skip(1)
                 .Subscribe(useCache => {
                     Preferences.Default.DiffSingerTensorCache = useCache;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.DiffSingerPhonemePanelMode)
+                .Skip(1)
                 .Subscribe(mode => {
                     Preferences.Default.DiffSingerPhonemePanelMode = mode;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new NotesRefreshEvent());
                 });
             this.WhenAnyValue(vm => vm.DiffSingerPhonemePanelAuto)
+                .Skip(1)
                 .Subscribe(auto => {
                     Preferences.Default.DiffSingerPhonemePanelAuto = auto;
                     Preferences.Save();
@@ -1081,53 +1145,63 @@ namespace OpenUtau.App.ViewModels {
                     }
                 });
             this.WhenAnyValue(vm => vm.DiffSingerVarianceLocalPitchPatch)
+                .Skip(1)
                 .Subscribe(useLocalPatch => {
                     Preferences.Default.DiffSingerVarianceLocalPitchPatch = useLocalPatch;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.DiffSingerAcousticLocalRetake)
+                .Skip(1)
                 .Subscribe(useLocalRetake => {
                     Preferences.Default.DiffSingerAcousticLocalRetake = useLocalRetake;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.DiffSingerUnvoicedConsonantAcousticF0Interpolate)
+                .Skip(1)
                 .Subscribe(enabled => {
                     Preferences.Default.DiffSingerUnvoicedConsonantAcousticF0Interpolate = enabled;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.DiffSingerShowAcousticF0PatchPreview)
+                .Skip(1)
                 .Subscribe(show => {
                     Preferences.Default.DiffSingerShowAcousticF0PatchPreview = show;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.DiffSingerAcousticFlatPitch)
+                .Skip(1)
                 .Subscribe(enabled => {
                     Preferences.Default.DiffSingerAcousticFlatPitch = enabled;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.DiffSingerPhonemeVarianceRemap)
+                .Skip(1)
                 .Subscribe(enabled => {
                     Preferences.Default.DiffSingerPhonemeVarianceRemap = enabled;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.DiffSingerLangCodeHide)
+                .Skip(1)
                 .Subscribe(useCache => {
                     Preferences.Default.DiffSingerLangCodeHide = useCache;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new NotesRefreshEvent());
                 });
             this.WhenAnyValue(vm => vm.DiffSingerLocalRetaking)
+                .Skip(1)
                 .Subscribe(value => {
                     Preferences.Default.DiffSingerLocalRetaking = value;
                     Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.DiffSingerShowRenderPhraseBoundaries)
+                .Skip(1)
                 .Subscribe(showBoundaries => {
                     Preferences.Default.DiffSingerShowRenderPhraseBoundaries = showBoundaries;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new NotesRefreshEvent());
                 });
             this.WhenAnyValue(vm => vm.DiffSingerMergeOverlappingPhrases)
+                .Skip(1)
                 .Subscribe(merge => {
                     Preferences.Default.DiffSingerMergeOverlappingPhrases = merge;
                     Preferences.Save();
@@ -1135,12 +1209,14 @@ namespace OpenUtau.App.ViewModels {
                     MessageBus.Current.SendMessage(new NotesRefreshEvent());
                 });
             this.WhenAnyValue(vm => vm.DiffSingerShowPhonemeVarianceRemapPreview)
+                .Skip(1)
                 .Subscribe(showPreview => {
                     Preferences.Default.DiffSingerShowPhonemeVarianceRemapPreview = showPreview;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new NotesRefreshEvent());
                 });
             this.WhenAnyValue(vm => vm.SkipRenderingMutedTracks)
+                .Skip(1)
                 .Subscribe(skipRenderingMutedTracks => {
                     Preferences.Default.SkipRenderingMutedTracks = skipRenderingMutedTracks;
                     Preferences.Save();
