@@ -103,9 +103,11 @@ namespace OpenUtau.Core {
         }
 
         /// <summary>
-        /// Portable / Debug / Release: keep user data beside the configuration folder, not inside
+        /// Portable / local SDK output: keep user data beside the configuration folder, not inside
         /// <c>netX.Y-windows</c>, so TFM bumps do not create a fresh empty prefs.json.
-        /// True zip-portable layouts (exe not under a TFM folder) still use the exe directory.
+        /// Shipped portable ZIP (publish to <c>bin/win-x64</c>, Velopack Portable) is NOT a TFM
+        /// folder — prefs stay next to the exe, same as before.
+        /// Installed / Velopack builds never call this; they use <c>Documents\OpenUtau-Lunai</c>.
         /// </summary>
         public static string ResolveWindowsPortableDataPath(string? exePath) {
             if (string.IsNullOrEmpty(exePath)) {
@@ -215,12 +217,20 @@ namespace OpenUtau.Core {
         }
 
         /// <summary>
-        /// Portable Debug/Release: adopt prefs (and missing companion files) from sibling
-        /// <c>net*-windows</c> output folders after a TFM bump.
+        /// Debug/Release SDK output only: adopt prefs from sibling <c>net*-windows</c> folders
+        /// into <see cref="PortableDataFolderName"/>. No-op for:
+        /// <list type="bullet">
+        /// <item>Installed / Velopack builds (<c>Documents\OpenUtau-Lunai</c>)</item>
+        /// <item>Shipped portable ZIP (exe not under a TFM folder — prefs stay next to exe)</item>
+        /// </list>
         /// </summary>
         public void TryMigratePortableFromTfmOutputFolders() {
             try {
                 if (IsInstalled || OS.IsMacOS() || OS.IsLinux()) {
+                    return;
+                }
+                // Extra guard: never touch Documents\OpenUtau-Lunai or a flat portable ZIP folder.
+                if (!IsPortableTfmSiblingDataPath(DataPath)) {
                     return;
                 }
                 string? exePath = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule?.FileName);
@@ -270,6 +280,17 @@ namespace OpenUtau.Core {
             } catch (Exception e) {
                 Log.Error(e, "Failed to migrate portable prefs from TFM output folders.");
             }
+        }
+
+        /// <summary>
+        /// True only for <c>.../Debug|Release/OpenUtau-Lunai-Data</c> used by local SDK builds.
+        /// </summary>
+        public static bool IsPortableTfmSiblingDataPath(string? dataPath) {
+            if (string.IsNullOrEmpty(dataPath)) {
+                return false;
+            }
+            var name = Path.GetFileName(dataPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            return string.Equals(name, PortableDataFolderName, StringComparison.OrdinalIgnoreCase);
         }
 
         static void CopyFileIfMissing(string source, string dest) {
