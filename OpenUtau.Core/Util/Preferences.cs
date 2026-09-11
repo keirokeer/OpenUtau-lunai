@@ -223,8 +223,15 @@ namespace OpenUtau.Core.Util {
                         Default.PreferPortAudio = null;
                     }
                     Default.MigrateRealTimePitchMode();
-                    MigrateLegacyPreferences(json);
-                } else {
+                    Default.RecentSingers = Default.RecentSingers?
+                        .Where(s => !string.IsNullOrWhiteSpace(s))
+                        .ToList()
+                        ?? new List<string>();
+                    Default.FavoriteSingers = Default.FavoriteSingers?
+                        .Where(s => !string.IsNullOrWhiteSpace(s))
+                        .ToList()
+                        ?? new List<string>();
+                    MigrateLegacyPreferences(json);                } else {
                     Reset();
                 }
             } catch (Exception e) {
@@ -433,6 +440,7 @@ namespace OpenUtau.Core.Util {
             public bool RememberUst = true;
             public bool RememberVsqx = true;
             public string WinePath = string.Empty;
+            public bool DefaultSnapCurve = true;
             public string PhoneticAssistant = string.Empty;
             public string RecentOpenSingerDirectory = string.Empty;
             public string RecentOpenProjectDirectory = string.Empty;
