@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,7 +8,6 @@ using OpenUtau.Api;
 using OpenUtau.Classic;
 using OpenUtau.Core.Format;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace OpenUtau.Plugins {
     public abstract class PhonemizerTestBase {

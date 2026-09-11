@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -10,7 +10,6 @@ using OpenUtau.Core.Format;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Plugin.Builtin;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace OpenUtau.Plugins {
     public class EnVCCVTest : PhonemizerTestBase {

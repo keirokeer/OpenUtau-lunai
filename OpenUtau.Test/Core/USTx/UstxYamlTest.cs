@@ -1,5 +1,4 @@
-﻿using Xunit;
-using Xunit.Abstractions;
+using Xunit;
 
 namespace OpenUtau.Core.Ustx {
     public class UstxYamlTest {

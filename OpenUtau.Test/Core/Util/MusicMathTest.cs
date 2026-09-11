@@ -1,5 +1,4 @@
-﻿using Xunit;
-using Xunit.Abstractions;
+using Xunit;
 
 namespace OpenUtau.Core.Util {
     public class MusicMathTest {
