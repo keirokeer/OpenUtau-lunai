@@ -39,15 +39,27 @@
     <PackageReference Include="YamlDotNet" Version="15.1.2" />
     <PackageReference Include="NetMQ" Version="4.0.1.13" />
   </ItemGroup>
-  <ItemGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true'">
+  <!--
+    ONNX Runtime backend by *target* RID (not only host OS).
+    Microsoft.ML.OnnxRuntime.Gpu props try to copy win-arm64/onnxruntime.dll whenever
+    PlatformTarget=ARM64; that file is absent, so linux-arm64 (and other ARM64) publishes fail.
+    CUDA GPU ORT is only used for linux-x64.
+  -->
+  <PropertyGroup>
+    <OpenUtauOnnxBackend Condition="'$(OpenUtauOnnxBackend)' == '' and '$(RuntimeIdentifier)' != '' and $(RuntimeIdentifier.StartsWith('win'))">DirectML</OpenUtauOnnxBackend>
+    <OpenUtauOnnxBackend Condition="'$(OpenUtauOnnxBackend)' == '' and '$(RuntimeIdentifier)' == '' and $([MSBuild]::IsOSPlatform('Windows'))">DirectML</OpenUtauOnnxBackend>
+    <OpenUtauOnnxBackend Condition="'$(OpenUtauOnnxBackend)' == '' and '$(RuntimeIdentifier)' == 'linux-x64'">Cuda</OpenUtauOnnxBackend>
+    <OpenUtauOnnxBackend Condition="'$(OpenUtauOnnxBackend)' == '' and '$(RuntimeIdentifier)' == '' and $([MSBuild]::IsOSPlatform('Linux')) and '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'X64'">Cuda</OpenUtauOnnxBackend>
+    <OpenUtauOnnxBackend Condition="'$(OpenUtauOnnxBackend)' == ''">Cpu</OpenUtauOnnxBackend>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(OpenUtauOnnxBackend)' == 'DirectML'">
     <PackageReference Include="NAudio" Version="2.2.1" />
     <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.23.0" />
   </ItemGroup>
-  <!-- CUDA Linux: Gpu 1.23.2 (matches fork non-Windows ORT; exists on NuGet — no Windows DirectML bump). OSX/Android keep OnnxRuntime 1.23.2. -->
-  <ItemGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">
+  <ItemGroup Condition="'$(OpenUtauOnnxBackend)' == 'Cuda'">
     <PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu" Version="1.23.2" />
   </ItemGroup>
-  <ItemGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'false' And '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'false'">
+  <ItemGroup Condition="'$(OpenUtauOnnxBackend)' == 'Cpu'">
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.23.2" />
   </ItemGroup>
   <ItemGroup>
