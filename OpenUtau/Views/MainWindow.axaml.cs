@@ -2271,11 +2271,17 @@ namespace OpenUtau.App.Views {
         }
 
         static bool IsImportedVocalModeCurve(string abbr) {
+            if (string.IsNullOrEmpty(abbr)) return false;
             if (abbr.StartsWith("cl", StringComparison.OrdinalIgnoreCase)) return false;
+            // Built-in / DiffSinger curves must not be treated as imported vocal modes
+            // (otherwise remapping dialog offers e.g. VPIT → voice color).
             return abbr != Ustx.DYN && abbr != Ustx.PITD && abbr != Ustx.TENC &&
                 abbr != Ustx.BREC && abbr != Ustx.GENC && abbr != Ustx.VOIC &&
                 abbr != Ustx.SHFC && abbr != Ustx.CLR && abbr != Ustx.CLRY &&
-                abbr != "opec";
+                abbr != Ustx.OPEC && abbr != Ustx.XSY &&
+                abbr != DiffSingerUtils.VELC && abbr != DiffSingerUtils.ENE &&
+                abbr != DiffSingerUtils.PEXP && abbr != DiffSingerUtils.VPIT &&
+                abbr != DiffSingerUtils.AF0Z;
         }
         async Task VoiceColorRemappingAsync(UTrack track, string[] oldColors, string[] newColors) {
             var parts = DocManager.Inst.Project.parts
