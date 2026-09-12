@@ -152,5 +152,45 @@ namespace OpenUtau.Test.Core.USTx {
 
             AssertSameValues(before, after, 0, 800 - UCurve.interval);
         }
+
+        [Fact]
+        public void SetDoesNotBridgeLargeEmptyGap() {
+            var curve = new UCurve(Descriptor);
+            curve.Set(1000, 80, 1000, 80);
+            // Coalesced pointer jump across untouched space must not paint a plateau.
+            curve.Set(1000 + UCurve.MaxEmptyBridgeTicks + UCurve.interval * 10, 80, 1000, 80);
+
+            Assert.Equal(80, curve.Sample(1000));
+            Assert.Equal(0, curve.Sample(1000 + UCurve.interval * 10));
+            Assert.Equal(0, curve.Sample(1000 + UCurve.MaxEmptyBridgeTicks));
+            int far = 1000 + UCurve.MaxEmptyBridgeTicks + UCurve.interval * 10;
+            Assert.Equal(80, curve.Sample(far));
+            Assert.Equal(0, curve.Sample(far + UCurve.interval * 2));
+        }
+
+        [Fact]
+        public void SetStillConnectsAcrossAuthoredPlateau() {
+            var curve = new UCurve(Descriptor);
+            for (int t = 0; t <= 400; t += UCurve.interval) {
+                curve.Set(t, 61, t, 61);
+            }
+            // Redrawing through existing non-empty points may still bridge.
+            curve.Set(400, 90, 0, 90);
+            Assert.Equal(90, curve.Sample(0));
+            Assert.Equal(90, curve.Sample(200));
+            Assert.Equal(90, curve.Sample(400));
+        }
+
+        [Fact]
+        public void SetSealsStrokeFromFarNonEmptyPoint() {
+            var curve = new UCurve(Descriptor);
+            curve.Set(5000, 70, 5000, 70);
+            curve.Set(1000, 80, 1000, 80);
+
+            Assert.Equal(80, curve.Sample(1000));
+            // Must not lerp from the new stroke into the distant point.
+            Assert.Equal(0, curve.Sample(2000));
+            Assert.Equal(70, curve.Sample(5000));
+        }
     }
 }

@@ -107,29 +107,96 @@ namespace OpenUtau.Core.Ustx {
             Set(x, y, lastX, lastY, empty);
         }
 
+        /// <summary>
+        /// Max tick span across previously-empty curve space that a single Set may bridge.
+        /// Larger jumps (pointer coalescing / skipped samples) are painted as a new local
+        /// point instead of filling the whole gap with a plateau to the end of the part.
+        /// </summary>
+        public const int MaxEmptyBridgeTicks = interval * 24; // 120 ticks
+
         public void Set(int x, int y, int lastX, int lastY, int emptyValue) {
             x = (int)Math.Round((float)x / interval) * interval;
             lastX = (int)Math.Round((float)lastX / interval) * interval;
-            int minX = Math.Min(x, lastX);
-            int maxX = Math.Max(x, lastX);
-            RemoveBreaksBetween(minX, maxX);
+            if (x != lastX && Math.Abs(x - lastX) > MaxEmptyBridgeTicks) {
+                int minX = Math.Min(x, lastX);
+                int maxX = Math.Max(x, lastX);
+                // Skip bridging when the open gap has no non-empty authored points.
+                // Pointer coalescing otherwise paints a plateau across untouched space.
+                if (!HasNonEmptyPointStrictlyBetween(minX, maxX, emptyValue)) {
+                    SetSinglePoint(x, y, emptyValue);
+                    return;
+                }
+            }
+            int minSeg = Math.Min(x, lastX);
+            int maxSeg = Math.Max(x, lastX);
+            RemoveBreaksBetween(minSeg, maxSeg);
             if (x == lastX) {
-                int leftY = Sample(x - interval, emptyValue);
-                int rightY = Sample(x + interval, emptyValue);
-                Insert(x - interval, leftY);
-                Insert(x, y);
-                Insert(x + interval, rightY);
+                SetSinglePoint(x, y, emptyValue);
             } else if (x < lastX) {
                 int leftY = Sample(x - interval, emptyValue);
+                // Re-assert the segment start so lastY is not lost when lastX was never written.
+                Insert(lastX, lastY);
                 DeleteBetweenExclusive(x, lastX);
                 Insert(x - interval, leftY);
                 Insert(x, y);
+                SealRightIfNeeded(x, emptyValue);
             } else {
                 int rightY = Sample(x + interval, emptyValue);
+                Insert(lastX, lastY);
                 DeleteBetweenExclusive(lastX, x);
                 Insert(x, y);
                 Insert(x + interval, rightY);
+                SealRightIfNeeded(x, emptyValue);
             }
+        }
+
+        void SetSinglePoint(int x, int y, int emptyValue) {
+            int leftY = Sample(x - interval, emptyValue);
+            int rightY = Sample(x + interval, emptyValue);
+            Insert(x - interval, leftY);
+            Insert(x, y);
+            Insert(x + interval, rightY);
+            SealRightIfNeeded(x, emptyValue);
+        }
+
+        bool HasNonEmptyPointStrictlyBetween(int minX, int maxX, int emptyValue) {
+            int idx = xs.BinarySearch(minX);
+            if (idx < 0) {
+                idx = ~idx;
+            } else {
+                idx++;
+            }
+            while (idx < xs.Count && xs[idx] < maxX) {
+                if (ys[idx] != emptyValue) {
+                    return true;
+                }
+                idx++;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// If a non-adjacent point exists to the right, keep a return-to-empty anchor and a
+        /// break so Sample does not lerp the stroke into far-away authored values.
+        /// </summary>
+        void SealRightIfNeeded(int x, int emptyValue) {
+            int rightAnchor = x + interval;
+            int idx = xs.BinarySearch(rightAnchor);
+            if (idx < 0) {
+                idx = ~idx;
+            } else {
+                idx++;
+            }
+            if (idx >= xs.Count) {
+                return;
+            }
+            int nextX = xs[idx];
+            if (nextX <= rightAnchor + interval) {
+                return;
+            }
+            // Force the immediate right neighbor to empty and break before the far point.
+            Insert(rightAnchor, emptyValue);
+            AddBreak(rightAnchor + 1);
         }
 
         /// <summary>
