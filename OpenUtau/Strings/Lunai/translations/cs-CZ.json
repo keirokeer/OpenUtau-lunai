@@ -350,5 +350,6 @@
   "workspace.panel.expressions.voicecolors": "Voice colors",
   "workspace.panel.render": "Renderovat",
   "workspace.panel.view": "Zobrazení",
-  "workspace.tracks": "Stopy"
+  "workspace.tracks": "Stopy",
+  "progress.stoprender": "Stop current render"
 }

@@ -350,5 +350,6 @@
   "workspace.panel.expressions.voicecolors": "Voice colors",
   "workspace.panel.render": "Renderen",
   "workspace.panel.view": "Weergave",
-  "workspace.tracks": "Sporen"
+  "workspace.tracks": "Sporen",
+  "progress.stoprender": "Stop current render"
 }

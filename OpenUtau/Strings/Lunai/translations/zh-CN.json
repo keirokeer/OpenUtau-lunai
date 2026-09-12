@@ -350,5 +350,6 @@
   "workspace.panel.expressions.voicecolors": "Voice colors",
   "workspace.panel.render": "渲染",
   "workspace.panel.view": "视图",
-  "workspace.tracks": "音轨"
+  "workspace.tracks": "音轨",
+  "progress.stoprender": "Stop current render"
 }

@@ -350,5 +350,6 @@
   "workspace.panel.expressions.voicecolors": "Voice colors",
   "workspace.panel.render": "تصيير",
   "workspace.panel.view": "عرض",
-  "workspace.tracks": "المسارات"
+  "workspace.tracks": "المسارات",
+  "progress.stoprender": "Stop current render"
 }

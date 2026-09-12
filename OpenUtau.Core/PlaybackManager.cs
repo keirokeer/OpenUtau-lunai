@@ -510,6 +510,27 @@ namespace OpenUtau.Core {
             renderCancellation?.Cancel();
         }
 
+        /// <summary>
+        /// Cancels in-flight playback/pre-render work and clears the progress bar.
+        /// Does not cancel export. Also drops any incomplete playback mix so
+        /// HoldWhenUnready cannot hang forever on phrases that will never arrive;
+        /// the next Play starts a fresh render pass.
+        /// </summary>
+        public void CancelActiveRender() {
+            renderCancellation?.Cancel();
+            preRenderCancellation?.Cancel();
+            playbackRenderGeneration++;
+            StartingToPlay = false;
+            // Incomplete mix after a cancelled RenderRequests would wait forever
+            // under HoldWhenUnready; warm-resume would replay that dead mix.
+            if (masterMix != null || pausedWithMix || PlayingMaster
+                || AudioOutput.PlaybackState == PlaybackState.Playing
+                || AudioOutput.PlaybackState == PlaybackState.Paused) {
+                StopPlayback();
+            }
+            DocManager.Inst.ExecuteCmd(new ProgressBarNotification(0, string.Empty));
+        }
+
         public void UpdatePlayPos() {
             if (AudioOutput != null && AudioOutput.PlaybackState == PlaybackState.Playing && PlayingMaster) {
                 var currentMasterMix = masterMix;

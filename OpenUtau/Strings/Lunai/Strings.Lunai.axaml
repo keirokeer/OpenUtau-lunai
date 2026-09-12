@@ -277,6 +277,7 @@
   <system:String x:Key="prefs.shortcuts.listening">Press keys...</system:String>
 
   <system:String x:Key="progress.diffsinger.preset">DiffSinger {0} preset applied (acoustic {1}, variance {2}, pitch {3})</system:String>
+  <system:String x:Key="progress.stoprender">Stop current render</system:String>
 
   <system:String x:Key="shortcut.ClearSelection">Clear Selection</system:String>
   <system:String x:Key="shortcut.Copy">Copy</system:String>

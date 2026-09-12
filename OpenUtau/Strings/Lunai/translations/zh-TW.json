@@ -350,5 +350,6 @@
   "workspace.panel.expressions.voicecolors": "Voice colors",
   "workspace.panel.render": "算繪",
   "workspace.panel.view": "檢視",
-  "workspace.tracks": "音軌"
+  "workspace.tracks": "音軌",
+  "progress.stoprender": "Stop current render"
 }

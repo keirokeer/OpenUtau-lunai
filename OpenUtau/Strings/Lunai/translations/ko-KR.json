@@ -350,5 +350,6 @@
   "workspace.panel.expressions.voicecolors": "Voice colors",
   "workspace.panel.render": "렌더",
   "workspace.panel.view": "보기",
-  "workspace.tracks": "트랙"
+  "workspace.tracks": "트랙",
+  "progress.stoprender": "Stop current render"
 }

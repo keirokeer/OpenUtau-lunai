@@ -350,5 +350,6 @@
   "workspace.panel.expressions.voicecolors": "Voice colors",
   "workspace.panel.render": "Renderöi",
   "workspace.panel.view": "Näytä",
-  "workspace.tracks": "Raidat"
+  "workspace.tracks": "Raidat",
+  "progress.stoprender": "Stop current render"
 }

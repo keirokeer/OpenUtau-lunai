@@ -1,6 +1,8 @@
 using System;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Interactivity;
+using OpenUtau.Core;
 
 namespace OpenUtau.App.Controls {
     public partial class RenderProgressPanel : UserControl {
@@ -20,19 +22,51 @@ namespace OpenUtau.App.Controls {
             set => SetValue(ProgressTextProperty, value);
         }
 
+        bool pointerOver;
+
         static RenderProgressPanel() {
-            ProgressProperty.Changed.AddClassHandler<RenderProgressPanel>((panel, _) => panel.UpdateFillLayout());
+            ProgressProperty.Changed.AddClassHandler<RenderProgressPanel>((panel, _) => {
+                panel.UpdateFillLayout();
+                panel.UpdateCancelVisibility();
+            });
+            ProgressTextProperty.Changed.AddClassHandler<RenderProgressPanel>((panel, _) =>
+                panel.UpdateCancelVisibility());
         }
 
         public RenderProgressPanel() {
             InitializeComponent();
             HostGrid.SizeChanged += (_, _) => UpdateFillLayout();
             ProgressRow.SizeChanged += (_, _) => UpdateFillLayout();
+            PointerEntered += (_, _) => {
+                pointerOver = true;
+                UpdateCancelVisibility();
+            };
+            PointerExited += (_, _) => {
+                pointerOver = false;
+                UpdateCancelVisibility();
+            };
         }
 
         protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e) {
             base.OnAttachedToVisualTree(e);
             UpdateFillLayout();
+            UpdateCancelVisibility();
+        }
+
+        void OnCancelClick(object? sender, RoutedEventArgs e) {
+            PlaybackManager.Inst.CancelActiveRender();
+            e.Handled = true;
+        }
+
+        void UpdateCancelVisibility() {
+            if (CancelButton == null) {
+                return;
+            }
+            bool hasProgress = Progress > 0.01
+                || !string.IsNullOrWhiteSpace(ProgressText);
+            bool show = pointerOver && hasProgress;
+            CancelButton.Opacity = show ? 1 : 0;
+            CancelButton.IsHitTestVisible = show;
         }
 
         void UpdateFillLayout() {

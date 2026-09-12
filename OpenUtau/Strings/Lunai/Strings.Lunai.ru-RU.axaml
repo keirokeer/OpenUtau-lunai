@@ -281,6 +281,7 @@
   <system:String x:Key="prefs.shortcuts.listening">Нажмите клавиши...</system:String>
 
   <system:String x:Key="progress.diffsinger.preset">Пресет DiffSinger {0} применён (акустика {1}, вэриэнс {2}, питч {3})</system:String>
+  <system:String x:Key="progress.stoprender">Остановить текущий рендер</system:String>
 
   <system:String x:Key="shortcut.ClearSelection">Снять выделение</system:String>
   <system:String x:Key="shortcut.Copy">Копировать</system:String>

@@ -350,5 +350,6 @@
   "workspace.panel.expressions.voicecolors": "Voice colors",
   "workspace.panel.render": "Kết xuất",
   "workspace.panel.view": "Xem",
-  "workspace.tracks": "Track"
+  "workspace.tracks": "Track",
+  "progress.stoprender": "Stop current render"
 }

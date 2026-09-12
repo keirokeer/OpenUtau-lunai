@@ -350,5 +350,6 @@
   "workspace.panel.expressions.voicecolors": "Voice colors",
   "workspace.panel.render": "Rendu",
   "workspace.panel.view": "Affichage",
-  "workspace.tracks": "Pistes"
+  "workspace.tracks": "Pistes",
+  "progress.stoprender": "Stop current render"
 }

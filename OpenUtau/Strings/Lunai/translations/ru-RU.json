@@ -365,5 +365,6 @@
   "workspace.panel.expressions.voicecolors": "Оттенки голоса",
   "workspace.panel.render": "Рендер",
   "workspace.panel.view": "Вид",
-  "workspace.tracks": "Треки"
+  "workspace.tracks": "Треки",
+  "progress.stoprender": "Остановить текущий рендер"
 }

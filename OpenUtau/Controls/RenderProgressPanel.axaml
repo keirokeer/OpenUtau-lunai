@@ -8,23 +8,65 @@
              Height="24" MinHeight="24" MaxHeight="24"
              VerticalAlignment="Stretch"
              HorizontalAlignment="Stretch"
-             IsHitTestVisible="False">
-  <Grid x:Name="HostGrid" ClipToBounds="True">
-    <Grid.RowDefinitions>
-      <RowDefinition Height="20"/>
-      <RowDefinition Height="4"/>
-    </Grid.RowDefinitions>
-    <TextBlock Grid.Row="0"
-               Text="{Binding ProgressText, ElementName=Root}"
-               Margin="4,0,4,0"
-               VerticalAlignment="Center"
-               FontSize="12"
-               TextTrimming="CharacterEllipsis"
-               Foreground="{DynamicResource ForegroundColor}"/>
-    <Panel x:Name="ProgressRow" Grid.Row="1" ClipToBounds="True">
+             Background="Transparent"
+             IsHitTestVisible="True">
+  <UserControl.Styles>
+    <Style Selector="Button.renderCancelChip">
+      <Setter Property="Height" Value="22"/>
+      <Setter Property="MinHeight" Value="22"/>
+      <Setter Property="Margin" Value="4,0,0,0"/>
+      <Setter Property="Padding" Value="8,0,4,0"/>
+      <Setter Property="CornerRadius" Value="4"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="Button.renderCancelChip:pointerover:not(:pressed):not(:disabled),
+            Button.renderCancelChip:pressed:not(:disabled)">
+      <Setter Property="Background" Value="{DynamicResource TrackAccentMuteCheckedBrush}"/>
+    </Style>
+  </UserControl.Styles>
+  <Grid x:Name="HostGrid" Background="Transparent" ClipToBounds="True">
+    <Grid ColumnDefinitions="*,Auto" Margin="4,0,4,0" Background="Transparent">
+      <TextBlock Text="{Binding ProgressText, ElementName=Root}"
+                 VerticalAlignment="Center"
+                 FontSize="12"
+                 Margin="0,0,0,4"
+                 TextTrimming="CharacterEllipsis"
+                 IsHitTestVisible="False"
+                 Foreground="{DynamicResource ForegroundColor}"/>
+      <Button x:Name="CancelButton"
+              Grid.Column="1"
+              Classes="renderCancelChip"
+              VerticalAlignment="Center"
+              Opacity="0"
+              IsHitTestVisible="False"
+              Click="OnCancelClick">
+        <StackPanel Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+          <TextBlock Text="{DynamicResource progress.stoprender}"
+                     VerticalAlignment="Center"
+                     FontSize="12"
+                     Foreground="White"/>
+          <Path Width="10" Height="10"
+                VerticalAlignment="Center"
+                Margin="2,0"
+                Stretch="Uniform"
+                Fill="{DynamicResource TrackAccentMuteBrush}"
+                Data="M 5.8,4.6 L 8.1,4.6 L 12,9.4 L 15.9,4.6 L 18.2,4.6 L 13.6,10.8 L 18.2,17 L 15.9,17 L 12,12.2 L 8.1,17 L 5.8,17 L 10.4,10.8 Z"/>
+        </StackPanel>
+      </Button>
+    </Grid>
+    <Panel x:Name="ProgressRow"
+           Height="4"
+           VerticalAlignment="Bottom"
+           Background="Transparent"
+           ClipToBounds="True"
+           IsHitTestVisible="False">
       <Border x:Name="FillClip"
               HorizontalAlignment="Left"
               VerticalAlignment="Stretch"
+              IsHitTestVisible="False"
               Background="{DynamicResource ForegroundColor}"/>
     </Panel>
   </Grid>

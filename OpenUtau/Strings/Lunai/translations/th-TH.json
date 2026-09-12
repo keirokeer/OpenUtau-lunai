@@ -350,5 +350,6 @@
   "workspace.panel.expressions.voicecolors": "Voice colors",
   "workspace.panel.render": "เรนเดอร์",
   "workspace.panel.view": "มุมมอง",
-  "workspace.tracks": "แทร็ก"
+  "workspace.tracks": "แทร็ก",
+  "progress.stoprender": "Stop current render"
 }

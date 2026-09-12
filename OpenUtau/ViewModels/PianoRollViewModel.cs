@@ -548,6 +548,8 @@ namespace OpenUtau.App.ViewModels {
                 prefs.DiffSingerStepsPitch = pitch;
             }
             UpdateDiffSingerPresetHighlight();
+            PlaybackManager.Inst.CancelActiveRender();
+            DocManager.Inst.ExecuteCmd(new PreRenderNotification(force: true));
             var message = string.Format(
                 ThemeManager.GetString("progress.diffsinger.preset"),
                 label, acoustic, variance, pitch);
