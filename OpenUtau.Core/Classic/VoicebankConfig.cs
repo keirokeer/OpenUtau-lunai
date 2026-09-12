@@ -33,6 +33,11 @@ namespace OpenUtau.Classic {
         /// Tone ranges. Each range specified as "C1-C4" or "C4".
         /// </summary>
         public string[] ToneRanges { get; set; }
+
+        /// <summary>
+        /// Optional short description shown as a tip for this voice color in the UI.
+        /// </summary>
+        public string Description { get; set; } = string.Empty;
     }
 
     public class VoicebankConfig {

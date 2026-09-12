@@ -15,6 +15,8 @@ namespace OpenUtau.App.ViewModels {
     public partial class ExpressionDefaultItem : ReactiveObject {
         public string Abbr { get; }
         [Reactive] public partial string Name { get; set; }
+        [Reactive] public partial string? Tip { get; set; }
+        [Reactive] public partial bool HasTip { get; set; }
         [Reactive] public partial float Min { get; set; }
         [Reactive] public partial float Max { get; set; }
         [Reactive] public partial float DefaultValue { get; set; }
@@ -22,9 +24,11 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool ShowPlayheadMarker { get; set; }
         [Reactive] public partial bool HasTrackOverride { get; set; }
 
-        public ExpressionDefaultItem(UExpressionDescriptor descriptor) {
+        public ExpressionDefaultItem(UExpressionDescriptor descriptor, string? tip = null) {
             Abbr = descriptor.abbr;
             Name = ExpressionSuggestionSync.GetPanelDisplayName(descriptor);
+            Tip = tip;
+            HasTip = !string.IsNullOrWhiteSpace(tip);
             Min = descriptor.min;
             Max = descriptor.max;
             DefaultValue = descriptor.CustomDefaultValue;
@@ -33,11 +37,24 @@ namespace OpenUtau.App.ViewModels {
             HasTrackOverride = false;
         }
 
-        public void SyncFromDescriptor(UExpressionDescriptor descriptor) {
+        public void SyncFromDescriptor(UExpressionDescriptor descriptor, string? tip = null) {
             Name = ExpressionSuggestionSync.GetPanelDisplayName(descriptor);
+            Tip = tip;
+            HasTip = !string.IsNullOrWhiteSpace(tip);
             Min = descriptor.min;
             Max = descriptor.max;
         }
+    }
+
+    public class VoiceColorOptionItem {
+        public string Name { get; }
+        public string? Tip { get; }
+        public bool HasTip => !string.IsNullOrWhiteSpace(Tip);
+        public VoiceColorOptionItem(string name, string? tip) {
+            Name = name;
+            Tip = tip;
+        }
+        public override string ToString() => Name;
     }
 
     public partial class ExpressionStyleItemViewModel : ViewModelBase {
@@ -62,7 +79,7 @@ namespace OpenUtau.App.ViewModels {
     public partial class ExpressionDefaultsViewModel : ViewModelBase, ICmdSubscriber {
         public ObservableCollectionExtended<ExpressionDefaultItem> ParameterItems { get; } = new();
         public ObservableCollectionExtended<ExpressionDefaultItem> VoiceColorItems { get; } = new();
-        public ObservableCollectionExtended<string> VoiceColorOptions { get; } = new();
+        public ObservableCollectionExtended<VoiceColorOptionItem> VoiceColorOptions { get; } = new();
         public ObservableCollectionExtended<ExpressionStyleItemViewModel> StyleItems { get; } = new();
 
         [Reactive] public partial bool HasParameters { get; private set; }
@@ -71,6 +88,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool HasStyles { get; private set; }
         [Reactive] public partial bool CanSaveStyle { get; private set; }
         [Reactive] public partial int SelectedVoiceColorIndex { get; set; }
+        [Reactive] public partial string? SelectedVoiceColorTip { get; set; }
         [Reactive] public partial string VoiceColorCurveMaxText { get; set; } = "100";
         [Reactive] public partial bool IsTrackMode { get; set; }
         [Reactive] public partial bool CanUseTrackMode { get; private set; }
@@ -99,6 +117,7 @@ namespace OpenUtau.App.ViewModels {
             UpdateChrome();
             this.WhenAnyValue(vm => vm.SelectedVoiceColorIndex)
                 .Subscribe(index => {
+                    UpdateSelectedVoiceColorTip(index);
                     if (!applyingVoiceColor) {
                         CommitDefaultVoiceColor(index);
                     }
@@ -551,7 +570,9 @@ namespace OpenUtau.App.ViewModels {
             SelectedVoiceColorIndex = -1;
             if (track.VoiceColorExp?.options != null && track.VoiceColorExp.options.Length > 0) {
                 foreach (var option in track.VoiceColorExp.options) {
-                    VoiceColorOptions.Add(option);
+                    VoiceColorOptions.Add(new VoiceColorOptionItem(
+                        option,
+                        VoiceColorDescription.ForColor(track.Singer, option)));
                 }
                 ShowDefaultVoiceColorPicker = true;
                 float clrValue = IsTrackMode
@@ -565,7 +586,16 @@ namespace OpenUtau.App.ViewModels {
                 SelectedVoiceColorIndex = 0;
             }
             applyingVoiceColor = false;
+            UpdateSelectedVoiceColorTip(SelectedVoiceColorIndex);
             CanSaveStyle = HasParameters || HasVoiceColors;
+        }
+
+        void UpdateSelectedVoiceColorTip(int index) {
+            if (index >= 0 && index < VoiceColorOptions.Count) {
+                SelectedVoiceColorTip = VoiceColorOptions[index].Tip;
+            } else {
+                SelectedVoiceColorTip = null;
+            }
         }
 
         void RebuildItemList(
@@ -576,12 +606,13 @@ namespace OpenUtau.App.ViewModels {
             var byAbbr = target.ToDictionary(i => i.Abbr, StringComparer.OrdinalIgnoreCase);
             target.Clear();
             foreach (var descriptor in descriptors) {
+                string? tip = VoiceColorDescription.ForVoiceColorDescriptor(track?.Singer, descriptor.name);
                 ExpressionDefaultItem item;
                 if (byAbbr.TryGetValue(descriptor.abbr, out var existing)) {
-                    existing.SyncFromDescriptor(descriptor);
+                    existing.SyncFromDescriptor(descriptor, tip);
                     item = existing;
                 } else {
-                    item = new ExpressionDefaultItem(descriptor);
+                    item = new ExpressionDefaultItem(descriptor, tip);
                 }
                 item.HasTrackOverride = ExpressionDefaultResolver.HasTrackOverride(track, descriptor.abbr);
                 item.DefaultValue = IsTrackMode && track != null

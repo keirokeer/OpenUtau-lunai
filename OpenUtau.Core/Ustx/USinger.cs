@@ -144,6 +144,10 @@ namespace OpenUtau.Core.Ustx {
             get => subbank.Suffix;
             set => subbank.Suffix = value;
         }
+        public string Description {
+            get => subbank.Description ?? string.Empty;
+            set => subbank.Description = value ?? string.Empty;
+        }
         public string ToneRangesString {
             get => toneRangesString;
             set {

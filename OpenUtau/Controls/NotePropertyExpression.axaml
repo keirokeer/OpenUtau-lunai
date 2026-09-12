@@ -12,9 +12,15 @@
     <Slider Grid.Column="4" Classes="fader" Value="{Binding Value}" Minimum="{Binding Min}" Maximum="{Binding Max}"
             TickPlacement="BottomRight" TickFrequency="1" IsSnapToTickEnabled="true" IsVisible="{Binding IsNumerical}" VerticalAlignment="Center" IsEnabled="{Binding IsNoteSelected}"
             Name="slider"/>
-    <c:WorkspacePanelComboBox Grid.Column="1" Grid.ColumnSpan="4" Classes="workspacePanelCombo" ItemsSource="{Binding Options}"
+    <c:WorkspacePanelComboBox Grid.Column="1" Grid.ColumnSpan="4" Classes="workspacePanelCombo" ItemsSource="{Binding OptionItems}"
               SelectedIndex="{Binding SelectedOption}" MinWidth="120" IsVisible="{Binding IsOptions}" VerticalAlignment="Center" IsEnabled="{Binding IsNoteSelected}"
               IsDropDownOpen="{Binding DropDownOpen, Mode=OneWayToSource}"
-              Name="comboBox"/>
+              Name="comboBox">
+      <c:WorkspacePanelComboBox.ItemTemplate>
+        <DataTemplate x:DataType="vm:NotePropertyOptionItem">
+          <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/>
+        </DataTemplate>
+      </c:WorkspacePanelComboBox.ItemTemplate>
+    </c:WorkspacePanelComboBox>
   </Grid>
 </UserControl>

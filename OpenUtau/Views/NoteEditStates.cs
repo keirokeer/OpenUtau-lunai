@@ -768,6 +768,11 @@ namespace OpenUtau.App.Views {
                     } else {
                         valueTipText = value;
                     }
+                    if (descriptor.abbr == Ustx.CLR) {
+                        valueTipText = VoiceColorDescription.AppendTip(
+                            valueTipText,
+                            VoiceColorDescription.ForColor(track.Singer, descriptor.options[index]));
+                    }
                 } else {
                     valueTipText = "Error: out of range";
                 }

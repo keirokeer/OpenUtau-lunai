@@ -244,6 +244,7 @@ namespace OpenUtau.App.ViewModels {
                             if (track.VoiceColorExp != null && track.VoiceColorExp.options.Length > 0) {
                                 viewModel.Options.Clear();
                                 Array.ForEach(track.VoiceColorExp.options, opt => viewModel.Options.Add(opt));
+                                viewModel.RebuildOptionItems();
                             }
                         }
                         Expressions.Add(viewModel);
@@ -805,6 +806,7 @@ namespace OpenUtau.App.ViewModels {
         public float Min { get; set; }
         public float Max { get; set; }
         public ObservableCollection<string> Options { get; set; } = new ObservableCollection<string>();
+        public ObservableCollection<NotePropertyOptionItem> OptionItems { get; set; } = new();
         public string abbr;
         public float defaultValue;
 
@@ -814,6 +816,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool DropDownOpen { get; set; }
         [Reactive] public partial bool HasValue { get; set; } = false;
         [Reactive] public partial FontWeight NameFontWeight { get; set; }
+        [Reactive] public partial string? SelectedOptionTip { get; set; }
 
         private NotePropertiesViewModel parentViewmodel;
 
@@ -835,14 +838,17 @@ namespace OpenUtau.App.ViewModels {
             }
 
             parentViewmodel = parent;
+            RebuildOptionItems();
 
             if (IsOptions) {
                 this.WhenAnyValue(vm => vm.SelectedOption)
                     .Subscribe(value => {
+                        SelectedOptionTip = GetSelectedTip(value);
                         if (value >= 0 && DropDownOpen) {
                             parentViewmodel.SetOptionalExpressionsChanges(abbr, value);
                         }
                     });
+                SelectedOptionTip = GetSelectedTip(SelectedOption);
             }
 
             this.WhenAnyValue(vm => vm.HasValue)
@@ -853,6 +859,26 @@ namespace OpenUtau.App.ViewModels {
                         NameFontWeight = FontWeight.Normal;
                     }
                 });
+        }
+
+        public void RebuildOptionItems() {
+            OptionItems.Clear();
+            USinger? singer = null;
+            if (abbr == Ustx.CLR && parentViewmodel?.Part != null) {
+                singer = DocManager.Inst.Project.tracks[parentViewmodel.Part.trackNo].Singer;
+            }
+            foreach (var opt in Options) {
+                OptionItems.Add(new NotePropertyOptionItem(
+                    opt,
+                    abbr == Ustx.CLR ? VoiceColorDescription.ForColor(singer, opt) : null));
+            }
+        }
+
+        string? GetSelectedTip(int index) {
+            if (index < 0 || index >= OptionItems.Count) {
+                return null;
+            }
+            return OptionItems[index].Tip;
         }
 
         public void SetNumericalExpressions(object? obj) {
@@ -870,5 +896,16 @@ namespace OpenUtau.App.ViewModels {
         public override string ToString() {
             return Name;
         }
+    }
+
+    public class NotePropertyOptionItem {
+        public string Name { get; }
+        public string? Tip { get; }
+        public bool HasTip => !string.IsNullOrWhiteSpace(Tip);
+        public NotePropertyOptionItem(string name, string? tip) {
+            Name = name;
+            Tip = tip;
+        }
+        public override string ToString() => Name;
     }
 }

@@ -201,23 +201,43 @@
                          Grid.Column="0"/>
               <c:WorkspacePanelComboBox Grid.Column="1" Classes="workspacePanelCombo"
                                         ItemsSource="{Binding VoiceColorOptions}"
-                                        SelectedIndex="{Binding SelectedVoiceColorIndex}"/>
+                                        SelectedIndex="{Binding SelectedVoiceColorIndex}">
+                <c:WorkspacePanelComboBox.ItemTemplate>
+                  <DataTemplate x:DataType="vm:VoiceColorOptionItem">
+                    <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/>
+                  </DataTemplate>
+                </c:WorkspacePanelComboBox.ItemTemplate>
+              </c:WorkspacePanelComboBox>
             </Grid>
             <ItemsControl ItemsSource="{Binding VoiceColorItems}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="vm:ExpressionDefaultItem">
                   <Grid Classes="expDefaultRow expDefaultSliderRow" ColumnDefinitions="110,*,Auto">
-                    <Border Classes="expDefaultLabelHit" Grid.Column="0"
-                            ToolTip.Tip="{DynamicResource workspace.panel.expressions.openinexppanel}"
-                            PointerPressed="OnParameterNamePressed">
-                      <DockPanel LastChildFill="True">
-                        <Ellipse DockPanel.Dock="Left" Width="6" Height="6"
-                                 Margin="0,4,4,0" VerticalAlignment="Top"
-                                 IsVisible="{Binding HasTrackOverride}"
-                                 Fill="{DynamicResource SystemAccentColorDark1Brush}"/>
-                        <TextBlock Classes="expDefaultLabel" Text="{Binding Name}"/>
-                      </DockPanel>
-                    </Border>
+                    <DockPanel Grid.Column="0" LastChildFill="True">
+                      <TextBlock DockPanel.Dock="Right"
+                                 Text="?"
+                                 FontSize="12"
+                                 FontWeight="SemiBold"
+                                 Margin="0,0,8,0"
+                                 VerticalAlignment="Center"
+                                 Opacity="0.75"
+                                 Cursor="Help"
+                                 IsVisible="{Binding HasTip}"
+                                 ToolTip.Tip="{Binding Tip}"
+                                 Foreground="{DynamicResource MutedIconBrush}"/>
+                      <Border Classes="expDefaultLabelHit"
+                              ToolTip.Tip="{DynamicResource workspace.panel.expressions.openinexppanel}"
+                              PointerPressed="OnParameterNamePressed">
+                        <DockPanel LastChildFill="True">
+                          <Ellipse DockPanel.Dock="Left" Width="6" Height="6"
+                                   Margin="0,4,4,0" VerticalAlignment="Top"
+                                   IsVisible="{Binding HasTrackOverride}"
+                                   Fill="{DynamicResource SystemAccentColorDark1Brush}"/>
+                          <TextBlock Classes="expDefaultLabel" Text="{Binding Name}"
+                                     TextTrimming="CharacterEllipsis"/>
+                        </DockPanel>
+                      </Border>
+                    </DockPanel>
                     <c:ExpressionDefaultSlider Grid.Column="1" Item="{Binding}"/>
                     <TextBlock Classes="expDefaultValue" Grid.Column="2"
                                Text="{Binding DefaultValue, StringFormat={}{0:0}}"/>

@@ -13,14 +13,20 @@ using ReactiveUI.SourceGenerators;
 namespace OpenUtau.App.ViewModels {
     partial class VoiceColor : ReactiveObject {
         [Reactive] public partial string Name { get; set; }
+        [Reactive] public partial string Description { get; set; }
         [Reactive] public partial ObservableCollectionExtended<VoiceColorRow> Rows { get; set; }
         public VoiceColor(string color, List<Subbank> subbanks) {
             Name = color;
+            Description = subbanks.Select(s => s.Description)
+                .FirstOrDefault(d => !string.IsNullOrWhiteSpace(d)) ?? string.Empty;
             Rows = new ObservableCollectionExtended<VoiceColorRow>();
             for (int i = 107; i >= 24; --i) {
                 Rows.Add(new VoiceColorRow(i, string.Empty, string.Empty));
             }
             foreach (var subbank in subbanks) {
+                if (subbank.ToneRanges == null) {
+                    continue;
+                }
                 foreach (var range in subbank.ToneRanges) {
                     var parts = range.Split('-');
                     if (parts.Length == 1) {
@@ -203,6 +209,7 @@ namespace OpenUtau.App.ViewModels {
                             Color = color.Name,
                             Prefix = row.Prefix,
                             Suffix = row.Suffix,
+                            Description = color.Description ?? string.Empty,
                         };
                         subbanks[key] = subbank;
                     }
