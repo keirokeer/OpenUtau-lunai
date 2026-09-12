@@ -382,7 +382,7 @@ namespace OpenUtau.Core {
             if (!forceFreshRender && pausedWithMix && masterMix != null) {
                 var timeAxis = project.timeAxis;
                 startMs = timeAxis.TickPosToMsPos(tick);
-                // playbackStartTick unchanged — resume from pause, not a new session
+                playbackStartTick = tick;
                 masterMix.SetPosition((int)(startMs * 44100 / 1000) * 2);
                 pausedWithMix = false;
                 PlayingMaster = true;
@@ -395,6 +395,7 @@ namespace OpenUtau.Core {
             }
             if (!forceFreshRender && AudioOutput.PlaybackState == PlaybackState.Paused) {
                 PlayingMaster = true;
+                playbackStartTick = DocManager.Inst.playPosTick;
                 metronomeEngine.StartPlayback(project.timeAxis, DocManager.Inst.playPosTick);
                 AudioOutput.Play();
                 return;
@@ -658,6 +659,7 @@ namespace OpenUtau.Core {
                 } else {
                     StopPlayback();
                 }
+                playbackStartTick = tick;
                 DocManager.Inst.ExecuteCmd(new SetPlayPosTickNotification(tick, false, _cmd.pause));
             } else if (cmd is VolumeChangeNotification) {
                 var _cmd = cmd as VolumeChangeNotification;

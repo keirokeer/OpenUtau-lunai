@@ -51,22 +51,11 @@ namespace OpenUtau.App.ViewModels {
             NotifyPlaybackActiveChanged();
         }
         public void PlayOrPause(int tick = -1, int endTick = -1, int trackNo = -1) {
-            bool wasPlaying = PlaybackManager.Inst.PlayingMaster;
             PlaybackManager.Inst.PlayOrPause(tick: tick, endTick: endTick, trackNo: trackNo);
-            if (wasPlaying && !PlaybackManager.Inst.PlayingMaster && !PlaybackManager.Inst.StartingToPlay
-                && Preferences.Default.LockStartTime != 0) {
-                DocManager.Inst.ExecuteCmd(new SetPlayPosTickNotification(
-                    PlaybackManager.Inst.PlaybackStartTick, pause: true));
-            }
             NotifyPlaybackActiveChanged();
         }
         public void Pause() {
-            bool wasPlaying = PlaybackManager.Inst.PlayingMaster;
             PlaybackManager.Inst.PausePlayback();
-            if (wasPlaying && Preferences.Default.LockStartTime != 0) {
-                DocManager.Inst.ExecuteCmd(new SetPlayPosTickNotification(
-                    PlaybackManager.Inst.PlaybackStartTick, pause: true));
-            }
             NotifyPlaybackActiveChanged();
         }
 
