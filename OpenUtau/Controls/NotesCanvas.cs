@@ -1205,7 +1205,7 @@ namespace OpenUtau.App.Controls {
             if (track.Singer is not { Found: true, SingerType: USingerType.DiffSinger }) {
                 return;
             }
-            IBrush? brush = ThemeManager.AccentBrush2;
+            IBrush? brush = ThemeManager.VocoderPitchBrush;
             if (brush == null) {
                 return;
             }

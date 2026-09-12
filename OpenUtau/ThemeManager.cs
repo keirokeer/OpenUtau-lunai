@@ -186,6 +186,11 @@ namespace OpenUtau.App {
             if (resDict.TryGetResource("AccentBrush2Semi", themeVariant, out outVar)) {
                 AccentBrush2Semi = (IBrush)outVar!;
             }
+            if (resDict.TryGetResource("VocoderPitchBrush", themeVariant, out outVar)) {
+                VocoderPitchBrush = (IBrush)outVar!;
+            } else {
+                VocoderPitchBrush = new SolidColorBrush(Color.Parse("#FF9F43"));
+            }
             if (resDict.TryGetResource("AccentBrush3", themeVariant, out outVar)) {
                 AccentBrush3 = (IBrush)outVar!;
                 AccentPen3 = new Pen(AccentBrush3, 1);

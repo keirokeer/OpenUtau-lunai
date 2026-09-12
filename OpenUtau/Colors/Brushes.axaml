@@ -66,6 +66,7 @@
   <SolidColorBrush x:Key="PianoRollSideAccentPlayToneBrush" Color="#E5A84A"/>
   <SolidColorBrush x:Key="PianoRollSideAccentLivePitchBrush" Color="#52C4E8"/>
   <SolidColorBrush x:Key="PianoRollSideAccentLivePitchFastBrush" Color="#FF9F43"/>
+  <SolidColorBrush x:Key="VocoderPitchBrush" Color="#FF9F43"/>
   <SolidColorBrush x:Key="PianoRollSideAccentVibratoBrush" Color="#B87FD4"/>
   <SolidColorBrush x:Key="PianoRollSideAccentPitchBrush" Color="#5BA8F2"/>
   <SolidColorBrush x:Key="PianoRollSideAccentFinalPitchBrush" Color="#4ABFA8"/>
