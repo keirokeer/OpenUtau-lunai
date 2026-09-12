@@ -140,15 +140,23 @@ namespace OpenUtau.App.Views {
             DocManager.Inst.AddSubscriber(this);
 
             MessageBus.Current.Listen<ScrollbarsStyleChangedEvent>()
-                .Subscribe(_ => ScheduleApplyTracksScrollStyle());
+                .Subscribe(_ => {
+                    ScheduleApplyTracksScrollStyle();
+                    ScheduleApplyWelcomeScrollStyle();
+                });
             MessageBus.Current.Listen<PianorollRefreshEvent>()
                 .Subscribe(e => {
                     if (e.refreshItem == "Attachment") {
                         ApplyPianoRollAttachment(Preferences.Default.DetachPianoRoll);
                     }
                 });
-            Loaded += (_, _) => ScheduleApplyTracksScrollStyle();
+            Loaded += (_, _) => {
+                ScheduleApplyTracksScrollStyle();
+                ScheduleApplyWelcomeScrollStyle();
+            };
             Opened += (_, _) => ScheduleApplyTracksScrollStyle();
+            Opened += (_, _) => ScheduleApplyWelcomeScrollStyle();
+            AttachedToVisualTree += (_, _) => ScheduleApplyWelcomeScrollStyle();
             viewModel.WhenAnyValue(vm => vm.Page)
                 .Subscribe(_ => ScheduleApplyTracksScrollStyle());
 
@@ -187,6 +195,20 @@ namespace OpenUtau.App.Views {
 
         void ScheduleApplyTracksScrollStyle() {
             Dispatcher.UIThread.Post(ApplyTracksScrollStyle, DispatcherPriority.Loaded);
+        }
+
+        void ScheduleApplyWelcomeScrollStyle() {
+            Dispatcher.UIThread.Post(ApplyWelcomeScrollStyle, DispatcherPriority.Loaded);
+        }
+
+        void ApplyWelcomeScrollStyle() {
+            if (!WorkspaceScrollbarHelper.IsInVisualTree(WelcomeRecentScroll) ||
+                !WorkspaceScrollbarHelper.IsInVisualTree(WelcomeTemplateScroll)) {
+                return;
+            }
+            bool classic = WorkspaceScrollbarHelper.UseClassicScrollbars;
+            WorkspaceScrollbarHelper.ApplyScrollViewer(WelcomeRecentScroll, classic);
+            WorkspaceScrollbarHelper.ApplyScrollViewer(WelcomeTemplateScroll, classic);
         }
 
         void ApplyTracksScrollStyle() {

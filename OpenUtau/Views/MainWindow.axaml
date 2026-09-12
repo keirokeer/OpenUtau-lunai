@@ -233,7 +233,7 @@
             <Border Grid.Row="2" Grid.Column="0" Classes="welcomeCard" VerticalAlignment="Stretch">
               <Grid RowDefinitions="Auto,8,*">
                 <TextBlock Grid.Row="0" Text="{DynamicResource welcome.recent}" Classes="workspacePanelTitle"/>
-                <ScrollViewer Grid.Row="2" Classes="workspaceScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" AllowAutoHide="False">
+                <ScrollViewer x:Name="WelcomeRecentScroll" Grid.Row="2" Classes="workspaceScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" AllowAutoHide="False">
                   <ListBox ItemsSource="{Binding RecentFiles}" Classes="welcomeFileList" Background="Transparent">
                     <ListBox.ItemTemplate>
                       <DataTemplate x:DataType="vm:RecentFileInfo">
@@ -251,7 +251,7 @@
             <Border Grid.Row="2" Grid.Column="2" Classes="welcomeCard" VerticalAlignment="Stretch">
               <Grid RowDefinitions="Auto,8,*">
                 <TextBlock Grid.Row="0" Text="{DynamicResource welcome.template}" Classes="workspacePanelTitle"/>
-                <ScrollViewer Grid.Row="2" Classes="workspaceScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" AllowAutoHide="False">
+                <ScrollViewer x:Name="WelcomeTemplateScroll" Grid.Row="2" Classes="workspaceScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" AllowAutoHide="False">
                   <ListBox ItemsSource="{Binding TemplateFiles}" Classes="welcomeFileList" Background="Transparent">
                     <ListBox.ItemTemplate>
                       <DataTemplate x:DataType="vm:RecentFileInfo">
