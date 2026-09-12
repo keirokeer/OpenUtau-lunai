@@ -28,7 +28,12 @@ namespace OpenUtau.Core.Render {
 
         public void Complete(int n, string info) {
             Interlocked.Add(ref completed, n);
-            Notify(completed * 100.0 / total, info);
+            Notify(total <= 0 ? 0 : completed * 100.0 / total, info);
+        }
+
+        /// <summary>Update progress text without advancing the bar.</summary>
+        public void Info(string info) {
+            Notify(total <= 0 ? 0 : completed * 100.0 / total, info);
         }
 
         public void Clear() {

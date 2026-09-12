@@ -521,7 +521,7 @@ namespace OpenUtau.App.ViewModels {
         #endregion
 
         void ApplyProgressNotification(ProgressBarNotification progressBarNotification) {
-            ProgressText = progressBarNotification.Info;
+            ProgressText = ThemeManager.ExpandTranslateTags(progressBarNotification.Info);
             progressTextClearTimer?.Stop();
             progressTextClearTimer = null;
             if (progressBarNotification.AutoClearSeconds > 0) {

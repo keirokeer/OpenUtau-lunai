@@ -700,7 +700,7 @@ namespace OpenUtau.App.ViewModels {
         }
 
         void ApplyProgressNotification(ProgressBarNotification progressBarNotification) {
-            ProgressText = progressBarNotification.Info;
+            ProgressText = ThemeManager.ExpandTranslateTags(progressBarNotification.Info);
             if (progressBarNotification.Progress <= 0 && string.IsNullOrEmpty(progressBarNotification.Info)) {
                 progressTarget = 0;
                 Progress = 0;

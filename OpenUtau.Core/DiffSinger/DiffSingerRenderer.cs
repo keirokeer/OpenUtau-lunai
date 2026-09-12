@@ -132,6 +132,7 @@ namespace OpenUtau.Core.DiffSinger {
                     var wavPath = Path.Join(PathManager.Inst.CachePath, wavName);
                     phrase.AddCacheFile(wavPath);
                     string progressInfo = $"Track {trackNo + 1}: {this} depth={depth:f2} steps={steps} \"{string.Join(" ", phrase.phones.Select(p => p.phoneme))}\"";
+                    int progressDone = 0;
                     bool skipWavCache = DiffSingerAcousticRetake.HasPendingForceRetake(phrase);
                     if (!skipWavCache && File.Exists(wavPath)) {
                         try {
@@ -143,7 +144,7 @@ namespace OpenUtau.Core.DiffSinger {
                         }
                     }
                     if (result.samples == null) {
-                        result.samples = InvokeDiffsinger(phrase, depth, steps, cancellation, renderEvents, out var waveformSamples);
+                        result.samples = InvokeDiffsinger(phrase, depth, steps, cancellation, progress, progressInfo, trackNo, out progressDone, renderEvents, out var waveformSamples);
                         result.waveformSamples = waveformSamples;
                         if (result.samples != null) {
                             Wave.WriteMono16Wav(wavPath, result.samples);
@@ -163,7 +164,10 @@ namespace OpenUtau.Core.DiffSinger {
                             result.waveformSamples = waveResult.samples;
                         }
                     }
-                    progress.Complete(phrase.phones.Length, progressInfo);
+                    int phones = phrase.phones.Length;
+                    if (progressDone < phones) {
+                        progress.Complete(phones - progressDone, progressInfo);
+                    }
                     return result;
                 }
             });
@@ -174,8 +178,22 @@ namespace OpenUtau.Core.DiffSinger {
         leadingMs、positionMs、estimatedLengthMs: timeaxis layout in Ms, double
          */
 
-        float[] InvokeDiffsinger(RenderPhrase phrase, double depth, int steps, CancellationTokenSource cancellation, RenderPhraseEvents? renderEvents, out float[]? waveformSamples) {
+        float[] InvokeDiffsinger(RenderPhrase phrase, double depth, int steps, CancellationTokenSource cancellation, Progress progress, string progressInfo, int trackNo, out int progressDone, RenderPhraseEvents? renderEvents, out float[]? waveformSamples) {
             waveformSamples = null;
+            progressDone = 0;
+            int done = 0;
+            int phones = phrase.phones.Length;
+            int stepVariance = phones / 3;
+            int stepAcoustic = (phones - stepVariance) / 2;
+            int stepVocoder = phones - stepVariance - stepAcoustic;
+            void Advance(int n) {
+                if (n <= 0) {
+                    return;
+                }
+                progress.Complete(n, progressInfo);
+                done += n;
+            }
+
             var singer = phrase.singer as DiffSingerSinger;
             //Check if dsconfig.yaml is correct
             if(String.IsNullOrEmpty(singer.dsConfig.vocoder) ||
@@ -187,6 +205,9 @@ namespace OpenUtau.Core.DiffSinger {
                 throw new Exception("Invalid dsconfig.yaml. Please ensure that dsconfig.yaml contains keys \"vocoder\", \"acoustic\" and \"phonemes\".");
             }
 
+            if (!singer.IsVocoderLoaded) {
+                ReportDiffSingerStage(progress, trackNo, "progress.diffsinger.loading.vocoder");
+            }
             var vocoder = singer.getVocoder();
             //mel specification validity checks
             //num_mel_bins must be a sane vocoder value. This is a hard-coded
@@ -259,6 +280,9 @@ namespace OpenUtau.Core.DiffSinger {
                     $"Vocoder and acoustic model has mismatching mel scale ({vocoder.mel_scale} != {singer.dsConfig.mel_scale})");
             }
 
+            if (!singer.IsAcousticSessionLoaded) {
+                ReportDiffSingerStage(progress, trackNo, "progress.diffsinger.loading.acoustic");
+            }
             var acousticModel = singer.getAcousticSession();
             var frameMs = vocoder.frameMs();
             var frameSec = frameMs / 1000;
@@ -414,14 +438,18 @@ namespace OpenUtau.Core.DiffSinger {
                     throw new Exception(
                         "This singer has no variance predictor but its acoustic model requires one.");
                 }
-                var variancePredictor = singer.getVariancePredictor();
+                if (!singer.IsVariancePredictorLoaded) {
+                    ReportDiffSingerStage(progress, trackNo, "progress.diffsinger.loading.variance");
+                }
                 VarianceResult varianceResult;
                 lock(singer.SessionLock){
                     if(cancellation.IsCancellationRequested) {
+                        progressDone = done;
                         return null;
                     }
                     varianceResult = singer.getVariancePredictor().Process(phrase);
                 }
+                Advance(stepVariance);
                 renderEvents?.ReportRealCurves(BuildRenderedRealCurves(phrase, varianceResult));
                 //TODO: let user edit variance curves
                 if(singer.dsConfig.useEnergyEmbed){
@@ -529,6 +557,8 @@ namespace OpenUtau.Core.DiffSinger {
                         new DenseTensor<float>(mouthOpening, new int[] { mouthOpening.Length })
                         .Reshape(new int[] { 1, mouthOpening.Length })));
                 }
+            } else {
+                Advance(stepVariance);
             }
             ulong? acousticRetakeKey = null;
             AcousticRetakeState? previousAcoustic = null;
@@ -626,6 +656,7 @@ namespace OpenUtau.Core.DiffSinger {
                 if (acousticOutputs is null) {
                     lock(singer.SessionLock){
                         if(cancellation.IsCancellationRequested) {
+                            progressDone = done;
                             return null;
                         }
                         acousticOutputs = acousticModel.Run(acousticInputs).Cast<NamedOnnxValue>().ToList();
@@ -639,6 +670,7 @@ namespace OpenUtau.Core.DiffSinger {
                     mel = DiffSingerAcousticRetake.HardComposeMel(previousMel, mel, acousticRetakeMask);
                 }
             }
+            Advance(stepAcoustic);
             // Keep pre-transform mel for state (restore must not double-apply mel_base).
             Tensor<float> melForState = mel.Clone();
             float[] samples;
@@ -680,6 +712,7 @@ namespace OpenUtau.Core.DiffSinger {
                 if (vocoderOutputs is null) {
                     lock(singer.SessionLock){
                         if(cancellation.IsCancellationRequested) {
+                            progressDone = done;
                             return null;
                         }
                         vocoderOutputs = vocoder.session.Run(vocoderInputs).Cast<NamedOnnxValue>().ToList();
@@ -695,6 +728,7 @@ namespace OpenUtau.Core.DiffSinger {
                 }
                 samples = samplesTensor.ToArray();
             }
+            Advance(stepVocoder);
             // Play/export: continuous vocoder output after mel inpaint (no sample splice).
             // Piano-roll waveform: optional HardCompose so only the retake region redraws.
             if (previousAcoustic?.rawSamples != null &&
@@ -732,6 +766,7 @@ namespace OpenUtau.Core.DiffSinger {
                     waveformSamples = ResampleTo44100(waveformSamples, vocoder.sample_rate);
                 }
             }
+            progressDone = done;
             return samples;
         }
 
@@ -993,6 +1028,10 @@ namespace OpenUtau.Core.DiffSinger {
             }
 
             return result.ToArray();
+        }
+
+        static void ReportDiffSingerStage(Progress progress, int trackNo, string translateKey) {
+            progress?.Info($"Track {trackNo + 1}: DIFFSINGER — <translate:{translateKey}>");
         }
 
         public override string ToString() => Renderers.DIFFSINGER;

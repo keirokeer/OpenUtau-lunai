@@ -239,6 +239,18 @@ namespace OpenUtau.Core.DiffSinger {
             }
         }
 
+        public bool IsAcousticSessionLoaded {
+            get { lock (SessionLock) { return acousticSession != null; } }
+        }
+
+        public bool IsVocoderLoaded {
+            get { lock (SessionLock) { return vocoder != null; } }
+        }
+
+        public bool IsVariancePredictorLoaded {
+            get { lock (SessionLock) { return variancePredictor != null; } }
+        }
+
         public bool SupportsAcousticRetake =>
             DiffSingerAcousticRetake.Supports(getAcousticSession(), dsConfig);
 

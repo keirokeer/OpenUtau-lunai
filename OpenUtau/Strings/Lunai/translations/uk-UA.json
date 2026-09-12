@@ -336,5 +336,8 @@
   "workspace.panel.render": "Рендер",
   "workspace.panel.view": "Вигляд",
   "workspace.tracks": "Треки",
-  "progress.stoprender": "Stop current render"
+  "progress.stoprender": "Stop current render",
+  "progress.diffsinger.loading.vocoder": "loading vocoder…",
+  "progress.diffsinger.loading.acoustic": "loading acoustic model…",
+  "progress.diffsinger.loading.variance": "loading variance model…"
 }

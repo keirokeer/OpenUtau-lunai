@@ -351,5 +351,8 @@
   "workspace.panel.render": "Rendu",
   "workspace.panel.view": "Affichage",
   "workspace.tracks": "Pistes",
-  "progress.stoprender": "Stop current render"
+  "progress.stoprender": "Stop current render",
+  "progress.diffsinger.loading.vocoder": "loading vocoder…",
+  "progress.diffsinger.loading.acoustic": "loading acoustic model…",
+  "progress.diffsinger.loading.variance": "loading variance model…"
 }

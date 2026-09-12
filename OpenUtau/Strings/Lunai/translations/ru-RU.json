@@ -366,5 +366,8 @@
   "workspace.panel.render": "Рендер",
   "workspace.panel.view": "Вид",
   "workspace.tracks": "Треки",
-  "progress.stoprender": "Остановить текущий рендер"
+  "progress.stoprender": "Остановить текущий рендер",
+  "progress.diffsinger.loading.vocoder": "загрузка vocoder…",
+  "progress.diffsinger.loading.acoustic": "загрузка acoustic…",
+  "progress.diffsinger.loading.variance": "загрузка variance…"
 }

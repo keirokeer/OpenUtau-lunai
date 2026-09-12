@@ -351,5 +351,8 @@
   "workspace.panel.render": "Renderöi",
   "workspace.panel.view": "Näytä",
   "workspace.tracks": "Raidat",
-  "progress.stoprender": "Stop current render"
+  "progress.stoprender": "Stop current render",
+  "progress.diffsinger.loading.vocoder": "loading vocoder…",
+  "progress.diffsinger.loading.acoustic": "loading acoustic model…",
+  "progress.diffsinger.loading.variance": "loading variance model…"
 }

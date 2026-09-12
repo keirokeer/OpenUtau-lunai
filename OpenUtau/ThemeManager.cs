@@ -42,6 +42,7 @@ namespace OpenUtau.App {
         public static IPen AccentPen2Thickness2 = new Pen(Brushes.White);
         public static IPen AccentPen2Thickness3 = new Pen(Brushes.White);
         public static IBrush AccentBrush2Semi = Brushes.Gray;
+        public static IBrush VocoderPitchBrush = Brushes.Orange;
         public static IBrush AccentBrush3 = Brushes.Gray;
         public static IPen AccentPen3 = new Pen(Brushes.White);
         public static IPen AccentPen3Thick = new Pen(Brushes.White);
@@ -531,6 +532,29 @@ namespace OpenUtau.App {
         public static string GetString(string key) {
             TryGetString(key, out string value);
             return value;
+        }
+
+        /// <summary>
+        /// Expands <c>&lt;translate:key&gt;</c> tags using resource strings.
+        /// Unresolved tags are left as-is so Core English fallbacks remain readable.
+        /// </summary>
+        public static string ExpandTranslateTags(string? text) {
+            if (string.IsNullOrEmpty(text) || !text.Contains("<translate:", StringComparison.Ordinal)) {
+                return text ?? string.Empty;
+            }
+            try {
+                var matches = System.Text.RegularExpressions.Regex.Matches(text, "<translate:(.*?)>");
+                foreach (System.Text.RegularExpressions.Match match in matches) {
+                    if (TryGetString(match.Groups[1].Value, out string translated)
+                        && !string.IsNullOrEmpty(translated)
+                        && translated != match.Groups[1].Value) {
+                        text = text.Replace(match.Value, translated);
+                    }
+                }
+            } catch {
+                // Keep original text on regex/resource failure.
+            }
+            return text;
         }
 
         public static bool TryGetString(string key, out string value) {
