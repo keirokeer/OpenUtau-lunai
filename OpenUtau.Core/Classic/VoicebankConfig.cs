@@ -36,8 +36,9 @@ namespace OpenUtau.Classic {
 
         /// <summary>
         /// Optional short description shown as a tip for this voice color in the UI.
+        /// Omitted from character.yaml when unset (null).
         /// </summary>
-        public string Description { get; set; } = string.Empty;
+        public string Description { get; set; }
     }
 
     public class VoicebankConfig {
