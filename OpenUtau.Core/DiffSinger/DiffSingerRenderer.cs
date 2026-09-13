@@ -972,8 +972,8 @@ namespace OpenUtau.Core.DiffSinger {
                     isFlag = false,
                 });
             }
-            //expressiveness
-            if (dsSinger == null || dsSinger.getPitchPredictor()?.UseExpr == true) {
+            //expressiveness (read yaml flag only — do not load ONNX on UI suggestion sync)
+            if (dsSinger == null || dsSinger.PitchPredictorUsesExpr) {
                 result.Add(new UExpressionDescriptor {
                     name = "pitch expressiveness (curve)",
                     abbr = PEXP,

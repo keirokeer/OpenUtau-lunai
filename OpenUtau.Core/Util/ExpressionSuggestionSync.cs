@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using OpenUtau.Core.DiffSinger;
 using OpenUtau.Core.Ustx;
+using Serilog;
 using FormatUstx = OpenUtau.Core.Format.Ustx;
 
 namespace OpenUtau.Core.Util {
@@ -24,7 +26,13 @@ namespace OpenUtau.Core.Util {
             if (renderer == null) {
                 return false;
             }
-            var suggestions = renderer.GetSuggestedExpressions(track.Singer, track.RendererSettings);
+            UExpressionDescriptor[] suggestions;
+            try {
+                suggestions = renderer.GetSuggestedExpressions(track.Singer, track.RendererSettings);
+            } catch (Exception e) {
+                Log.Error(e, "GetSuggestedExpressions failed for track {Track}", track.TrackName);
+                return false;
+            }
             if (suggestions == null || suggestions.Length == 0) {
                 return false;
             }

@@ -54,6 +54,7 @@ namespace OpenUtau.Core.DiffSinger {
         public DsPitch pitchPredictor = null;
         public DiffSingerSpeakerEmbedManager speakerEmbedManager = null;
         public DsVariance variancePredictor = null;
+        bool? pitchUsesExpr;
         /// <summary>
         /// Guards the lazily created native models above: building one, using one and freeing one
         /// are mutually exclusive per singer. Locking the model instances themselves cannot do
@@ -65,6 +66,36 @@ namespace OpenUtau.Core.DiffSinger {
         public object SessionLock { get; } = new object();
         public bool HasPitchPredictor => File.Exists(Path.Join(Location, "dspitch", "dsconfig.yaml"));
         public bool HasVariancePredictor => File.Exists(Path.Join(Location,"dsvariance", "dsconfig.yaml"));
+
+        /// <summary>
+        /// Reads <c>dspitch/dsconfig.yaml</c> <c>use_expr</c> without constructing ONNX sessions.
+        /// Expression suggestion sync runs on the UI thread when a part opens; loading the pitch
+        /// model there has terminated the process with an access violation inside OnnxRuntime.
+        /// </summary>
+        public bool PitchPredictorUsesExpr {
+            get {
+                if (pitchPredictor != null) {
+                    return pitchPredictor.UseExpr;
+                }
+                if (pitchUsesExpr.HasValue) {
+                    return pitchUsesExpr.Value;
+                }
+                if (!HasPitchPredictor) {
+                    pitchUsesExpr = false;
+                    return false;
+                }
+                try {
+                    var path = Path.Join(Location, "dspitch", "dsconfig.yaml");
+                    var config = Yaml.DefaultDeserializer.Deserialize<DsConfig>(
+                        File.ReadAllText(path, Encoding.UTF8));
+                    pitchUsesExpr = config.use_expr;
+                } catch (Exception e) {
+                    Log.Warning(e, "Failed to read pitch use_expr for {Singer}", Id);
+                    pitchUsesExpr = false;
+                }
+                return pitchUsesExpr.Value;
+            }
+        }
 
         public DiffSingerSinger(Voicebank voicebank) {
             this.voicebank = voicebank;
@@ -290,7 +321,14 @@ namespace OpenUtau.Core.DiffSinger {
             lock (SessionLock) {
                 if(pitchPredictor is null) {
                     if(HasPitchPredictor){
-                        pitchPredictor = new DsPitch(Path.Join(Location, "dspitch"));
+                        try {
+                            pitchPredictor = new DsPitch(Path.Join(Location, "dspitch"));
+                            pitchUsesExpr = pitchPredictor.UseExpr;
+                        } catch (Exception e) {
+                            Log.Error(e, "Failed to load pitch predictor for {Singer}", Id);
+                            pitchUsesExpr = false;
+                            return null;
+                        }
                     }
                 }
                 return pitchPredictor;

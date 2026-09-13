@@ -61,7 +61,7 @@ namespace OpenUtau.Core.DiffSinger {
                 Format.Ustx.OPEC => dsSinger.dsConfig.useMouthOpeningEmbed,
                 VELC => dsSinger.dsConfig.useSpeedEmbed,
                 Format.Ustx.GENC => dsSinger.dsConfig.useKeyShiftEmbed,
-                PEXP => dsSinger.getPitchPredictor()?.UseExpr == true,
+                PEXP => dsSinger.PitchPredictorUsesExpr,
                 _ => true,
             };
         }
