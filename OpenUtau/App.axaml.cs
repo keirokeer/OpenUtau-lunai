@@ -27,6 +27,7 @@ namespace OpenUtau.App {
 
         public override void OnFrameworkInitializationCompleted() {
             Log.Information("Framework initialization completed.");
+            UnhandledExceptionGuard.InstallUiThreadHandlers();
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop) {
                 desktop.MainWindow = new SplashWindow();
             }

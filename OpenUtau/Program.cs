@@ -29,6 +29,7 @@ namespace OpenUtau.App {
 
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             InitLogging();
+            UnhandledExceptionGuard.InstallEarly();
             string processName = Process.GetCurrentProcess().ProcessName;
             if (processName != "dotnet") {
                 var exists = Process.GetProcessesByName(processName).Count() > 1;
@@ -53,6 +54,9 @@ namespace OpenUtau.App {
             try {
                 Run(args);
                 Log.Information($"Exiting.");
+            } catch (Exception e) {
+                Log.Fatal(e, "Application terminated unexpectedly");
+                UnhandledExceptionGuard.ReportFatal(e);
             } finally {
                 if (!OS.IsMacOS()) {
                     NetMQ.NetMQConfig.Cleanup(/*block=*/false);
@@ -110,9 +114,6 @@ namespace OpenUtau.App {
                     .MinimumLevel.ControlledBy(DebugViewModel.Sink.Inst.LevelSwitch)
                     .WriteTo.Sink(DebugViewModel.Sink.Inst))
                 .CreateLogger();
-            AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler((sender, args) => {
-                Log.Error((Exception)args.ExceptionObject, "Unhandled exception");
-            });
             Log.Information("Logging initialized.");
         }
 

@@ -282,6 +282,9 @@
   <system:String x:Key="progress.diffsinger.loading.acoustic">loading acoustic model…</system:String>
   <system:String x:Key="progress.diffsinger.loading.variance">loading variance model…</system:String>
 
+  <system:String x:Key="errors.unhandled.message">An unexpected error occurred. The application will try to continue. Save your work if you can.</system:String>
+  <system:String x:Key="errors.unhandled.fatal">A fatal error occurred and OpenUtau Lunai must close. Details were written to the log.</system:String>
+
   <system:String x:Key="shortcut.ClearSelection">Clear Selection</system:String>
   <system:String x:Key="shortcut.Copy">Copy</system:String>
   <system:String x:Key="shortcut.Cut">Cut</system:String>

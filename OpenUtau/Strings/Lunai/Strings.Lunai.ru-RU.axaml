@@ -286,6 +286,9 @@
   <system:String x:Key="progress.diffsinger.loading.acoustic">загрузка acoustic…</system:String>
   <system:String x:Key="progress.diffsinger.loading.variance">загрузка variance…</system:String>
 
+  <system:String x:Key="errors.unhandled.message">Произошла непредвиденная ошибка. Программа попытается продолжить работу. По возможности сохраните проект.</system:String>
+  <system:String x:Key="errors.unhandled.fatal">Произошла критическая ошибка, OpenUtau Lunai будет закрыт. Подробности записаны в лог.</system:String>
+
   <system:String x:Key="shortcut.ClearSelection">Снять выделение</system:String>
   <system:String x:Key="shortcut.Copy">Копировать</system:String>
   <system:String x:Key="shortcut.Cut">Вырезать</system:String>
