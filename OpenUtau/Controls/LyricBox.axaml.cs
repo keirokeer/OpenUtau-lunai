@@ -21,6 +21,8 @@ namespace OpenUtau.App.Controls {
         private ListBox listBox;
         private DispatcherTimer? focusTimer;
         private int scrollStyleApplyGeneration;
+        private bool selectAllOnNextGotFocus;
+        private bool restoringInputFocus;
 
         public LyricBox() {
             InitializeComponent();
@@ -70,23 +72,34 @@ namespace OpenUtau.App.Controls {
 
         private void Box_GotFocus(object? sender, FocusChangedEventArgs e) {
             viewModel.SuggestionFromBlend = false;
-            box.SelectAll();
-        }
-
-        private void Box_LostFocus(object? sender, RoutedEventArgs e) {
-            box.CaretIndex = 0;
+            if (selectAllOnNextGotFocus && !restoringInputFocus) {
+                box.SelectAll();
+                selectAllOnNextGotFocus = false;
+            }
         }
 
         private void BlendBox_GotFocus(object? sender, FocusChangedEventArgs e) {
             viewModel.SuggestionFromBlend = true;
-            if (blendBox != null) {
+            if (blendBox != null && selectAllOnNextGotFocus && !restoringInputFocus) {
                 blendBox.SelectAll();
+                selectAllOnNextGotFocus = false;
             }
         }
 
-        private void BlendBox_LostFocus(object? sender, RoutedEventArgs e) {
-            if (blendBox != null) {
-                blendBox.CaretIndex = 0;
+        /// <summary>
+        /// Re-focus the active lyric/blend field without SelectAll (used after Alt/layout
+        /// switches briefly steal keyboard focus).
+        /// </summary>
+        public void RestoreInputFocus() {
+            if (!viewModel.IsVisible) {
+                return;
+            }
+            TextBox target = viewModel.SuggestionFromBlend && blendBox != null ? blendBox : box;
+            restoringInputFocus = true;
+            try {
+                target.Focus();
+            } finally {
+                restoringInputFocus = false;
             }
         }
 
@@ -260,7 +273,7 @@ namespace OpenUtau.App.Controls {
                 viewModel.BlendWeight = 0;
             }
             viewModel.IsVisible = true;
-            box.SelectAll();
+            selectAllOnNextGotFocus = true;
             ScheduleApplyScrollStyle();
             focusTimer = new DispatcherTimer(
                 TimeSpan.FromMilliseconds(15),

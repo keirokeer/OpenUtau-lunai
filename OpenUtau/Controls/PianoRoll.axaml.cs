@@ -1261,6 +1261,17 @@ namespace OpenUtau.App.Controls {
         }
 
         private void LyricBoxLostFocus(object sender, RoutedEventArgs e) {
+            // Alt / Shift+Alt (layout switch) can briefly clear keyboard focus while the
+            // lyric editor stays open. Restore the text field instead of parking focus
+            // on the piano roll (which forces an extra click to keep typing).
+            if (LyricBox != null && LyricBox.IsVisible) {
+                Dispatcher.UIThread.Post(() => {
+                    if (LyricBox != null && LyricBox.IsVisible && !LyricBox.IsKeyboardFocusWithin) {
+                        LyricBox.RestoreInputFocus();
+                    }
+                }, DispatcherPriority.Input);
+                return;
+            }
             if (sender is InputElement { IsKeyboardFocusWithin: false }) {
                 this.Focus();
             }
@@ -1791,7 +1802,7 @@ namespace OpenUtau.App.Controls {
                 } else {
                     // S-curve / Sine: transition to adjusting phase, keep pointer captured
                     if (!pcs.TransitionToAdjusting(point.Position)) {
-                        // TransitionToAdjusting returned false (click without drag) вЂ” already cancelled
+                        // TransitionToAdjusting returned false (click without drag) — already cancelled
                         editState = null;
                         return;
                     }
@@ -2240,7 +2251,7 @@ namespace OpenUtau.App.Controls {
                 return;
             }
 
-            // Command chords (Ctrl+R / Shift+R / вЂ¦) before TextBox/ComboBox bail-out so
+            // Command chords (Ctrl+R / Shift+R / …) before TextBox/ComboBox bail-out so
             // Project Expressions and Note Parameters do not swallow them.
             if (TryHandleNoteCommandShortcut(args)) {
                 args.Handled = true;

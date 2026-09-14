@@ -32,7 +32,7 @@
       <TextBlock Classes="tips" Grid.Row="0" HorizontalAlignment="Center" Text="{DynamicResource tip.aliasbox.phoneme}" IsVisible="{Binding ShowPhonemeOverrideTip, Mode=OneWay}"/>
       <ac:WorkspacePanelTextBox Name="PART_Box" Grid.Row="1" Classes="workspacePanelTextBox" Margin="0"
                Text="{Binding Text}" Focusable="True"
-               GotFocus="Box_GotFocus" LostFocus="Box_LostFocus" KeyDown="Box_KeyDown"/>
+               GotFocus="Box_GotFocus" KeyDown="Box_KeyDown"/>
       <StackPanel Grid.Row="2" Margin="0,6,0,0" Spacing="4"
                   IsVisible="{Binding ShowPhonemeBlend, Mode=OneWay}">
         <Separator Margin="0,2,0,4" Height="1"
@@ -40,7 +40,7 @@
         <TextBlock Classes="tips" HorizontalAlignment="Center" Text="{DynamicResource tip.aliasbox.blend}"/>
         <ac:WorkspacePanelTextBox Name="PART_BlendBox" Classes="workspacePanelTextBox" Margin="0"
                  Text="{Binding BlendText}" Focusable="True"
-                 GotFocus="BlendBox_GotFocus" LostFocus="BlendBox_LostFocus" KeyDown="Box_KeyDown"/>
+                 GotFocus="BlendBox_GotFocus" KeyDown="Box_KeyDown"/>
         <!-- Equal side columns keep the slider track visually centered despite the % label. -->
         <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,2,0,0">
           <TextBlock Grid.Column="0" Width="48" IsHitTestVisible="False" Opacity="0"
