@@ -1662,9 +1662,6 @@ namespace OpenUtau.App.Views {
                 ? vm.NotesViewModel.HitTest.SampleOverwritePitch(samplePoint)
                 : vm.NotesViewModel.HitTest.SamplePitch(samplePoint);
             if (pitch == null || vm.NotesViewModel.Part == null) {
-                // Break the stroke so the next valid sample does not bridge the gap.
-                lastPitch = null;
-                lastPoint = point;
                 return;
             }
             double tone = vm.NotesViewModel.PointToToneDouble(point);
@@ -1711,9 +1708,6 @@ namespace OpenUtau.App.Views {
                 vm.NotesViewModel.PointToToneDouble(point));
             double? basePitch = vm.NotesViewModel.HitTest.SampleFinalPitch(samplePoint);
             if (basePitch == null) {
-                // Break the stroke so the next valid sample does not bridge the gap.
-                lastBasePitch = null;
-                lastPoint = point;
                 return;
             }
             double tone = vm.NotesViewModel.PointToToneDouble(point);

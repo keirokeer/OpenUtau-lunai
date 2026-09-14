@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using OpenUtau.Core.Ustx;
 using Xunit;
@@ -154,43 +155,44 @@ namespace OpenUtau.Test.Core.USTx {
         }
 
         [Fact]
-        public void SetDoesNotBridgeLargeEmptyGap() {
+        public void SetMatchesUpstreamContinuousStroke() {
+            // Upstream OpenUtau Set: continuous x>lastX deletes between and anchors right.
             var curve = new UCurve(Descriptor);
-            curve.Set(1000, 80, 1000, 80);
-            // Coalesced pointer jump across untouched space must not paint a plateau.
-            curve.Set(1000 + UCurve.MaxEmptyBridgeTicks + UCurve.interval * 10, 80, 1000, 80);
-
-            Assert.Equal(80, curve.Sample(1000));
-            Assert.Equal(0, curve.Sample(1000 + UCurve.interval * 10));
-            Assert.Equal(0, curve.Sample(1000 + UCurve.MaxEmptyBridgeTicks));
-            int far = 1000 + UCurve.MaxEmptyBridgeTicks + UCurve.interval * 10;
-            Assert.Equal(80, curve.Sample(far));
-            Assert.Equal(0, curve.Sample(far + UCurve.interval * 2));
+            curve.Set(100, 10, 100, 10);
+            curve.Set(200, 40, 100, 10);
+            Assert.Equal(10, curve.Sample(100));
+            Assert.Equal(40, curve.Sample(200));
+            Assert.Equal(25, curve.Sample(150));
         }
 
         [Fact]
         public void SetStillConnectsAcrossAuthoredPlateau() {
+            // Upstream Set does not re-write lastY at lastX; endpoints that already
+            // exist keep their prior values, and the stroke only updates x.
             var curve = new UCurve(Descriptor);
             for (int t = 0; t <= 400; t += UCurve.interval) {
                 curve.Set(t, 61, t, 61);
             }
-            // Redrawing through existing non-empty points may still bridge.
             curve.Set(400, 90, 0, 90);
-            Assert.Equal(90, curve.Sample(0));
-            Assert.Equal(90, curve.Sample(200));
+            Assert.Equal(61, curve.Sample(0));
             Assert.Equal(90, curve.Sample(400));
+            Assert.True(curve.Sample(200) > 61 && curve.Sample(200) < 90);
         }
 
         [Fact]
-        public void SetSealsStrokeFromFarNonEmptyPoint() {
+        public void ContinuousStrokeDoesNotDeleteAheadOfBrush() {
             var curve = new UCurve(Descriptor);
-            curve.Set(5000, 70, 5000, 70);
-            curve.Set(1000, 80, 1000, 80);
+            for (int t = 2000; t <= 4000; t += UCurve.interval) {
+                curve.Set(t, 50, t, 50);
+            }
+            for (int t = 1000; t <= 1200; t += UCurve.interval) {
+                int prev = Math.Max(1000, t - UCurve.interval);
+                curve.Set(t, 80, prev, 80);
+            }
 
-            Assert.Equal(80, curve.Sample(1000));
-            // Must not lerp from the new stroke into the distant point.
-            Assert.Equal(0, curve.Sample(2000));
-            Assert.Equal(70, curve.Sample(5000));
+            Assert.Equal(80, curve.Sample(1100));
+            Assert.Equal(50, curve.Sample(2500));
+            Assert.Equal(50, curve.Sample(3500));
         }
     }
 }
