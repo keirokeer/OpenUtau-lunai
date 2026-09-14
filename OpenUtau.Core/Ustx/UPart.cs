@@ -366,6 +366,9 @@ namespace OpenUtau.Core.Ustx {
             phraseGate.MarkCompleted(source.Generation);
             if (DocManager.Inst.MainScheduler != null) {
                 RenderView.Inst.InvalidateAll();
+                // Final-pitch / VPIT overlays read renderPhrases — refresh piano roll
+                // without waiting for RealCurves / prerender.
+                DocManager.Inst.ExecuteCmd(new PhrasesUpdatedNotification(this));
             }
         }
 

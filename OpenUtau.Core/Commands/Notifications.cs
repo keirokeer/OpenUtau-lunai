@@ -127,6 +127,30 @@ namespace OpenUtau.Core {
         public override string ToString() => "Phonemized";
     }
 
+    /// <summary>
+    /// Fired when <see cref="UVoicePart.renderPhrases"/> was replaced after an
+    /// async phrase-source build. Piano roll final-pitch / VPIT overlays must refresh.
+    /// </summary>
+    public class PhrasesUpdatedNotification : UNotification {
+        public override bool Silent => true;
+        public PhrasesUpdatedNotification(UVoicePart part) {
+            this.part = part;
+        }
+        public override string ToString() => "Phrases updated";
+    }
+
+    /// <summary>
+    /// One coalesced UI refresh after a deferred undo group (e.g. Ctrl+R pitch batch)
+    /// so subscribers are not flooded by per-command ExpCommand publishes.
+    /// </summary>
+    public class NotesNeedRefreshNotification : UNotification {
+        public override bool Silent => true;
+        public NotesNeedRefreshNotification(UPart? part = null) {
+            this.part = part;
+        }
+        public override string ToString() => "Notes need refresh";
+    }
+
     public class SelectExpressionNotification : UNotification {
         public string ExpKey;
         public bool UpdateShadow;

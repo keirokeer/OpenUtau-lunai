@@ -1522,6 +1522,11 @@ namespace OpenUtau.App.ViewModels {
                     OnPartModified();
                     RebuildPlaybackNoteIndex();
                     MessageBus.Current.SendMessage(new NotesRefreshEvent());
+                } else if (notif is PhrasesUpdatedNotification phrasesUpdated && phrasesUpdated.part == Part) {
+                    MessageBus.Current.SendMessage(new NotesRefreshEvent());
+                } else if (notif is NotesNeedRefreshNotification notesNeedRefresh
+                           && (notesNeedRefresh.part == null || notesNeedRefresh.part == Part)) {
+                    MessageBus.Current.SendMessage(new NotesRefreshEvent());
                 } else if (notif is RealCurvesUpdatedNotification && notif.part == Part) {
                     MessageBus.Current.SendMessage(new NotesRefreshEvent());
                 }
@@ -1565,7 +1570,11 @@ namespace OpenUtau.App.ViewModels {
                     }
                 }
             } else if (cmd is ExpCommand) {
-                MessageBus.Current.SendMessage(new NotesRefreshEvent());
+                // Deferred batch edits (Ctrl+R pitch) publish thousands of SetCurve
+                // commands; refresh once via NotesNeedRefreshNotification at group end.
+                if (!DocManager.Inst.IsDeferringValidate) {
+                    MessageBus.Current.SendMessage(new NotesRefreshEvent());
+                }
             } else if (cmd is TrackCommand) {
                 if (cmd is RenameTrackCommand) {
                     LoadWindowTitle(Part, Project);
@@ -1701,7 +1710,9 @@ namespace OpenUtau.App.ViewModels {
         void RebuildPitchFollowPath() {
             var prefs = Preferences.Default;
             if (!prefs.PlaybackPitchFollowEnabled || Part == null) {
-                ClearPitchFollowPath();
+                if (pitchFollowPath.IsBuilt) {
+                    ClearPitchFollowPath();
+                }
                 return;
             }
             pitchFollowPath.Build(

@@ -426,6 +426,14 @@ namespace OpenUtau.Core {
                 Log.Error("No active undoGroup to end.");
                 return;
             }
+            bool deferred = undoGroup.DeferValidate;
+            UPart? deferredPart = null;
+            if (deferred && undoGroup.Commands.Count > 0) {
+                deferredPart = undoGroup.Commands
+                    .OfType<ExpCommand>()
+                    .Select(c => (UPart)c.Part)
+                    .FirstOrDefault();
+            }
             if (undoGroup.Commands.Count > 0) {
                 // The group is committed: bump the document revision. Regular
                 // groups already invalidated per command before their
@@ -447,8 +455,19 @@ namespace OpenUtau.Core {
             ScheduleRealCurveRefresh(undoGroup.Commands);
             undoGroup = null;
             Log.Information("undoGroup ended");
+            if (deferred) {
+                // Per-command Exp→NotesRefresh was suppressed while DeferValidate
+                // was set; fire one refresh for the piano roll now.
+                Publish(new NotesNeedRefreshNotification(deferredPart));
+            }
             ExecuteCmd(new PreRenderNotification());
         }
+
+        /// <summary>
+        /// True while an undo group with <c>deferValidate: true</c> is open
+        /// (batch curve edits). UI may coalesce ExpCommand refreshes.
+        /// </summary>
+        public bool IsDeferringValidate => undoGroup?.DeferValidate == true;
 
         public void RollBackUndoGroup() {
             if (undoGroup == null) {
