@@ -1015,6 +1015,13 @@ namespace OpenUtau.App.Views {
                 return;
             }
 
+            // Tracks / main chrome stole focus from the piano roll — still allow note
+            // command chords (Ctrl+R / Shift+R / Ctrl+Shift+R) when a part is open.
+            if (pianoRoll != null && pianoRoll.TryHandleNoteCommandShortcut(args)) {
+                args.Handled = true;
+                return;
+            }
+
             var tracksVm = viewModel.TracksViewModel;
 
             if (args.KeyModifiers == KeyModifiers.None) {

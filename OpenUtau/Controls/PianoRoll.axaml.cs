@@ -76,6 +76,16 @@ namespace OpenUtau.App.Controls {
         private ReactiveCommand<BatchEdit, RxVoid>? noteBatchEditCommand;
         private MenuItemViewModel? lengthenCrossfadeMenuItem;
 
+        /// <summary>
+        /// Note-batch command shortcuts that should work even when keyboard focus is on
+        /// tracks chrome, Project Expressions, or Note Parameters (not bare letters).
+        /// </summary>
+        static readonly HashSet<string> NoteCommandShortcutActionIds = new(StringComparer.Ordinal) {
+            "pianoroll.menu.notes.loadrenderedpitch",
+            "pianoroll.menu.notes.refreshrealcurves",
+            "context.note.acousticretake",
+        };
+
         private Window RootWindow => (Window)TopLevel.GetTopLevel(this)!;
 
         string? GetActionIdForShortcut(Key pressedKey, KeyModifiers pressedMods) {
@@ -89,6 +99,49 @@ namespace OpenUtau.App.Controls {
                 }
             }
             return null;
+        }
+
+        /// <summary>
+        /// Handles Ctrl+R / Shift+R / Ctrl+Shift+R (and remapped equivalents) from both
+        /// piano-roll and main-window key handlers. Skips bare-letter toggles and lyric edit.
+        /// </summary>
+        public bool TryHandleNoteCommandShortcut(KeyEventArgs args) {
+            if (ViewModel?.NotesViewModel?.Part == null || noteBatchEditCommand == null) {
+                return false;
+            }
+            if (LyricBox?.IsVisible == true) {
+                return false;
+            }
+            // Never globalize bare keys (e.g. R = toggle final pitch).
+            if (args.KeyModifiers == KeyModifiers.None) {
+                return false;
+            }
+
+            string? action = GetActionIdForShortcut(args.Key, args.KeyModifiers);
+            // Legacy hardcode: Control+R always loads rendered pitch (pre-remap behavior).
+            if (args.Key == Key.R && args.KeyModifiers == KeyModifiers.Control) {
+                action = "pianoroll.menu.notes.loadrenderedpitch";
+            }
+            if (action == null || !NoteCommandShortcutActionIds.Contains(action)) {
+                return false;
+            }
+            return ExecuteNoteCommandShortcut(action);
+        }
+
+        bool ExecuteNoteCommandShortcut(string action) {
+            switch (action) {
+                case "pianoroll.menu.notes.loadrenderedpitch":
+                    noteBatchEditCommand?.Execute(new LoadRenderedPitch()).Subscribe();
+                    return true;
+                case "pianoroll.menu.notes.refreshrealcurves":
+                    noteBatchEditCommand?.Execute(new RefreshRealCurves()).Subscribe();
+                    return true;
+                case "context.note.acousticretake":
+                    noteBatchEditCommand?.Execute(new AcousticRetakeNotes()).Subscribe();
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         public PianoRoll(PianoRollViewModel model) {
@@ -1738,7 +1791,7 @@ namespace OpenUtau.App.Controls {
                 } else {
                     // S-curve / Sine: transition to adjusting phase, keep pointer captured
                     if (!pcs.TransitionToAdjusting(point.Position)) {
-                        // TransitionToAdjusting returned false (click without drag) — already cancelled
+                        // TransitionToAdjusting returned false (click without drag) вЂ” already cancelled
                         editState = null;
                         return;
                     }
@@ -2187,6 +2240,13 @@ namespace OpenUtau.App.Controls {
                 return;
             }
 
+            // Command chords (Ctrl+R / Shift+R / вЂ¦) before TextBox/ComboBox bail-out so
+            // Project Expressions and Note Parameters do not swallow them.
+            if (TryHandleNoteCommandShortcut(args)) {
+                args.Handled = true;
+                return;
+            }
+
             if (RootWindow.FocusManager != null) {
                 if (RootWindow.FocusManager.GetFocusedElement() is TextBox focusedTextBox) {
                     if (focusedTextBox.IsEnabled && focusedTextBox.IsEffectivelyVisible && focusedTextBox.IsFocused) {
@@ -2200,19 +2260,6 @@ namespace OpenUtau.App.Controls {
             }
             if (LyricBox.IsVisible) {
                 args.Handled = false;
-                return;
-            }
-
-            if (args.Key == Key.R && args.KeyModifiers == KeyModifiers.Control) {
-                var project = DocManager.Inst.Project;
-                var part = notesVm.Part;
-                var selectedNotes = notesVm.Selection.ToList();
-
-                if (part != null && selectedNotes.Count > 0) {
-                    noteBatchEditCommand?.Execute(new LoadRenderedPitch()).Subscribe();
-                }
-
-                args.Handled = true;
                 return;
             }
 
