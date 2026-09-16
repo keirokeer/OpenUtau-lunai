@@ -216,7 +216,6 @@
   "prefs.playback.pitchfollow.showpath": "Zobrazit náhled cesty kamery",
   "prefs.playback.pitchfollow.threshold": "Prahová hodnota půltónu",
   "prefs.playback.pitchfollow.verticalposition": "Svislá poloha noty",
-  "prefs.rendering.diffsingerpitchlocalretaking": "DiffSinger Pitch Local Retaking",
   "prefs.rendering.diffsingershowacousticf0patchpreview": "Show akustika F0 patch preview on piano roll",
   "prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate": "Interpolace F0 neznělých souhlásek DiffSinger (experimentální)",
   "prefs.shortcut.search.watermark": "Hledat podle názvu nebo klávesy...",

@@ -270,7 +270,6 @@
   <system:String x:Key="prefs.playback.pitchfollow.showpath">Voorbeeld van camerabeweging weergeven</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.threshold">Drempelwaarde in halve tonen</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.verticalposition">Verticale positie van noot</system:String>
-  <system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">DiffSinger Pitch Local Retaking</system:String>
   <system:String x:Key="prefs.rendering.diffsingershowacousticf0patchpreview">Show akoestiek F0 patch preview on piano roll</system:String>
   <system:String x:Key="prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate">F0-interpolatie voor stemloze medeklinkers in DiffSinger (experimenteel)</system:String>
   <system:String x:Key="prefs.shortcut.search.watermark">Zoeken op naam of toets...</system:String>

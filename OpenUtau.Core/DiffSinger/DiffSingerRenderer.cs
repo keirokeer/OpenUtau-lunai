@@ -808,13 +808,13 @@ namespace OpenUtau.Core.DiffSinger {
         public RenderPitchResult LoadRenderedPitch(RenderPhrase phrase, HashSet<int> selectedNotePositions) {
             // Manual Ctrl+R / menu: new diffusion noise each time so repeated presses retake pitch.
             uint seed = (uint)Random.Shared.Next(1, int.MaxValue);
-            return LoadRenderedPitch(phrase, selectedNotePositions, pitchSteps: null, fastRealtime: false, forceLocalRetake: false, noiseSeed: seed);
+            return LoadRenderedPitch(phrase, selectedNotePositions, pitchSteps: null, fastRealtime: false, noiseSeed: seed);
         }
 
         /// <summary>Live pitch: partial retake for changed notes with fast sampling settings.</summary>
         internal RenderPitchResult LoadRenderedPitchLive(
             RenderPhrase phrase, HashSet<int> selectedNotePositions, double pitchSteps, bool fastRealtime) {
-            return LoadRenderedPitch(phrase, selectedNotePositions, pitchSteps, fastRealtime, forceLocalRetake: true, noiseSeed: null);
+            return LoadRenderedPitch(phrase, selectedNotePositions, pitchSteps, fastRealtime, noiseSeed: null);
         }
 
         RenderPitchResult LoadRenderedPitch(
@@ -822,18 +822,7 @@ namespace OpenUtau.Core.DiffSinger {
             HashSet<int> selectedNotePositions,
             double? pitchSteps,
             bool fastRealtime,
-            bool forceLocalRetake,
             uint? noiseSeed) {
-            if (!forceLocalRetake && !Preferences.Default.DiffSingerLocalRetaking) {
-                DiffSingerSinger singerFull = (DiffSingerSinger) phrase.singer;
-                if (!singerFull.HasPitchPredictor) {
-                    throw new Exception("This singer has no pitch predictor.");
-                }
-                var pitchFull = singerFull.getPitchPredictor()!;
-                lock (singerFull.SessionLock) {
-                    return pitchFull.Process(phrase, pitchSteps, fastRealtime, noiseSeed: noiseSeed);
-                }
-            }
             DiffSingerSinger singer = (DiffSingerSinger) phrase.singer;
             if (!singer.HasPitchPredictor) {
                 throw new Exception("This singer has no pitch predictor.");

@@ -216,7 +216,6 @@
   "prefs.playback.pitchfollow.showpath": "Näytä kamerapolun esikatselu",
   "prefs.playback.pitchfollow.threshold": "Puolisävelaskelkynnys",
   "prefs.playback.pitchfollow.verticalposition": "Nuotin pystysuuntainen sijainti",
-  "prefs.rendering.diffsingerpitchlocalretaking": "DiffSingerin paikallinen pitch-uudelleenotto",
   "prefs.rendering.diffsingershowacousticf0patchpreview": "Näytä akustisen F0-korjauksen esikatselu pianorullalla",
   "prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate": "DiffSinger soinnittomien konsonanttien F0-interpolointi (kokeellinen)",
   "prefs.shortcut.search.watermark": "Hae nimellä tai näppäimellä...",

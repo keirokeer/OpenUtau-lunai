@@ -216,7 +216,6 @@
   "prefs.playback.pitchfollow.showpath": "Voorbeeld van camerabeweging weergeven",
   "prefs.playback.pitchfollow.threshold": "Drempelwaarde in halve tonen",
   "prefs.playback.pitchfollow.verticalposition": "Verticale positie van noot",
-  "prefs.rendering.diffsingerpitchlocalretaking": "DiffSinger Pitch Local Retaking",
   "prefs.rendering.diffsingershowacousticf0patchpreview": "Show akoestiek F0 patch preview on piano roll",
   "prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate": "F0-interpolatie voor stemloze medeklinkers in DiffSinger (experimenteel)",
   "prefs.shortcut.search.watermark": "Zoeken op naam of toets...",

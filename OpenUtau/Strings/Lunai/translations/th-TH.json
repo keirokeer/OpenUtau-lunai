@@ -216,7 +216,6 @@
   "prefs.playback.pitchfollow.showpath": "แสดงตัวอย่างเส้นทางกล้อง",
   "prefs.playback.pitchfollow.threshold": "เกณฑ์เซมิโทน",
   "prefs.playback.pitchfollow.verticalposition": "ตำแหน่งแนวตั้งของโน้ต",
-  "prefs.rendering.diffsingerpitchlocalretaking": "DiffSinger พิชแบบรีเทคเฉพาะจุด",
   "prefs.rendering.diffsingershowacousticf0patchpreview": "แสดงตัวอย่างแพตช์ F0 อะคูสติกบนเปียโนโรล",
   "prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate": "อินเทอร์โพเลต F0 พยัญชนะไร้เสียง DiffSinger (ทดลอง)",
   "prefs.shortcut.search.watermark": "ค้นหาตามชื่อหรือปุ่ม...",

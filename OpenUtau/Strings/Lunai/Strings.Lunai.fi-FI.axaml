@@ -270,7 +270,6 @@
   <system:String x:Key="prefs.playback.pitchfollow.showpath">Näytä kamerapolun esikatselu</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.threshold">Puolisävelaskelkynnys</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.verticalposition">Nuotin pystysuuntainen sijainti</system:String>
-  <system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">DiffSingerin paikallinen pitch-uudelleenotto</system:String>
   <system:String x:Key="prefs.rendering.diffsingershowacousticf0patchpreview">Näytä akustisen F0-korjauksen esikatselu pianorullalla</system:String>
   <system:String x:Key="prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate">DiffSinger soinnittomien konsonanttien F0-interpolointi (kokeellinen)</system:String>
   <system:String x:Key="prefs.shortcut.search.watermark">Hae nimellä tai näppäimellä...</system:String>

@@ -204,7 +204,6 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool DiffSingerLangCodeHide { get; set; }
         [Reactive] public partial bool DiffSingerPhonemePanelMode { get; set; }
         [Reactive] public partial bool DiffSingerPhonemePanelAuto { get; set; }
-        [Reactive] public partial bool DiffSingerLocalRetaking { get; set; }
         [Reactive] public partial bool DiffSingerShowRenderPhraseBoundaries { get; set; }
         [Reactive] public partial bool DiffSingerMergeOverlappingPhrases { get; set; }
         [Reactive] public partial bool DiffSingerShowPhonemeVarianceRemapPreview { get; set; }
@@ -599,7 +598,6 @@ namespace OpenUtau.App.ViewModels {
             DiffSingerLangCodeHide = Preferences.Default.DiffSingerLangCodeHide;
             DiffSingerPhonemePanelMode = Preferences.Default.DiffSingerPhonemePanelMode;
             DiffSingerPhonemePanelAuto = Preferences.Default.DiffSingerPhonemePanelAuto;
-            DiffSingerLocalRetaking = Preferences.Default.DiffSingerLocalRetaking;
             DiffSingerShowRenderPhraseBoundaries = Preferences.Default.DiffSingerShowRenderPhraseBoundaries;
             DiffSingerMergeOverlappingPhrases = Preferences.Default.DiffSingerMergeOverlappingPhrases;
             DiffSingerShowPhonemeVarianceRemapPreview = Preferences.Default.DiffSingerShowPhonemeVarianceRemapPreview;
@@ -1197,12 +1195,6 @@ namespace OpenUtau.App.ViewModels {
                     Preferences.Default.DiffSingerLangCodeHide = useCache;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new NotesRefreshEvent());
-                });
-            this.WhenAnyValue(vm => vm.DiffSingerLocalRetaking)
-                .Skip(1)
-                .Subscribe(value => {
-                    Preferences.Default.DiffSingerLocalRetaking = value;
-                    Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.DiffSingerShowRenderPhraseBoundaries)
                 .Skip(1)

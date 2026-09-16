@@ -279,7 +279,6 @@
   <system:String x:Key="prefs.playback.pitchfollow.showpath">Show camera path preview</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.threshold">Semitone threshold</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.verticalposition">Note vertical position</system:String>
-  <system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">DiffSinger Pitch Local Retaking</system:String>
   <system:String x:Key="prefs.rendering.diffsingeracousticlocalretake">DiffSinger Acoustic Local Retake</system:String>
   <system:String x:Key="prefs.rendering.diffsingeracousticlocalretake.hint">On pitch/curve edits, regenerate only the changed region (needs Tensor Cache and a bank with retake+gt_mel).</system:String>
   <system:String x:Key="prefs.rendering.diffsingershowacousticf0patchpreview">Show acoustic F0 patch preview on piano roll</system:String>

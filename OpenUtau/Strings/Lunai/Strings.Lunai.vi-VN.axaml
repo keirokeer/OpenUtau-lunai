@@ -270,7 +270,6 @@
   <system:String x:Key="prefs.playback.pitchfollow.showpath">Hiện xem trước đường camera</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.threshold">Ngưỡng nửa cung</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.verticalposition">Vị trí dọc của nốt</system:String>
-  <system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">DiffSinger tái tạo cao độ cục bộ</system:String>
   <system:String x:Key="prefs.rendering.diffsingershowacousticf0patchpreview">Hiện xem trước vá F0 acoustic trên piano roll</system:String>
   <system:String x:Key="prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate">Nội suy F0 phụ âm vô thanh DiffSinger (thử nghiệm)</system:String>
   <system:String x:Key="prefs.shortcut.search.watermark">Tìm theo tên hoặc phím...</system:String>

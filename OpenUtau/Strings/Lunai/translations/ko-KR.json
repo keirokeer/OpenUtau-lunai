@@ -216,7 +216,6 @@
   "prefs.playback.pitchfollow.showpath": "카메라 경로 미리보기 표시",
   "prefs.playback.pitchfollow.threshold": "반음 임계값",
   "prefs.playback.pitchfollow.verticalposition": "노트 세로 위치",
-  "prefs.rendering.diffsingerpitchlocalretaking": "DiffSinger 피치 로컬 리테이킹",
   "prefs.rendering.diffsingershowacousticf0patchpreview": "피아노 롤에 acoustic F0 패치 미리보기 표시",
   "prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate": "DiffSinger 무성 자음 F0 보간(실험적)",
   "prefs.shortcut.search.watermark": "이름 또는 키로 검색...",

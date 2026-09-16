@@ -216,7 +216,6 @@
   "prefs.playback.pitchfollow.showpath": "Arată previzualizarea traseului camerei",
   "prefs.playback.pitchfollow.threshold": "Prag de semiton",
   "prefs.playback.pitchfollow.verticalposition": "Poziția verticală a notei",
-  "prefs.rendering.diffsingerpitchlocalretaking": "DiffSinger Pitch Local Retaking",
   "prefs.rendering.diffsingershowacousticf0patchpreview": "Show acustic F0 patch preview on piano roll",
   "prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate": "Interpolare F0 pentru consoane nevoce DiffSinger (experimental)",
   "prefs.shortcut.search.watermark": "Caută după nume sau tastă...",

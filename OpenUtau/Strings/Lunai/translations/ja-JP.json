@@ -216,7 +216,6 @@
   "prefs.playback.pitchfollow.showpath": "カメラパスのプレビューを表示",
   "prefs.playback.pitchfollow.threshold": "半音のしきい値",
   "prefs.playback.pitchfollow.verticalposition": "ノートの縦位置",
-  "prefs.rendering.diffsingerpitchlocalretaking": "DiffSinger ピッチローカルリテイキング",
   "prefs.rendering.diffsingershowacousticf0patchpreview": "ピアノロールに acoustic F0 パッチのプレビューを表示",
   "prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate": "DiffSinger 無声音子音の F0 補間（実験的）",
   "prefs.shortcut.search.watermark": "名前またはキーで検索...",

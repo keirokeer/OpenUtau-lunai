@@ -395,10 +395,6 @@
             <ToggleSwitch IsChecked="{Binding DiffSingerAcousticF0ZeroEnabled}" />
           </Grid>
           <Grid Margin="0,5,0,0">
-            <TextBlock Text="{DynamicResource prefs.rendering.diffsingerpitchlocalretaking}" HorizontalAlignment="Left" />
-            <ToggleSwitch IsChecked="{Binding DiffSingerLocalRetaking}" />
-          </Grid>
-          <Grid Margin="0,5,0,0">
             <TextBlock Text="{DynamicResource prefs.diffsinger.renderphraseboundaries}" HorizontalAlignment="Left" />
             <ToggleSwitch IsChecked="{Binding DiffSingerShowRenderPhraseBoundaries}" />
           </Grid>

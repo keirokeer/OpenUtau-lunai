@@ -216,7 +216,6 @@
   "prefs.playback.pitchfollow.showpath": "Afficher l’aperçu du trajet de caméra",
   "prefs.playback.pitchfollow.threshold": "Seuil en demi-tons",
   "prefs.playback.pitchfollow.verticalposition": "Position verticale de la note",
-  "prefs.rendering.diffsingerpitchlocalretaking": "DiffSinger Pitch Local Retaking",
   "prefs.rendering.diffsingershowacousticf0patchpreview": "Afficher l’aperçu du correctif F0 acoustique sur le piano roll",
   "prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate": "DiffSinger : interpolation F0 des consonnes sourdes (expérimental)",
   "prefs.shortcut.search.watermark": "Rechercher par nom ou touche...",

@@ -216,7 +216,6 @@
   "prefs.playback.pitchfollow.showpath": "إظهار معاينة مسار الكاميرا",
   "prefs.playback.pitchfollow.threshold": "عتبة نصف النغمة",
   "prefs.playback.pitchfollow.verticalposition": "الموضع الرأسي للنغمة",
-  "prefs.rendering.diffsingerpitchlocalretaking": "إعادة أخذ محلية لطبقة DiffSinger",
   "prefs.rendering.diffsingershowacousticf0patchpreview": "إظهار معاينة رقعة F0 الصوتية على لفة البيانو",
   "prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate": "استيفاء F0 للصوامت غير المجهورة في DiffSinger (تجريبي)",
   "prefs.shortcut.search.watermark": "بحث بالاسم أو المفتاح...",

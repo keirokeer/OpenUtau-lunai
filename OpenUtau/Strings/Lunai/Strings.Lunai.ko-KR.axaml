@@ -270,7 +270,6 @@
   <system:String x:Key="prefs.playback.pitchfollow.showpath">카메라 경로 미리보기 표시</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.threshold">반음 임계값</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.verticalposition">노트 세로 위치</system:String>
-  <system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">DiffSinger 피치 로컬 리테이킹</system:String>
   <system:String x:Key="prefs.rendering.diffsingershowacousticf0patchpreview">피아노 롤에 acoustic F0 패치 미리보기 표시</system:String>
   <system:String x:Key="prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate">DiffSinger 무성 자음 F0 보간(실험적)</system:String>
   <system:String x:Key="prefs.shortcut.search.watermark">이름 또는 키로 검색...</system:String>

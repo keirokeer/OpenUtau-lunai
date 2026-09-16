@@ -270,7 +270,6 @@
   <system:String x:Key="prefs.playback.pitchfollow.showpath">Arată previzualizarea traseului camerei</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.threshold">Prag de semiton</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.verticalposition">Poziția verticală a notei</system:String>
-  <system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">DiffSinger Pitch Local Retaking</system:String>
   <system:String x:Key="prefs.rendering.diffsingershowacousticf0patchpreview">Show acustic F0 patch preview on piano roll</system:String>
   <system:String x:Key="prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate">Interpolare F0 pentru consoane nevoce DiffSinger (experimental)</system:String>
   <system:String x:Key="prefs.shortcut.search.watermark">Caută după nume sau tastă...</system:String>

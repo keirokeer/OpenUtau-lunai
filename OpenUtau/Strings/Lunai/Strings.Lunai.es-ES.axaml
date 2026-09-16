@@ -270,7 +270,6 @@
   <system:String x:Key="prefs.playback.pitchfollow.showpath">Mostrar vista previa de la trayectoria de la cámara</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.threshold">Umbral de semitonos</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.verticalposition">Posición vertical de las notas</system:String>
-  <system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">Recaptura local de tono de DiffSinger</system:String>
   <system:String x:Key="prefs.rendering.diffsingershowacousticf0patchpreview">Mostrar vista previa del parche F0 acústico en el piano roll</system:String>
   <system:String x:Key="prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate">Interpolar F0 acústico de consonantes sordas de DiffSinger (experimental)</system:String>
   <system:String x:Key="prefs.shortcut.search.watermark">Buscar por nombre o tecla...</system:String>

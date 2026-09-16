@@ -270,7 +270,6 @@
   <system:String x:Key="prefs.playback.pitchfollow.showpath">Показувати попередній перегляд шляху камери</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.threshold">Поріг у півтонах</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.verticalposition">Вертикальна позиція ноти</system:String>
-  <system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">Локальний перезйом pitch DiffSinger</system:String>
   <system:String x:Key="prefs.rendering.diffsingershowacousticf0patchpreview">Показувати попередній перегляд акустичного F0-патча на піаноролі</system:String>
   <system:String x:Key="prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate">Інтерполяція F0 на глухих приголосних DiffSinger (експериментально)</system:String>
   <system:String x:Key="prefs.shortcut.search.watermark">Пошук за назвою або клавішею...</system:String>

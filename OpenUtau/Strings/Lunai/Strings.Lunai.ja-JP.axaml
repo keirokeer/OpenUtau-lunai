@@ -270,7 +270,6 @@
   <system:String x:Key="prefs.playback.pitchfollow.showpath">カメラパスのプレビューを表示</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.threshold">半音のしきい値</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.verticalposition">ノートの縦位置</system:String>
-  <system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">DiffSinger ピッチローカルリテイキング</system:String>
   <system:String x:Key="prefs.rendering.diffsingershowacousticf0patchpreview">ピアノロールに acoustic F0 パッチのプレビューを表示</system:String>
   <system:String x:Key="prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate">DiffSinger 無声音子音の F0 補間（実験的）</system:String>
   <system:String x:Key="prefs.shortcut.search.watermark">名前またはキーで検索...</system:String>

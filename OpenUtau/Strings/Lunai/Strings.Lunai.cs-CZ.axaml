@@ -270,7 +270,6 @@
   <system:String x:Key="prefs.playback.pitchfollow.showpath">Zobrazit náhled cesty kamery</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.threshold">Prahová hodnota půltónu</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.verticalposition">Svislá poloha noty</system:String>
-  <system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">DiffSinger Pitch Local Retaking</system:String>
   <system:String x:Key="prefs.rendering.diffsingershowacousticf0patchpreview">Show akustika F0 patch preview on piano roll</system:String>
   <system:String x:Key="prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate">Interpolace F0 neznělých souhlásek DiffSinger (experimentální)</system:String>
   <system:String x:Key="prefs.shortcut.search.watermark">Hledat podle názvu nebo klávesy...</system:String>

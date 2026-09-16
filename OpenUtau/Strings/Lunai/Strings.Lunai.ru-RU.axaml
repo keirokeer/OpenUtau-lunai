@@ -282,7 +282,6 @@
   <system:String x:Key="prefs.playback.pitchfollow.showpath">Показывать траекторию камеры</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.threshold">Порог в полутонах</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.verticalposition">Вертикальная позиция ноты</system:String>
-  <system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">Локальный пересъём питча DiffSinger</system:String>
   <system:String x:Key="prefs.rendering.gamebackend">Бэкенд инференса GAME</system:String>
   <system:String x:Key="prefs.rendering.diffsingeracousticlocalretake">Локальный пересъём acoustic DiffSinger</system:String>
   <system:String x:Key="prefs.rendering.diffsingeracousticlocalretake.hint">При правке pitch/кривых пересобирается только изменённый участок (нужны Tensor Cache и банк с retake+gt_mel).</system:String>

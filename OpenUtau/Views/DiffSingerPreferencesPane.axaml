@@ -178,10 +178,6 @@
               <TextBlock Text="{DynamicResource prefs.rendering.diffsingeracousticf0zero}"/>
               <ToggleSwitch IsChecked="{Binding DiffSingerAcousticF0ZeroEnabled}"/>
             </Grid>
-            <Grid Classes="prefRow" ColumnDefinitions="*,Auto">
-              <TextBlock Text="{DynamicResource prefs.rendering.diffsingerpitchlocalretaking}"/>
-              <ToggleSwitch IsChecked="{Binding DiffSingerLocalRetaking}"/>
-            </Grid>
           </StackPanel>
         </Expander>
         <Separator Classes="workspacePanelSectionDivider"/>

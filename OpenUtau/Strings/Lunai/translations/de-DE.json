@@ -216,7 +216,6 @@
   "prefs.playback.pitchfollow.showpath": "Kamerapfad-Vorschau anzeigen",
   "prefs.playback.pitchfollow.threshold": "Halbton-Schwellenwert",
   "prefs.playback.pitchfollow.verticalposition": "Vertikale Notenposition",
-  "prefs.rendering.diffsingerpitchlocalretaking": "DiffSinger Pitch Local Retaking",
   "prefs.rendering.diffsingershowacousticf0patchpreview": "Vorschau des akustischen F0-Patches in der Piano-Roll anzeigen",
   "prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate": "DiffSinger: F0-Interpolation bei stimmlosen Konsonanten (experimentell)",
   "prefs.shortcut.search.watermark": "Nach Name oder Taste suchen...",

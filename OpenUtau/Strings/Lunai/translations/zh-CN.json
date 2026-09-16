@@ -216,7 +216,6 @@
   "prefs.playback.pitchfollow.showpath": "显示镜头路径预览",
   "prefs.playback.pitchfollow.threshold": "半音阈值",
   "prefs.playback.pitchfollow.verticalposition": "音符垂直位置",
-  "prefs.rendering.diffsingerpitchlocalretaking": "DiffSinger 音高局部重录",
   "prefs.rendering.diffsingershowacousticf0patchpreview": "在钢琴卷轴上显示声学 F0 补丁预览",
   "prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate": "DiffSinger 清辅音 F0 插值（实验性）",
   "prefs.shortcut.search.watermark": "按名称或按键搜索...",

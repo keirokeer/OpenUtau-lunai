@@ -270,7 +270,6 @@
   <system:String x:Key="prefs.playback.pitchfollow.showpath">إظهار معاينة مسار الكاميرا</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.threshold">عتبة نصف النغمة</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.verticalposition">الموضع الرأسي للنغمة</system:String>
-  <system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">إعادة أخذ محلية لطبقة DiffSinger</system:String>
   <system:String x:Key="prefs.rendering.diffsingershowacousticf0patchpreview">إظهار معاينة رقعة F0 الصوتية على لفة البيانو</system:String>
   <system:String x:Key="prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate">استيفاء F0 للصوامت غير المجهورة في DiffSinger (تجريبي)</system:String>
   <system:String x:Key="prefs.shortcut.search.watermark">بحث بالاسم أو المفتاح...</system:String>

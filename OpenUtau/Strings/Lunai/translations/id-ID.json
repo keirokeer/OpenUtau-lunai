@@ -216,7 +216,6 @@
   "prefs.playback.pitchfollow.showpath": "Tampilkan pratinjau jalur kamera",
   "prefs.playback.pitchfollow.threshold": "Ambang semiton",
   "prefs.playback.pitchfollow.verticalposition": "Posisi vertikal not",
-  "prefs.rendering.diffsingerpitchlocalretaking": "Pengambilan Ulang Nada Lokal DiffSinger",
   "prefs.rendering.diffsingershowacousticf0patchpreview": "Tampilkan pratinjau patch F0 akustik di piano roll",
   "prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate": "Interpolasi F0 konsonan tak bersuara DiffSinger (eksperimental)",
   "prefs.shortcut.search.watermark": "Cari berdasarkan nama atau tombol...",

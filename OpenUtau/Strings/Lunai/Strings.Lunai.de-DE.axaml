@@ -270,7 +270,6 @@
   <system:String x:Key="prefs.playback.pitchfollow.showpath">Kamerapfad-Vorschau anzeigen</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.threshold">Halbton-Schwellenwert</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.verticalposition">Vertikale Notenposition</system:String>
-  <system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">DiffSinger Pitch Local Retaking</system:String>
   <system:String x:Key="prefs.rendering.diffsingershowacousticf0patchpreview">Vorschau des akustischen F0-Patches in der Piano-Roll anzeigen</system:String>
   <system:String x:Key="prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate">DiffSinger: F0-Interpolation bei stimmlosen Konsonanten (experimentell)</system:String>
   <system:String x:Key="prefs.shortcut.search.watermark">Nach Name oder Taste suchen...</system:String>

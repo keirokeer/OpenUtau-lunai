@@ -357,7 +357,6 @@ namespace OpenUtau.Core.Util {
             public bool DiffSingerLangCodeHide = false;
             public bool DiffSingerPhonemePanelMode = true;
             public bool DiffSingerPhonemePanelAuto = true;
-            public bool DiffSingerLocalRetaking = true;
             public bool DiffSingerShowRenderPhraseBoundaries = false;
             /// <summary>
             /// When true, DiffSinger merges adjacent render phrases whose head/tail

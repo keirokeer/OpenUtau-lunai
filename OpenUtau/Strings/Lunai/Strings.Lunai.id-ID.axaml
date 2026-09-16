@@ -270,7 +270,6 @@
   <system:String x:Key="prefs.playback.pitchfollow.showpath">Tampilkan pratinjau jalur kamera</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.threshold">Ambang semiton</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.verticalposition">Posisi vertikal not</system:String>
-  <system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">Pengambilan Ulang Nada Lokal DiffSinger</system:String>
   <system:String x:Key="prefs.rendering.diffsingershowacousticf0patchpreview">Tampilkan pratinjau patch F0 akustik di piano roll</system:String>
   <system:String x:Key="prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate">Interpolasi F0 konsonan tak bersuara DiffSinger (eksperimental)</system:String>
   <system:String x:Key="prefs.shortcut.search.watermark">Cari berdasarkan nama atau tombol...</system:String>

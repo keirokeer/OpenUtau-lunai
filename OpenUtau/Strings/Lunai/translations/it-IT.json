@@ -216,7 +216,6 @@
   "prefs.playback.pitchfollow.showpath": "Mostra anteprima del percorso della videocamera",
   "prefs.playback.pitchfollow.threshold": "Soglia in semitoni",
   "prefs.playback.pitchfollow.verticalposition": "Posizione verticale della nota",
-  "prefs.rendering.diffsingerpitchlocalretaking": "Riacquisizione locale pitch DiffSinger",
   "prefs.rendering.diffsingershowacousticf0patchpreview": "Mostra anteprima patch F0 acustica sul piano roll",
   "prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate": "Interpola F0 acustica delle consonanti non sonore DiffSinger (sperimentale)",
   "prefs.shortcut.search.watermark": "Cerca per nome o tasto...",

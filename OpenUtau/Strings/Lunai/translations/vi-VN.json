@@ -216,7 +216,6 @@
   "prefs.playback.pitchfollow.showpath": "Hiện xem trước đường camera",
   "prefs.playback.pitchfollow.threshold": "Ngưỡng nửa cung",
   "prefs.playback.pitchfollow.verticalposition": "Vị trí dọc của nốt",
-  "prefs.rendering.diffsingerpitchlocalretaking": "DiffSinger tái tạo cao độ cục bộ",
   "prefs.rendering.diffsingershowacousticf0patchpreview": "Hiện xem trước vá F0 acoustic trên piano roll",
   "prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate": "Nội suy F0 phụ âm vô thanh DiffSinger (thử nghiệm)",
   "prefs.shortcut.search.watermark": "Tìm theo tên hoặc phím...",

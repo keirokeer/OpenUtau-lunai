@@ -216,7 +216,6 @@
   "prefs.playback.pitchfollow.showpath": "Pokaż podgląd ścieżki kamery",
   "prefs.playback.pitchfollow.threshold": "Próg półtonów",
   "prefs.playback.pitchfollow.verticalposition": "Pozycja pionowa nuty",
-  "prefs.rendering.diffsingerpitchlocalretaking": "DiffSinger Pitch Local Retaking",
   "prefs.rendering.diffsingershowacousticf0patchpreview": "Show akustyka F0 patch preview on piano roll",
   "prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate": "Interpolacja F0 bezdźwięcznych spółgłosek DiffSinger (eksperymentalne)",
   "prefs.shortcut.search.watermark": "Szukaj według nazwy lub klawisza...",

@@ -217,7 +217,6 @@
   "prefs.playback.pitchfollow.showpath": "Показывать траекторию камеры",
   "prefs.playback.pitchfollow.threshold": "Порог в полутонах",
   "prefs.playback.pitchfollow.verticalposition": "Вертикальная позиция ноты",
-  "prefs.rendering.diffsingerpitchlocalretaking": "Локальный пересъём питча DiffSinger",
   "prefs.rendering.diffsingeracousticlocalretake": "Локальный пересъём acoustic DiffSinger",
   "prefs.rendering.diffsingeracousticlocalretake.hint": "При правке pitch/кривых пересобирается только изменённый участок (нужны Tensor Cache и банк с retake+gt_mel).",
   "prefs.rendering.diffsingershowacousticf0patchpreview": "Показывать превью F0 патча на piano roll",

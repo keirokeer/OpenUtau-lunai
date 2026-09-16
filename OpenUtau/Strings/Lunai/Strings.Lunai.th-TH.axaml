@@ -270,7 +270,6 @@
   <system:String x:Key="prefs.playback.pitchfollow.showpath">แสดงตัวอย่างเส้นทางกล้อง</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.threshold">เกณฑ์เซมิโทน</system:String>
   <system:String x:Key="prefs.playback.pitchfollow.verticalposition">ตำแหน่งแนวตั้งของโน้ต</system:String>
-  <system:String x:Key="prefs.rendering.diffsingerpitchlocalretaking">DiffSinger พิชแบบรีเทคเฉพาะจุด</system:String>
   <system:String x:Key="prefs.rendering.diffsingershowacousticf0patchpreview">แสดงตัวอย่างแพตช์ F0 อะคูสติกบนเปียโนโรล</system:String>
   <system:String x:Key="prefs.rendering.diffsingerunvoicedconsonantacousticf0interpolate">อินเทอร์โพเลต F0 พยัญชนะไร้เสียง DiffSinger (ทดลอง)</system:String>
   <system:String x:Key="prefs.shortcut.search.watermark">ค้นหาตามชื่อหรือปุ่ม...</system:String>
