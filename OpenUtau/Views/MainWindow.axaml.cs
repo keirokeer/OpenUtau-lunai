@@ -22,6 +22,7 @@ using OpenUtau.Classic;
 using OpenUtau.Core;
 using OpenUtau.Core.Analysis;
 using OpenUtau.Core.DiffSinger;
+using OpenUtau.Core.Editing;
 using OpenUtau.Core.Format;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
@@ -1377,6 +1378,8 @@ namespace OpenUtau.App.Views {
                     if (PartsContextMenu != null && viewModel.TracksViewModel.SelectedParts.Count > 0) {
                         var menuArgs = new PartsContextMenuArgs {
                             Part = partControl.part,
+                            CanCreateDoubleVocal = DoubleVocalGenerator.CanCreateDoubleVocal(
+                                DocManager.Inst.Project, partControl.part),
                             PartDeleteCommand = viewModel.PartDeleteCommand,
                             PartGotoFileCommand = PartGotoFileCommand,
                             PartReplaceAudioCommand = PartReplaceAudioCommand,
@@ -1892,6 +1895,173 @@ namespace OpenUtau.App.Views {
         void OnPartGenerateHarmonies(object? sender, RoutedEventArgs e) {
             if (PartsContextMenu?.DataContext is PartsContextMenuArgs args && args.Part is UVoicePart voicePart) {
                 ShowGenerateHarmonyDialog(voicePart, this);
+            }
+        }
+
+        async void OnPartCreateDoubleVocal(object? sender, RoutedEventArgs e) {
+            if (PartsContextMenu?.DataContext is PartsContextMenuArgs args && args.Part is UVoicePart voicePart) {
+                await ShowCreateDoubleVocalDialog(voicePart, this);
+            }
+        }
+
+        internal static async Task ShowCreateDoubleVocalDialog(UVoicePart sourcePart, Window? owner = null) {
+            var host = owner
+                ?? (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+            if (!DoubleVocalGenerator.CanCreateDoubleVocal(DocManager.Inst.Project, sourcePart)) {
+                return;
+            }
+            var dialog = new CreateDoubleVocalDialog();
+            bool? ok;
+            if (host != null) {
+                ok = await dialog.ShowDialog<bool?>(host);
+            } else {
+                dialog.Show();
+                return;
+            }
+            if (ok != true || dialog.Result == null) {
+                return;
+            }
+            await CreateDoubleVocalAsync(sourcePart, dialog.Result, host);
+        }
+
+        internal static async Task CreateDoubleVocalAsync(
+            UVoicePart sourcePart,
+            DoubleVocalOptions options,
+            Window? owner = null) {
+            options ??= new DoubleVocalOptions();
+            int count = Math.Clamp(options.Count, 1, DoubleVocalGenerator.MaxDoubleCount);
+            var host = owner
+                ?? (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+            var project = DocManager.Inst.Project;
+            if (!DoubleVocalGenerator.CanCreateDoubleVocal(project, sourcePart)) {
+                return;
+            }
+
+            var cts = new CancellationTokenSource();
+            MessageBox? progressBox = null;
+            if (host != null) {
+                progressBox = new MessageBox {
+                    Title = ThemeManager.GetString("dialogs.doublevocal.running"),
+                };
+                progressBox.EnableProgress();
+                progressBox.SetProgress(ThemeManager.GetString("dialogs.doublevocal.step.clone"), 0);
+                var cancelBtn = new Button { Content = ThemeManager.GetString("button.cancel") };
+                cancelBtn.Click += (_, __) => progressBox.Close();
+                progressBox.Buttons.Children.Add(cancelBtn);
+                progressBox.Closed += (_, __) => {
+                    if (!cts.IsCancellationRequested) {
+                        cts.Cancel();
+                    }
+                };
+                _ = progressBox.ShowDialog(host);
+            }
+
+            void Report(string stepKey, double percent) {
+                progressBox?.SetProgress(ThemeManager.GetString(stepKey), percent);
+            }
+
+            void ReportIndexed(string stepKey, int index, double localPercent) {
+                double overall = ((index + localPercent / 100.0) / count) * 100.0;
+                string label = ThemeManager.GetString(stepKey);
+                if (count > 1) {
+                    label = $"{label} ({index + 1}/{count})";
+                }
+                progressBox?.SetProgress(label, overall);
+            }
+
+            DocManager.Inst.StartUndoGroup("command.part.createdoublevocal", deferValidate: true);
+            try {
+                int insertAt = sourcePart.trackNo + 1;
+                for (int i = 0; i < count; i++) {
+                    cts.Token.ThrowIfCancellationRequested();
+
+                    ReportIndexed("dialogs.doublevocal.step.clone", i, 5);
+                    var cloned = DoubleVocalGenerator.CloneTrackAndPart(project, sourcePart, insertAt);
+                    insertAt = cloned.trackNo + 1;
+
+                    if (options.GeneratePitch && !DoubleVocalGenerator.SupportsPitchGeneration(project, cloned)) {
+                        throw new InvalidOperationException("Current renderer doesn't support generating pitch curve");
+                    }
+
+                    if (options.NeedsPhonemes) {
+                        ReportIndexed("dialogs.doublevocal.step.phonemes", i, 15);
+                        DoubleVocalGenerator.RequestPhonemes(project, cloned);
+                        await DoubleVocalGenerator.WaitForPhonemesAsync(
+                            cloned, cts.Token, TimeSpan.FromMinutes(5));
+                    }
+
+                    if (options.RandomizePhonemeTimings || options.WarpPitchCurve || options.GeneratePitch) {
+                        ReportIndexed("dialogs.doublevocal.step.timings", i, 35);
+                        DoubleVocalGenerator.ApplyTimingAndExpression(project, cloned, options);
+                    }
+
+                    if (options.GeneratePitch) {
+                        ReportIndexed("dialogs.doublevocal.step.phrases", i, 45);
+                        await DoubleVocalGenerator.WaitForPhrasesAsync(
+                            cloned, cts.Token, TimeSpan.FromMinutes(2));
+
+                        if (cloned.renderPhrases.Count == 0) {
+                            throw new InvalidOperationException("No render phrases available for pitch generation.");
+                        }
+
+                        ReportIndexed("dialogs.doublevocal.step.pitch", i, 50);
+                        var pitchName = ThemeManager.GetString("dialogs.doublevocal.step.pitch");
+                        if (count > 1) {
+                            pitchName = $"{pitchName} ({i + 1}/{count})";
+                        }
+                        List<(int x, int y)> generated = await Task.Run(() =>
+                            DoubleVocalGenerator.CollectGeneratedPitchPoints(
+                                project, cloned,
+                                (current, total) => {
+                                    double frac = total <= 0 ? 1 : (double)current / total;
+                                    double local = 50 + frac * 45;
+                                    double overall = ((i + local / 100.0) / count) * 100.0;
+                                    progressBox?.SetProgress(
+                                        $"{pitchName} ({current}/{total})",
+                                        overall);
+                                },
+                                cts.Token),
+                            cts.Token);
+
+                        cts.Token.ThrowIfCancellationRequested();
+                        if (generated.Count == 0) {
+                            throw new InvalidOperationException("Pitch generation produced no curve points.");
+                        }
+
+                        ReportIndexed("dialogs.doublevocal.step.apply", i, 97);
+                        DoubleVocalGenerator.ApplyAdditivePitch(project, cloned, generated);
+                    }
+                }
+
+                DocManager.Inst.EndUndoGroup();
+                Report("dialogs.doublevocal.step.done", 100);
+            } catch (OperationCanceledException) {
+                DocManager.Inst.RollBackUndoGroup();
+            } catch (Exception ex) {
+                DocManager.Inst.RollBackUndoGroup();
+                Log.Error(ex, "Failed to create double vocal");
+                if (ex is InvalidOperationException &&
+                    ex.Message.Contains("doesn't support generating pitch", StringComparison.Ordinal)) {
+                    var e = new MessageCustomizableException(
+                        "Current renderer doesn't support generating pitch curve",
+                        "<translate:errors.editing.autopitch.unsupported>",
+                        ex);
+                    DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(e));
+                } else {
+                    var customEx = new MessageCustomizableException(
+                        "Failed to create double vocal",
+                        "<translate:errors.failed.runeditingmacro>",
+                        ex);
+                    DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(customEx));
+                }
+            } finally {
+                if (progressBox != null) {
+                    try {
+                        progressBox.Close();
+                    } catch {
+                        // ignored
+                    }
+                }
             }
         }
 

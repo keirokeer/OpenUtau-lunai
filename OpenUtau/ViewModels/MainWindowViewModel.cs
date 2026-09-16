@@ -22,6 +22,7 @@ namespace OpenUtau.App.ViewModels {
         public UPart? Part { get; set; }
         public bool IsVoicePart => Part is UVoicePart;
         public bool IsWavePart => Part is UWavePart;
+        public bool CanCreateDoubleVocal { get; set; }
         public ReactiveCommand<UPart, RxVoid>? PartDeleteCommand { get; set; }
         public ReactiveCommand<UPart, RxVoid>? PartRenameCommand { get; set; }
         public ReactiveCommand<UPart, RxVoid>? PartGotoFileCommand { get; set; }

@@ -512,6 +512,9 @@
                 <MenuItem Header="{DynamicResource context.part.generateharmonies}"
                           IsVisible="{Binding IsVoicePart}"
                           Click="OnPartGenerateHarmonies"/>
+                <MenuItem Header="{DynamicResource context.part.createdoublevocal}"
+                          IsVisible="{Binding CanCreateDoubleVocal}"
+                          Click="OnPartCreateDoubleVocal"/>
                 <MenuItem Header="{DynamicResource context.part.merge}"
                           IsVisible="{Binding IsVoicePart}"
                           Command="{Binding PartMergeCommand}"

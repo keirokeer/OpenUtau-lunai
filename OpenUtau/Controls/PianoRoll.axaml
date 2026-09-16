@@ -377,6 +377,9 @@
               <MenuItem Header="-" Height="1"/>
               <MenuItem Header="{DynamicResource pianoroll.menu.part.singer}" Click="OnMenuSingers"/>
               <MenuItem Header="{DynamicResource pianoroll.menu.part.generateharmonies}" Click="OnMenuGenerateHarmonies"/>
+              <MenuItem Header="{DynamicResource pianoroll.menu.part.createdoublevocal}"
+                        IsVisible="{Binding IsDiffSingerTrack}"
+                        Click="OnMenuCreateDoubleVocal"/>
               <MenuItem Header="{DynamicResource menu.edit.lockunselectednotes}">
                 <MenuItem Header="{DynamicResource menu.edit.lockunselectednotes.pitchpoints}" Click="OnMenuLockPitchPoints">
                   <MenuItem.Icon>

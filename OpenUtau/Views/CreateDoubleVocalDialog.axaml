@@ -1,0 +1,121 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:OpenUtau.App.ViewModels"
+        x:Class="OpenUtau.App.Views.CreateDoubleVocalDialog"
+        x:DataType="vm:CreateDoubleVocalViewModel"
+        Width="440" SizeToContent="Height" CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Icon="/Assets/open-utau.ico"
+        Title="{DynamicResource dialogs.doublevocal.caption}">
+  <Window.Styles>
+    <Style Selector="TextBlock.lbl">
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="FontSize" Value="11"/>
+    </Style>
+    <Style Selector="TextBlock.val">
+      <Setter Property="HorizontalAlignment" Value="Right"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="FontSize" Value="11"/>
+      <Setter Property="FontFamily" Value="monospace"/>
+      <Setter Property="Opacity" Value="0.8"/>
+    </Style>
+    <Style Selector="TextBlock.section">
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="Margin" Value="0,0,0,2"/>
+    </Style>
+  </Window.Styles>
+
+  <Border Margin="{Binding $parent.WindowDecorationMargin}">
+    <DockPanel Margin="14" LastChildFill="True">
+      <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="10"
+                  HorizontalAlignment="Right" Margin="0,12,0,0">
+        <Button Name="CancelButton" MinWidth="72"
+                Content="{DynamicResource button.cancel}"
+                IsCancel="True" Click="OnCancel"/>
+        <Button Name="OkButton" MinWidth="72" Classes="dialogPrimary"
+                Content="{DynamicResource button.ok}"
+                IsDefault="True" Click="OnOk"/>
+      </StackPanel>
+
+      <StackPanel Spacing="12">
+        <TextBlock TextWrapping="Wrap"
+                   Text="{DynamicResource dialogs.doublevocal.description}"/>
+
+        <StackPanel Spacing="4">
+          <TextBlock Classes="section"
+                     Text="{DynamicResource dialogs.doublevocal.count}"/>
+          <Grid ColumnDefinitions="*,40" MinHeight="28">
+            <Slider Grid.Column="0" Classes="fader" VerticalAlignment="Center"
+                    Minimum="1" Maximum="8"
+                    TickFrequency="1" IsSnapToTickEnabled="True"
+                    Value="{Binding Count}"/>
+            <TextBlock Grid.Column="1" Classes="val"
+                       Text="{Binding Count, StringFormat={}{0:0}}"/>
+          </Grid>
+        </StackPanel>
+
+        <Border Padding="10"
+                Background="{DynamicResource WorkspaceElevatedSurfaceBrush}"
+                CornerRadius="6" BorderThickness="1"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
+          <StackPanel Spacing="10">
+            <TextBlock Classes="section"
+                       Text="{DynamicResource dialogs.doublevocal.steps}"/>
+
+            <StackPanel Spacing="6">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <CheckBox VerticalAlignment="Center" IsChecked="{Binding RandomizePhonemeTimings}"/>
+                <TextBlock VerticalAlignment="Center" TextWrapping="Wrap"
+                           Text="{DynamicResource dialogs.doublevocal.randomize}"/>
+              </StackPanel>
+              <StackPanel Margin="24,0,0,0" Spacing="2"
+                          IsEnabled="{Binding RandomizePhonemeTimings}">
+                <Grid ColumnDefinitions="*,40">
+                  <TextBlock Grid.Column="0" Classes="lbl"
+                             Text="{DynamicResource dialogs.doublevocal.maxoffset}"/>
+                  <TextBlock Grid.Column="1" Classes="val"
+                             Text="{Binding MaxPhonemeOffsetTick, StringFormat={}{0:0}}"/>
+                </Grid>
+                <Slider Classes="fader"
+                        Minimum="1" Maximum="120"
+                        TickFrequency="1" IsSnapToTickEnabled="True"
+                        Value="{Binding MaxPhonemeOffsetTick}"/>
+              </StackPanel>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <CheckBox VerticalAlignment="Center" IsChecked="{Binding WarpPitchCurve}"/>
+              <TextBlock VerticalAlignment="Center" TextWrapping="Wrap"
+                         Text="{DynamicResource dialogs.doublevocal.warp}"/>
+            </StackPanel>
+
+            <StackPanel Spacing="6">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <CheckBox VerticalAlignment="Center" IsChecked="{Binding GeneratePitch}"/>
+                <TextBlock VerticalAlignment="Center" TextWrapping="Wrap"
+                           Text="{DynamicResource dialogs.doublevocal.generatepitch}"/>
+              </StackPanel>
+              <StackPanel Margin="24,0,0,0" Spacing="2"
+                          IsEnabled="{Binding GeneratePitch}">
+                <Grid ColumnDefinitions="*,48">
+                  <TextBlock Grid.Column="0" Classes="lbl"
+                             Text="{DynamicResource dialogs.doublevocal.pexp}"/>
+                  <TextBlock Grid.Column="1" Classes="val"
+                             Text="{Binding PitchExpressionPercent, StringFormat={}{0:0}%}"/>
+                </Grid>
+                <Slider Classes="fader"
+                        Minimum="0" Maximum="100"
+                        TickFrequency="1" IsSnapToTickEnabled="True"
+                        Value="{Binding PitchExpressionPercent}"/>
+              </StackPanel>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <TextBlock Opacity="0.75" FontSize="11" TextWrapping="Wrap"
+                   Text="{DynamicResource dialogs.doublevocal.hint}"/>
+      </StackPanel>
+    </DockPanel>
+  </Border>
+</Window>

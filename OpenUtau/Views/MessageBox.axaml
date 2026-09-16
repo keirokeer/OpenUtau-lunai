@@ -15,7 +15,12 @@
       </Grid.RowDefinitions>
 
       <!-- Show simple text -->
-      <TextBlock Margin="20" Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center" Name="Text" TextWrapping="Wrap" MaxWidth="560"/>
+      <StackPanel Margin="20" Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                  Name="SimpleTextPanel" MaxWidth="560" Spacing="12">
+        <TextBlock HorizontalAlignment="Center" Name="Text" TextWrapping="Wrap"/>
+        <ProgressBar Name="Progress" Minimum="0" Maximum="100" Height="8"
+                     IsVisible="False" HorizontalAlignment="Stretch"/>
+      </StackPanel>
 
       <!-- Show text with URL button -->
       <StackPanel Margin="20" Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center" Name="TextPanel" MaxWidth="560">

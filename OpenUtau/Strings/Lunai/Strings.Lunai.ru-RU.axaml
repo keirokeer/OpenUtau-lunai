@@ -5,6 +5,26 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
   <system:String x:Key="context.part.generateharmonies">Создать гармонии...</system:String>
+  <system:String x:Key="context.part.createdoublevocal">Создать дабл-вокал</system:String>
+  <system:String x:Key="command.part.createdoublevocal">Создать дабл-вокал</system:String>
+  <system:String x:Key="dialogs.doublevocal.running">Создание дабл-вокала</system:String>
+  <system:String x:Key="dialogs.doublevocal.caption">Создать дабл-вокал</system:String>
+  <system:String x:Key="dialogs.doublevocal.count">Количество даблов</system:String>
+  <system:String x:Key="dialogs.doublevocal.steps">Этапы</system:String>
+  <system:String x:Key="dialogs.doublevocal.description">Клонирует выбранный DiffSinger-парт на новый трек, затем опционально рандомизирует тайминги фонем, варпает питч и добавляет новую генерацию питча.</system:String>
+  <system:String x:Key="dialogs.doublevocal.generatepitch">Сгенерировать питч DiffSinger и сложить с существующим</system:String>
+  <system:String x:Key="dialogs.doublevocal.hint">По умолчанию все этапы включены. Отключите ненужные.</system:String>
+  <system:String x:Key="dialogs.doublevocal.maxoffset">Макс. оффсет (тики)</system:String>
+  <system:String x:Key="dialogs.doublevocal.pexp">Экспрессия питча (PEXP)</system:String>
+  <system:String x:Key="dialogs.doublevocal.randomize">Рандомизировать тайминги фонем</system:String>
+  <system:String x:Key="dialogs.doublevocal.warp">Растянуть существующую кривую питча под новые тайминги</system:String>
+  <system:String x:Key="dialogs.doublevocal.step.apply">Слияние кривых питча...</system:String>
+  <system:String x:Key="dialogs.doublevocal.step.clone">Клонирование трека и парта...</system:String>
+  <system:String x:Key="dialogs.doublevocal.step.done">Готово</system:String>
+  <system:String x:Key="dialogs.doublevocal.step.phonemes">Построение фонем...</system:String>
+  <system:String x:Key="dialogs.doublevocal.step.phrases">Построение фраз рендера...</system:String>
+  <system:String x:Key="dialogs.doublevocal.step.pitch">Генерация питча DiffSinger...</system:String>
+  <system:String x:Key="dialogs.doublevocal.step.timings">Рандомизация таймингов и варп питча...</system:String>
   <system:String x:Key="context.note.acousticretake">Ретейк акустики</system:String>
   <system:String x:Key="shortcut.context.note.acousticretake">Ретейк акустики</system:String>
 
@@ -133,6 +153,7 @@
   <system:String x:Key="phoneme.show.error">Alt + щелчок — полный текст ошибки</system:String>
 
   <system:String x:Key="pianoroll.menu.part.generateharmonies">Создать гармонии...</system:String>
+  <system:String x:Key="pianoroll.menu.part.createdoublevocal">Создать дабл-вокал</system:String>
   <system:String x:Key="pianoroll.menu.part.legacypluginexp.shortcuts">(устаревшее)</system:String>
   <system:String x:Key="pianoroll.menu.view.pianoroll.fullscreen">Пианоролл на всё окно</system:String>
   <system:String x:Key="pianoroll.menu.view.tiktokmode">Режим съёмки для TikTok</system:String>

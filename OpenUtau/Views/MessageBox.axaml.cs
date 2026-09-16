@@ -34,6 +34,22 @@ namespace OpenUtau.App.Views {
             });
         }
 
+        public void EnableProgress() {
+            Dispatcher.UIThread.Post(() => {
+                Progress.IsVisible = true;
+                Progress.Value = 0;
+            });
+        }
+
+        /// <summary>Update status text and optional 0–100 progress value.</summary>
+        public void SetProgress(string text, double percent) {
+            Dispatcher.UIThread.Post(() => {
+                Text.Text = text;
+                Progress.IsVisible = true;
+                Progress.Value = Math.Clamp(percent, 0, 100);
+            });
+        }
+
         public static Task<MessageBoxResult> ShowError(Window parent, Exception? e, string message = "", bool fromNotif = false) {
             string text = message;
             string title = ThemeManager.GetString("errors.caption");
@@ -134,6 +150,7 @@ namespace OpenUtau.App.Views {
                 Title = title
             };
             msgbox.Text.IsVisible = false;
+            msgbox.SimpleTextPanel.IsVisible = false;
             var linkBrush = GetAccentBrush(parent);
             msgbox.SetTextWithLink(text, msgbox.TextPanel, linkBrush);
             if (stackTrace != null) {

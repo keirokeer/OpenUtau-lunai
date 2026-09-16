@@ -2183,6 +2183,12 @@ namespace OpenUtau.App.Controls {
             }
         }
 
+        async void OnMenuCreateDoubleVocal(object? sender, RoutedEventArgs e) {
+            if (ViewModel?.NotesViewModel?.Part is UVoicePart voicePart) {
+                await MainWindow.ShowCreateDoubleVocalDialog(voicePart, TopLevel.GetTopLevel(this) as Window);
+            }
+        }
+
         bool MoveToNextPart(bool next) {
             var notesVm = ViewModel.NotesViewModel;
             var playVm = ViewModel.PlaybackViewModel;

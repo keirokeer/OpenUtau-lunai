@@ -1,10 +1,30 @@
-﻿<!--Lunai overlay for it-IT. Not managed by Crowdin.-->
+<!--Lunai overlay for it-IT. Not managed by Crowdin.-->
 <!--Professional UI translation of Lunai-only strings.-->
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:system="clr-namespace:System;assembly=mscorlib"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
   <system:String x:Key="context.part.generateharmonies">Genera armonie...</system:String>
+  <system:String x:Key="context.part.createdoublevocal">Crea double vocal</system:String>
+  <system:String x:Key="command.part.createdoublevocal">Crea double vocal</system:String>
+  <system:String x:Key="dialogs.doublevocal.running">Creazione double vocal</system:String>
+  <system:String x:Key="dialogs.doublevocal.caption">Create double vocal</system:String>
+  <system:String x:Key="dialogs.doublevocal.count">Number of doubles</system:String>
+  <system:String x:Key="dialogs.doublevocal.steps">Steps</system:String>
+  <system:String x:Key="dialogs.doublevocal.description">Clone the selected DiffSinger part onto a new track, then optionally randomize phoneme timings, warp the pitch curve, and blend a new pitch generation.</system:String>
+  <system:String x:Key="dialogs.doublevocal.generatepitch">Generate DiffSinger pitch and add to existing curve</system:String>
+  <system:String x:Key="dialogs.doublevocal.hint">All steps are enabled by default. Turn off any step you want to skip.</system:String>
+  <system:String x:Key="dialogs.doublevocal.maxoffset">Max offset (ticks)</system:String>
+  <system:String x:Key="dialogs.doublevocal.pexp">Pitch expression (PEXP)</system:String>
+  <system:String x:Key="dialogs.doublevocal.randomize">Randomize phoneme timings</system:String>
+  <system:String x:Key="dialogs.doublevocal.warp">Warp existing pitch curve to new timings</system:String>
+  <system:String x:Key="dialogs.doublevocal.step.apply">Merging pitch curves...</system:String>
+  <system:String x:Key="dialogs.doublevocal.step.clone">Cloning track and part...</system:String>
+  <system:String x:Key="dialogs.doublevocal.step.done">Done</system:String>
+  <system:String x:Key="dialogs.doublevocal.step.phonemes">Building phonemes...</system:String>
+  <system:String x:Key="dialogs.doublevocal.step.phrases">Building render phrases...</system:String>
+  <system:String x:Key="dialogs.doublevocal.step.pitch">Generating DiffSinger pitch...</system:String>
+  <system:String x:Key="dialogs.doublevocal.step.timings">Randomizing phoneme timings and warping pitch...</system:String>
 
   <system:String x:Key="dialogs.about.close">Chiudi</system:String>
   <system:String x:Key="dialogs.about.contributors.embedded">Viene mostrato l'elenco incorporato dei collaboratori.</system:String>
@@ -131,6 +151,7 @@
   <system:String x:Key="phoneme.show.error">Alt + clic per visualizzare l'errore completo</system:String>
 
   <system:String x:Key="pianoroll.menu.part.generateharmonies">Genera armonie...</system:String>
+  <system:String x:Key="pianoroll.menu.part.createdoublevocal">Crea double vocal</system:String>
   <system:String x:Key="pianoroll.menu.part.legacypluginexp.shortcuts">(precedente)</system:String>
   <system:String x:Key="pianoroll.menu.view.pianoroll.fullscreen">Espandi piano roll nella finestra</system:String>
   <system:String x:Key="pianoroll.menu.view.tiktokmode">Modalità di registrazione TikTok</system:String>
