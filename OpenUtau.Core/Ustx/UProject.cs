@@ -203,11 +203,24 @@ namespace OpenUtau.Core.Ustx {
                 foreach (var track in tracks) {
                     track.Validate(options, this);
                 }
+                RefreshMutedStates();
             }
             foreach (var part in parts) {
                 if (options.Part == null || options.Part == part) {
                     part.Validate(options, this, tracks[part.trackNo]);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Recomputes <see cref="UTrack.Muted"/> for every track from Solo/Mute.
+        /// Must run after solo toggles and on full project validate so playback
+        /// never keeps stale mute-by-solo flags.
+        /// </summary>
+        public void RefreshMutedStates() {
+            bool soloExists = SoloTrackExist;
+            foreach (var track in tracks) {
+                track.Muted = UTrack.ComputeMuted(track.Solo, track.Mute, soloExists);
             }
         }
 

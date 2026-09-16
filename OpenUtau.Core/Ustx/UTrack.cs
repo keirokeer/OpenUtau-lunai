@@ -273,9 +273,17 @@ namespace OpenUtau.Core.Ustx {
                 }
             }
             TrackNo = project.tracks.IndexOf(this);
-            if (!Solo && Mute) {
-                Muted = true;
+        }
+
+        /// <summary>
+        /// Effective mute for playback: explicit Mute, or muted-by-solo when another track is soloed.
+        /// Soloed tracks are never effectively muted.
+        /// </summary>
+        public static bool ComputeMuted(bool solo, bool mute, bool soloTrackExists) {
+            if (solo) {
+                return false;
             }
+            return mute || soloTrackExists;
         }
     }
 }

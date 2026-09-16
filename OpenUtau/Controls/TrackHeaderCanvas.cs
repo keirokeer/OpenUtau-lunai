@@ -8,6 +8,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Threading;
 using OpenUtau.App.ViewModels;
+using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
 using ReactiveUI;
 
@@ -65,27 +66,29 @@ namespace OpenUtau.App.Controls {
                 });
             MessageBus.Current.Listen<TracksSoloEvent>()
                 .Subscribe(e => {
-                    foreach (var (track, header) in trackHeaders) {
-                        if (header.ViewModel != null) {
-                            if (e.solo) {
-                                if (track.TrackNo == e.trackNo) {
-                                    header.ViewModel.Solo = true;
-                                } else if (!e.additionally) {
-                                    header.ViewModel.Solo = false;
-                                }
-                            } else {
-                                if (track.TrackNo == e.trackNo || e.trackNo == -1) {
-                                    header.ViewModel.Solo = false;
-                                }
+                    var project = DocManager.Inst.Project;
+                    // Update document Solo flags first so SoloTrackExist / Muted are consistent.
+                    foreach (var track in project.tracks) {
+                        if (e.solo) {
+                            if (track.TrackNo == e.trackNo) {
+                                track.Solo = true;
+                            } else if (!e.additionally) {
+                                track.Solo = false;
                             }
+                        } else if (track.TrackNo == e.trackNo || e.trackNo == -1) {
+                            track.Solo = false;
                         }
                     }
+                    project.RefreshMutedStates();
                     foreach (var (track, header) in trackHeaders) {
-                        if (header.ViewModel != null) {
-                            header.ViewModel.JudgeMuted();
-                            header.ViewModel.ManuallyRaise();
+                        if (header.ViewModel == null) {
+                            continue;
                         }
+                        header.ViewModel.Solo = track.Solo;
+                        header.ViewModel.JudgeMuted();
+                        header.ViewModel.ManuallyRaise();
                     }
+                    DocManager.Inst.ExecuteCmd(new SoloTrackNotification(e.trackNo, e.solo));
                 });
             MessageBus.Current.Listen<TracksMuteEvent>()
                 .Subscribe(e => {

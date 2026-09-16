@@ -511,6 +511,29 @@ namespace OpenUtau.Core {
         }
 
         /// <summary>
+        /// After solo/mute, VolumeChange already retargets live faders. Never stop
+        /// the transport here — that caused a hitch when switching solo between tracks.
+        /// Only drop a <em>paused</em> warm mix when muted tracks may be missing from
+        /// the session (<see cref="Preferences.SerializablePreferences.SkipRenderingMutedTracks"/>),
+        /// so the next Play rebuilds with the unmuted tracks included.
+        /// </summary>
+        void DiscardWarmMixAfterSoloMuteChange() {
+            if (PlayingMaster || StartingToPlay) {
+                return;
+            }
+            if (!pausedWithMix && masterMix == null) {
+                return;
+            }
+            if (!Preferences.Default.SkipRenderingMutedTracks) {
+                // Warm mix faders were already corrected via VolumeChange; keep it.
+                return;
+            }
+            pausedWithMix = false;
+            masterMix = null;
+            faders = null;
+        }
+
+        /// <summary>
         /// Cancels in-flight playback/pre-render work and clears the progress bar.
         /// Does not cancel export. Also drops any incomplete playback mix so
         /// HoldWhenUnready cannot hang forever on phrases that will never arrive;
@@ -685,8 +708,14 @@ namespace OpenUtau.Core {
             } else if (cmd is VolumeChangeNotification) {
                 var _cmd = cmd as VolumeChangeNotification;
                 if (faders != null && faders.Count > _cmd.TrackNo) {
+                    // Soft-ramp only: instant SetScaleToTarget clicks when solo switches.
                     faders[_cmd.TrackNo].Scale = DecibelToVolume(_cmd.Volume);
                 }
+            } else if (cmd is SoloTrackNotification) {
+                // Solo changes which tracks are effectively muted and which phrases
+                // belong in the mix. Drop any warm paused mix so the next Play
+                // rebuilds faders/slots from current Muted flags.
+                DiscardWarmMixAfterSoloMuteChange();
             } else if (cmd is PanChangeNotification) {
                 var _cmd = cmd as PanChangeNotification;
                 if (faders != null && faders.Count > _cmd!.TrackNo) {

@@ -265,15 +265,14 @@ namespace OpenUtau.App.ViewModels {
         }
 
         public void JudgeMuted() {
-            if (Solo) {
-                Muted = false;
-            } else if (Mute) {
-                Muted = true;
-            } else if (DocManager.Inst.Project.SoloTrackExist) {
-                Muted = true;
-            } else {
-                Muted = false;
-            }
+            bool muted = UTrack.ComputeMuted(
+                Solo, Mute, DocManager.Inst.Project.SoloTrackExist);
+            // Keep model + VM in sync even when the VM value is unchanged
+            // (otherwise a stale track.Muted can survive into the next Play).
+            track.Muted = muted;
+            Muted = muted;
+            DocManager.Inst.ExecuteCmd(new VolumeChangeNotification(
+                track.TrackNo, muted ? -24 : Volume));
             this.RaisePropertyChanged(nameof(Muted));
         }
 
