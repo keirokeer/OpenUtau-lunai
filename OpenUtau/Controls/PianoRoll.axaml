@@ -903,7 +903,7 @@
             IsVisible="{Binding NotesViewModel.ShowNoteParams}">
       <c:NotePropertiesControl x:Name="NoteProperties"/>
     </Border>
-    <c:RenderProgressPanel Grid.ColumnSpan="9" ZIndex="1000"
+    <c:RenderProgressPanel Grid.Column="6" ZIndex="1000"
                            VerticalAlignment="Bottom" HorizontalAlignment="Stretch"
                            Height="24"
                            Progress="{Binding Progress}"

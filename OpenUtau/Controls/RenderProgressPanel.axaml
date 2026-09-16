@@ -9,7 +9,7 @@
              VerticalAlignment="Stretch"
              HorizontalAlignment="Stretch"
              Background="Transparent"
-             IsHitTestVisible="True">
+             IsHitTestVisible="False">
   <UserControl.Styles>
     <Style Selector="Button.renderCancelChip">
       <Setter Property="Height" Value="22"/>

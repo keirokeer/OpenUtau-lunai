@@ -35,6 +35,7 @@ namespace OpenUtau.App.Controls {
 
         public RenderProgressPanel() {
             InitializeComponent();
+            IsHitTestVisible = false;
             HostGrid.SizeChanged += (_, _) => UpdateFillLayout();
             ProgressRow.SizeChanged += (_, _) => UpdateFillLayout();
             PointerEntered += (_, _) => {
@@ -64,6 +65,9 @@ namespace OpenUtau.App.Controls {
             }
             bool hasProgress = Progress > 0.01
                 || !string.IsNullOrWhiteSpace(ProgressText);
+            // Only capture pointer hits while rendering — otherwise this strip
+            // blocks the bottom of docked panels (note params, etc.).
+            IsHitTestVisible = hasProgress;
             bool show = pointerOver && hasProgress;
             CancelButton.Opacity = show ? 1 : 0;
             CancelButton.IsHitTestVisible = show;
