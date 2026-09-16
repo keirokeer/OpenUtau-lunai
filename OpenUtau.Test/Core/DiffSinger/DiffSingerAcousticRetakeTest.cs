@@ -212,6 +212,27 @@ namespace OpenUtau.Core {
             Assert.NotSame(previous, result);
         }
 
+        [Fact]
+        public void PhraseStateSnapshotRoundTripsThroughIndex() {
+            var state = State(mel: Mel(2, 2, 7f), rawSamples: new float[] { 1f, 2f, 3f }, hopSize: 10);
+            DiffSingerAcousticRetake.SetState(42, state, phrasePosition: 100, phraseEnd: 200);
+
+            var snaps = DiffSingerAcousticRetake.SnapshotPhraseStates(new[] { (100, 200), (300, 400) });
+            Assert.Equal(2, snaps.Length);
+            Assert.Equal(42ul, snaps[0].Key);
+            Assert.NotNull(snaps[0].State);
+            Assert.Equal(7f, snaps[0].State!.mel[0]);
+            Assert.Null(snaps[1].Key);
+            Assert.Null(snaps[1].State);
+
+            DiffSingerAcousticRetake.RestorePhraseStates(new[] {
+                new DiffSingerAcousticRetake.PhraseStateSnapshot(100, 200, null, null),
+            });
+            var cleared = DiffSingerAcousticRetake.SnapshotPhraseStates(new[] { (100, 200) });
+            Assert.Null(cleared[0].Key);
+            Assert.Null(cleared[0].State);
+        }
+
         static AcousticRetakeState State(
             Dictionary<string, float[]> conditions = null,
             Tensor<float> mel = null,

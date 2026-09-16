@@ -659,7 +659,13 @@ namespace OpenUtau.Core.DiffSinger {
                             progressDone = done;
                             return null;
                         }
-                        acousticOutputs = acousticModel.Run(acousticInputs).Cast<NamedOnnxValue>().ToList();
+                        try {
+                            acousticOutputs = acousticModel.Run(acousticInputs).Cast<NamedOnnxValue>().ToList();
+                        } catch (Exception e) {
+                            Serilog.Log.Error(e, "DiffSinger acoustic ONNX failed for phrase {Hash:x16}", phrase.hash);
+                            try { acousticCache?.Delete(); } catch { }
+                            throw;
+                        }
                     }
                     acousticCache?.Save(acousticOutputs);
                     phrase.AddCacheFile(acousticCache?.Filename);
@@ -715,7 +721,13 @@ namespace OpenUtau.Core.DiffSinger {
                             progressDone = done;
                             return null;
                         }
-                        vocoderOutputs = vocoder.session.Run(vocoderInputs).Cast<NamedOnnxValue>().ToList();
+                        try {
+                            vocoderOutputs = vocoder.session.Run(vocoderInputs).Cast<NamedOnnxValue>().ToList();
+                        } catch (Exception e) {
+                            Serilog.Log.Error(e, "DiffSinger vocoder ONNX failed for phrase {Hash:x16}", phrase.hash);
+                            try { vocoderCache?.Delete(); } catch { }
+                            throw;
+                        }
                     }
                     vocoderCache?.Save(vocoderOutputs);
                     phrase.AddCacheFile(vocoderCache?.Filename);
@@ -756,7 +768,9 @@ namespace OpenUtau.Core.DiffSinger {
                         samples,
                         sampleRate,
                         hopSize,
-                        DiffSingerAcousticRetake.HashVocoderF0(vocoderF0)));
+                        DiffSingerAcousticRetake.HashVocoderF0(vocoderF0)),
+                    phrase.position,
+                    phrase.end);
             }
             // OpenUtau playback/export is fixed at 44.1 kHz; resample vocoder output if needed.
             // Keep acoustic-retake cache/compose above at the vocoder native rate.

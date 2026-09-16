@@ -45,6 +45,10 @@ namespace OpenUtau.Core.DiffSinger {
             this.vocoderF0Hash = vocoderF0Hash;
         }
 
+        public AcousticRetakeState Clone() => new(
+            conditions, mel, melDims, totalFrames, melBins, frameMs,
+            rawSamples, sampleRate, hopSize, vocoderF0Hash);
+
         public bool HasCompatibleRawSamples(int expectedLength, int hopSize) {
             return rawSamples != null &&
                 rawSamples.Length == expectedLength &&
@@ -94,6 +98,15 @@ namespace OpenUtau.Core.DiffSinger {
             recency.RemoveLast();
             entries.Remove(oldest.Value.key);
         }
+
+        internal bool Remove(ulong key) {
+            if (!entries.TryGetValue(key, out var node)) {
+                return false;
+            }
+            entries.Remove(key);
+            recency.Remove(node);
+            return true;
+        }
     }
 
     /// <summary>
@@ -121,6 +134,8 @@ namespace OpenUtau.Core.DiffSinger {
 
         static readonly AcousticRetakeStateCache states = new(StateCacheCapacity);
         static readonly object forceLock = new();
+        static readonly object phraseIndexLock = new();
+        static readonly Dictionary<(int position, int end), ulong> phraseKeyIndex = new();
         static readonly List<ForceAcousticRetakeRequest> pendingForce = new();
 
         sealed class ForceAcousticRetakeRequest {
@@ -128,6 +143,21 @@ namespace OpenUtau.Core.DiffSinger {
             public int PhraseEnd;
             public HashSet<int> SelectedAbsoluteNotePositions = new();
             public uint NoiseNonce;
+        }
+
+        /// <summary>Undo snapshot for one phrase's acoustic-retake cache entry.</summary>
+        public readonly struct PhraseStateSnapshot {
+            public readonly int PhrasePosition;
+            public readonly int PhraseEnd;
+            public readonly ulong? Key;
+            public readonly AcousticRetakeState? State;
+
+            public PhraseStateSnapshot(int phrasePosition, int phraseEnd, ulong? key, AcousticRetakeState? state) {
+                PhrasePosition = phrasePosition;
+                PhraseEnd = phraseEnd;
+                Key = key;
+                State = state;
+            }
         }
 
         public static bool Supports(InferenceSession session) =>
@@ -154,12 +184,15 @@ namespace OpenUtau.Core.DiffSinger {
         /// </summary>
         public static void QueueForceRetake(
             IEnumerable<(int position, int end)> phraseBounds,
-            IEnumerable<int> selectedAbsoluteNotePositions) {
+            IEnumerable<int> selectedAbsoluteNotePositions,
+            uint? noiseNonce = null) {
             var notes = selectedAbsoluteNotePositions.ToHashSet();
             if (notes.Count == 0) {
                 return;
             }
-            uint nonce = (uint)Random.Shared.Next(1, int.MaxValue);
+            uint nonce = noiseNonce is > 0
+                ? noiseNonce.Value
+                : (uint)Random.Shared.Next(1, int.MaxValue);
             lock (forceLock) {
                 foreach (var (position, end) in phraseBounds) {
                     pendingForce.RemoveAll(r => r.PhrasePosition == position && r.PhraseEnd == end);
@@ -169,6 +202,47 @@ namespace OpenUtau.Core.DiffSinger {
                         SelectedAbsoluteNotePositions = new HashSet<int>(notes),
                         NoiseNonce = nonce,
                     });
+                }
+            }
+        }
+
+        public static void ClearPendingForceRetake(IEnumerable<(int position, int end)> phraseBounds) {
+            lock (forceLock) {
+                foreach (var (position, end) in phraseBounds) {
+                    pendingForce.RemoveAll(r => r.PhrasePosition == position && r.PhraseEnd == end);
+                }
+            }
+        }
+
+        public static PhraseStateSnapshot[] SnapshotPhraseStates(
+            IEnumerable<(int position, int end)> phraseBounds) {
+            var list = new List<PhraseStateSnapshot>();
+            lock (phraseIndexLock) {
+                foreach (var (position, end) in phraseBounds) {
+                    if (!phraseKeyIndex.TryGetValue((position, end), out var key) ||
+                        !states.TryGetValue(key, out var state)) {
+                        list.Add(new PhraseStateSnapshot(position, end, null, null));
+                        continue;
+                    }
+                    list.Add(new PhraseStateSnapshot(position, end, key, state.Clone()));
+                }
+            }
+            return list.ToArray();
+        }
+
+        public static void RestorePhraseStates(IEnumerable<PhraseStateSnapshot> snapshots) {
+            lock (phraseIndexLock) {
+                foreach (var snap in snapshots) {
+                    var bounds = (snap.PhrasePosition, snap.PhraseEnd);
+                    if (snap.Key is ulong key && snap.State != null) {
+                        states.Set(key, snap.State.Clone());
+                        phraseKeyIndex[bounds] = key;
+                    } else {
+                        if (phraseKeyIndex.TryGetValue(bounds, out var existingKey)) {
+                            states.Remove(existingKey);
+                            phraseKeyIndex.Remove(bounds);
+                        }
+                    }
                 }
             }
         }
@@ -303,8 +377,12 @@ namespace OpenUtau.Core.DiffSinger {
         public static bool TryGetState(ulong key, out AcousticRetakeState state) =>
             states.TryGetValue(key, out state);
 
-        public static void SetState(ulong key, AcousticRetakeState state) =>
+        public static void SetState(ulong key, AcousticRetakeState state, int phrasePosition, int phraseEnd) {
             states.Set(key, state);
+            lock (phraseIndexLock) {
+                phraseKeyIndex[(phrasePosition, phraseEnd)] = key;
+            }
+        }
 
         /// <summary>
         /// Builds a padded frame mask. Returns null when layout is incompatible (caller should full-retake).

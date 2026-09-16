@@ -923,30 +923,10 @@ namespace OpenUtau.Core.Editing {
             if (phrases.Length == 0) {
                 return;
             }
-            DiffSinger.DiffSingerAcousticRetake.QueueForceRetake(
-                phrases.Select(p => (p.position, p.end)),
-                positions);
-            var planner = PlaybackManager.Inst.MixPlanner;
-            double holePadMs = DiffSinger.DiffSingerAcousticRetake.PadMs
-                + DiffSinger.DiffSingerAcousticRetake.SampleCrossfadeMs;
-            foreach (var phrase in phrases) {
-                phrase.DeleteCacheFiles();
-                var selectedInPhrase = phrase.notes
-                    .Where(n => positions.Contains(phrase.position + n.position))
-                    .ToArray();
-                if (selectedInPhrase.Length >= phrase.notes.Length) {
-                    PhraseWaveformCache.ClearDisplayAll(phrase.hash);
-                } else if (selectedInPhrase.Length > 0) {
-                    PhraseWaveformCache.ClearDisplayRanges(
-                        phrase.hash,
-                        selectedInPhrase.Select(n => (
-                            n.positionMs - holePadMs,
-                            n.endMs + holePadMs)));
-                }
-                planner.MarkFailed(part, phrase.hash);
-            }
-            part.SetRenderMixComplete(false);
-            planner.InvalidatePartCompleteness(part);
+            uint nonce = (uint)Random.Shared.Next(1, int.MaxValue);
+            docManager.StartUndoGroup("context.note.acousticretake");
+            docManager.ExecuteCmd(new AcousticRetakeCommand(part, phrases, positions, nonce));
+            docManager.EndUndoGroup();
             int focusTick = notes[0].position + part.position;
             docManager.ExecuteCmd(new PreRenderNotification(part, focusTick, force: true));
         }
