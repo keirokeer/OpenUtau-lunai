@@ -48,8 +48,9 @@ namespace OpenUtau.App.ViewModels {
                 string? targetId = PhonemizerOverride;
                 bool isDefault = string.IsNullOrEmpty(targetId);
                 if (isDefault) {
-                    if (Part == null || Part.trackNo >= DocManager.Inst.Project.tracks.Count) return "Default";
-                    var track = DocManager.Inst.Project.tracks[Part.trackNo];
+                    if (!TryGetPartTrack(out var track)) {
+                        return "Default";
+                    }
                     string trackId = track.Phonemizer.GetType().FullName ?? string.Empty;
                     return $"Default ({GetPhonemizerDisplayName(trackId)})";
                 }
@@ -231,9 +232,11 @@ namespace OpenUtau.App.ViewModels {
 
         public void LoadPart(UPart? part) {
             Expressions.Clear();
-            if (part != null && part is UVoicePart) {
-                this.Part = part as UVoicePart;
-                var track = DocManager.Inst.Project.tracks[part.trackNo];
+            if (part != null && part is UVoicePart voicePart
+                && voicePart.trackNo >= 0
+                && voicePart.trackNo < DocManager.Inst.Project.tracks.Count) {
+                this.Part = voicePart;
+                var track = DocManager.Inst.Project.tracks[voicePart.trackNo];
                 foreach (var descriptor in track.GetSupportedExps(DocManager.Inst.Project)) {
                     if (descriptor.type != UExpressionType.Curve) {
                         var viewModel = new NotePropertyExpViewModel(
@@ -257,6 +260,19 @@ namespace OpenUtau.App.ViewModels {
             }
         }
 
+        bool TryGetPartTrack(out UTrack track) {
+            track = null!;
+            if (Part == null) {
+                return false;
+            }
+            var tracks = DocManager.Inst.Project.tracks;
+            if (Part.trackNo < 0 || Part.trackNo >= tracks.Count) {
+                return false;
+            }
+            track = tracks[Part.trackNo];
+            return true;
+        }
+
         private string GetPhonemizerDisplayName(string? targetId) {
             if (string.IsNullOrEmpty(targetId)) return "Default";
             var factory = OpenUtau.Api.PhonemizerFactory.GetAll().FirstOrDefault(f => 
@@ -270,18 +286,16 @@ namespace OpenUtau.App.ViewModels {
         public void RefreshPhonemizers() {
             var items = new List<MenuItemViewModel>();
             USinger? singer = null;
-            if (Part != null) {
-                var track = DocManager.Inst.Project.tracks[Part.trackNo];
-                singer = track.Singer;
+            if (TryGetPartTrack(out var trackForSinger)) {
+                singer = trackForSinger.Singer;
             }
             var available = PhonemizerFactory.EnumerateForSinger(singer).ToArray();
             var availableTypes = available.Select(factory => factory.type).ToHashSet();
             bool flatMenu = PhonemizerFactory.UsesFlatPhonemizerMenu(singer);
 
             string defaultHeader = "Default";
-            if (Part != null) {
-                var track = DocManager.Inst.Project.tracks[Part.trackNo];
-                string trackId = track.Phonemizer.GetType().FullName ?? "";
+            if (TryGetPartTrack(out var trackForHeader)) {
+                string trackId = trackForHeader.Phonemizer.GetType().FullName ?? "";
                 defaultHeader = $"Default ({GetPhonemizerDisplayName(trackId)})";
             }
             items.Add(new MenuItemViewModel() {
@@ -729,20 +743,18 @@ namespace OpenUtau.App.ViewModels {
             }
         }
         public void SetNumericalExpressionsChanges(string abbr, float? value) {
-            if (AllowNoteEdit && Part != null && selectedNotes.Count > 0) {
-                var track = DocManager.Inst.Project.tracks[Part.trackNo];
+            if (AllowNoteEdit && TryGetPartTrack(out var track) && selectedNotes.Count > 0) {
                 var project = DocManager.Inst.Project;
                 if (track.TryGetExpDescriptor(project, abbr, out UExpressionDescriptor descriptor) &&
                     ExpressionDefaultResolver.ApproximatelyEqual(
                         ExpressionDefaultResolver.GetEffectiveDefault(project, track, abbr), value ?? float.NaN)) {
                     value = null;
                 }
-                DocManager.Inst.ExecuteCmd(new SetNotesSameExpressionCommand(DocManager.Inst.Project, track, Part, selectedNotes, abbr, value));
+                DocManager.Inst.ExecuteCmd(new SetNotesSameExpressionCommand(DocManager.Inst.Project, track, Part!, selectedNotes, abbr, value));
             }
         }
         public void SetOptionalExpressionsChanges(string abbr, int? value) {
-            if (!NoteLoading && Part != null && selectedNotes.Count > 0) {
-                var track = DocManager.Inst.Project.tracks[Part.trackNo];
+            if (!NoteLoading && TryGetPartTrack(out var track) && selectedNotes.Count > 0) {
                 var project = DocManager.Inst.Project;
                 if (track.TryGetExpDescriptor(project, abbr, out _) &&
                     ExpressionDefaultResolver.ApproximatelyEqual(
@@ -750,7 +762,7 @@ namespace OpenUtau.App.ViewModels {
                     value = null;
                 }
                 DocManager.Inst.StartUndoGroup("command.exp.edit");
-                DocManager.Inst.ExecuteCmd(new SetNotesSameExpressionCommand(DocManager.Inst.Project, track, Part, selectedNotes, abbr, value));
+                DocManager.Inst.ExecuteCmd(new SetNotesSameExpressionCommand(DocManager.Inst.Project, track, Part!, selectedNotes, abbr, value));
                 DocManager.Inst.EndUndoGroup();
             }
         }
@@ -865,7 +877,11 @@ namespace OpenUtau.App.ViewModels {
             OptionItems.Clear();
             USinger? singer = null;
             if (abbr == Ustx.CLR && parentViewmodel?.Part != null) {
-                singer = DocManager.Inst.Project.tracks[parentViewmodel.Part.trackNo].Singer;
+                var tracks = DocManager.Inst.Project.tracks;
+                int trackNo = parentViewmodel.Part.trackNo;
+                if (trackNo >= 0 && trackNo < tracks.Count) {
+                    singer = tracks[trackNo].Singer;
+                }
             }
             foreach (var opt in Options) {
                 OptionItems.Add(new NotePropertyOptionItem(

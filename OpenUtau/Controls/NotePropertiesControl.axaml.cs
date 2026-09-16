@@ -223,7 +223,11 @@ foreach (var box in this.GetLogicalDescendants().OfType<TextBox>()) {
                 } else if (cmd is LoadProjectNotification) {
                     LoadPart(null);
                 } else if (cmd is SingersRefreshedNotification srn && srn.singer != null && ViewModel.Part != null) {
-                    var singer = DocManager.Inst.Project.tracks[ViewModel.Part.trackNo].Singer;
+                    var tracks = DocManager.Inst.Project.tracks;
+                    if (ViewModel.Part.trackNo < 0 || ViewModel.Part.trackNo >= tracks.Count) {
+                        return;
+                    }
+                    var singer = tracks[ViewModel.Part.trackNo].Singer;
                     if (singer != null && singer == srn.singer) {
                         LoadPart(ViewModel.Part);
                     }
