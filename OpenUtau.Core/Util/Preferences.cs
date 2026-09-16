@@ -37,10 +37,16 @@ namespace OpenUtau.Core.Util {
         public static void Save() {
             EnsureOverlayScrollbars();
             ClampVoiceColorCurveMax();
+            string path = PathManager.Inst.PrefsFilePath;
+            string tmp = path + ".tmp";
+            string json = JsonConvert.SerializeObject(Default, Formatting.Indented);
             try {
-                File.WriteAllText(PathManager.Inst.PrefsFilePath,
-                    JsonConvert.SerializeObject(Default, Formatting.Indented),
-                    Encoding.UTF8);
+                File.WriteAllText(tmp, json, Encoding.UTF8);
+                using (var src = new FileStream(tmp, FileMode.Open, FileAccess.Read, FileShare.Read))
+                using (var dst = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read)) {
+                    src.CopyTo(dst);
+                }
+                try { File.Delete(tmp); } catch { }
             } catch (Exception e) {
                 Log.Error(e, "Failed to save prefs.");
             }

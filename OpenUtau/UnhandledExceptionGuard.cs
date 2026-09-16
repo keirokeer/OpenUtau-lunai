@@ -13,8 +13,9 @@ using Serilog;
 namespace OpenUtau.App {
     /// <summary>
     /// Last-resort handlers so managed failures surface as an error dialog instead of a silent exit.
-    /// Native/process-corrupting faults (e.g. AccessViolation inside OnnxRuntime) may still terminate;
-    /// those try to show a blocking OS dialog before exit when possible.
+    /// Native/process-corrupting faults (e.g. AccessViolation inside OnnxRuntime) still terminate the
+    /// process without a managed exception — those cannot be caught here. We flush logs and try a
+    /// blocking OS dialog when any fatal path does reach managed code.
     /// </summary>
     static class UnhandledExceptionGuard {
         static int installedEarly;
@@ -38,11 +39,13 @@ namespace OpenUtau.App {
 
         public static void ReportFatal(Exception ex) {
             Log.Fatal(ex, "Fatal application error");
+            try { Log.CloseAndFlush(); } catch { }
             ShowNativeFatalDialog(ex);
         }
 
         static void OnDispatcherUnhandledException(object? sender, DispatcherUnhandledExceptionEventArgs e) {
             Log.Error(e.Exception, "Unhandled UI thread exception");
+            try { Log.CloseAndFlush(); } catch { }
             bool fatal = IsNonRecoverable(e.Exception);
             if (fatal) {
                 ShowNativeFatalDialog(e.Exception);
@@ -54,6 +57,7 @@ namespace OpenUtau.App {
 
         static void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e) {
             Log.Error(e.Exception, "Unobserved task exception");
+            try { Log.CloseAndFlush(); } catch { }
             e.SetObserved();
             ShowUserDialog(e.Exception);
         }
@@ -62,6 +66,7 @@ namespace OpenUtau.App {
             var ex = e.ExceptionObject as Exception
                 ?? new Exception($"Non-Exception unhandled: {e.ExceptionObject}");
             Log.Fatal(ex, "Unhandled domain exception (IsTerminating={IsTerminating})", e.IsTerminating);
+            try { Log.CloseAndFlush(); } catch { }
             if (e.IsTerminating || IsNonRecoverable(ex)) {
                 ShowNativeFatalDialog(ex);
             } else {
