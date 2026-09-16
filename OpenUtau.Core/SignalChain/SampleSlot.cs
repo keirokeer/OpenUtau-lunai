@@ -110,9 +110,49 @@ namespace OpenUtau.Core.SignalChain {
         public bool IsReady(int position, int count) {
             var s = slots;
             for (int i = 0; i < s.Length; ++i) {
-                if (!s[i].IsReady(position, count)) {
+                if (s[i].IsReady(position, count)) {
+                    continue;
+                }
+                // Pending window intersects this read. Do not stall while Ready PCM
+                // from an overlapping earlier phrase (leading/crossfade) still covers
+                // that range — otherwise playback micro-pauses at every phrase boundary
+                // even though audible samples are already available.
+                int copies = 2 / Math.Max(1, s[i].Channels);
+                int winStart = s[i].Offset * copies;
+                int winEnd = winStart + s[i].EstimatedLength * copies;
+                int from = Math.Max(position, winStart);
+                int to = Math.Min(position + count, winEnd);
+                if (from < to && !RangeCoveredByReady(s, from, to)) {
                     return false;
                 }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// True when every sample in <paramref name="from"/>..<paramref name="to"/>
+        /// (stereo transport domain) falls inside at least one Ready slot's PCM.
+        /// </summary>
+        internal static bool RangeCoveredByReady(SampleSlot[] s, int from, int to) {
+            int cursor = from;
+            while (cursor < to) {
+                int coverEnd = cursor;
+                for (int i = 0; i < s.Length; ++i) {
+                    var slot = s[i];
+                    if (slot.State != SlotState.Ready || slot.Data == null) {
+                        continue;
+                    }
+                    int copies = 2 / Math.Max(1, slot.Channels);
+                    int start = slot.Offset * copies;
+                    int end = start + slot.Data.Length * copies;
+                    if (start <= cursor && end > cursor) {
+                        coverEnd = Math.Max(coverEnd, end);
+                    }
+                }
+                if (coverEnd <= cursor) {
+                    return false;
+                }
+                cursor = coverEnd;
             }
             return true;
         }

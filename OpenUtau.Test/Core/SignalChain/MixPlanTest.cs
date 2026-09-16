@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using OpenUtau.Core.Ustx;
+using OpenUtau.Core.Util;
 using Xunit;
 
 namespace OpenUtau.Core.SignalChain {
@@ -93,6 +94,75 @@ namespace OpenUtau.Core.SignalChain {
             // position did not advance: the next read waits again
             Assert.Equal(4410, adapter.Read(buffer, 0, buffer.Length));
             Assert.Equal(8820, adapter.Waited);
+        }
+
+        [Fact]
+        public void AdapterMixesReadyPrefixThenHoldsOnPendingTail() {
+            // Ready phrase [0, 50ms), pending phrase [50ms, 150ms).
+            // Play the ready half, then hold — do not skip the pending segment.
+            var readyData = Enumerable.Repeat(0.5f, 2205).ToArray().Freeze(); // 50ms mono
+            var source = new SlotMixSource();
+            source.SetSlots(new[] {
+                new SampleSlot(0, 50, 1, readyData, SlotState.Ready),
+                new SampleSlot(50, 100, 1, null, SlotState.Pending),
+            });
+            var adapter = new MasterAdapter(source);
+            var buffer = new float[8820]; // 100ms stereo
+            Assert.Equal(8820, adapter.Read(buffer, 0, buffer.Length));
+            Assert.True(adapter.IsWaiting);
+            Assert.True(adapter.Waited > 0);
+            Assert.Contains(buffer.Take(4410), x => Math.Abs(x) > 0.01f);
+            // Still pending: keep holding without advancing past the boundary.
+            Assert.Equal(8820, adapter.Read(buffer, 0, buffer.Length));
+            Assert.True(adapter.IsWaiting);
+        }
+
+        [Fact]
+        public void MutedFaderDoesNotBlockReadiness() {
+            var pending = new SlotMixSource();
+            pending.SetSlots(new[] { new SampleSlot(0, 100, 1, null, SlotState.Pending) });
+            var muted = new Fader(pending);
+            muted.Scale = 0;
+            muted.SetScaleToTarget();
+            Assert.True(muted.IsReady(0, 4410));
+
+            var audibleData = Enumerable.Repeat(0.4f, 4410).ToArray().Freeze();
+            var audibleSrc = new SlotMixSource();
+            audibleSrc.SetSlots(new[] { new SampleSlot(0, 100, 1, audibleData, SlotState.Ready) });
+            var audible = new Fader(audibleSrc);
+            audible.Scale = 1;
+            audible.SetScaleToTarget();
+            var mix = new WaveMix(new ISignalSource[] { audible, muted });
+            Assert.True(mix.IsReady(0, 4410));
+        }
+
+        [Fact]
+        public void OverlappingReadyCoversPendingLeadingWithoutBlocking() {
+            // Phrase A ready through 80ms; phrase B pending starts at 50ms (leading overlap).
+            // Playback must not hold while A's PCM still covers the playhead.
+            var readyA = Enumerable.Repeat(0.5f, 3528).ToArray().Freeze(); // 80ms mono
+            var source = new SlotMixSource();
+            source.SetSlots(new[] {
+                new SampleSlot(0, 80, 1, readyA, SlotState.Ready),
+                new SampleSlot(50, 100, 1, null, SlotState.Pending),
+            });
+            Assert.True(source.IsReady(0, 4410)); // first 50ms
+            // 50–80ms is inside B's pending window but covered by A's ready PCM
+            Assert.True(source.IsReady(4410, 2205));
+            // Past A's data, still inside B's pending window → not ready
+            Assert.False(source.IsReady(7056, 4410));
+        }
+
+        [Fact]
+        public void LargestReadyCountFindsPrefixBeforePending() {
+            var readyData = Enumerable.Repeat(0.25f, 2205).ToArray().Freeze();
+            var source = new SlotMixSource();
+            source.SetSlots(new[] {
+                new SampleSlot(0, 50, 1, readyData, SlotState.Ready),
+                new SampleSlot(50, 100, 1, null, SlotState.Pending),
+            });
+            int ready = MasterAdapter.LargestReadyCount(source, 0, 8820);
+            Assert.Equal(4410, ready); // exactly 50ms of interleaved stereo
         }
 
         [Fact]

@@ -361,6 +361,7 @@ namespace OpenUtau.Core {
         }
 
         private void RebuildPartSlots(UPart part, ulong phraseHash, Frozen<float> frozen) {
+            int trackNo = -1;
             for (int p = 0; p < sessionParts.Count; ++p) {
                 var ps = sessionParts[p];
                 if (!ReferenceEquals(ps.part, part)) {
@@ -371,10 +372,15 @@ namespace OpenUtau.Core {
                         var spec = ps.specs[i];
                         ps.samples[i] = new SampleSlot(spec.offsetMs, spec.estimatedLengthMs, spec.channels,
                             frozen, SlotState.Ready);
+                        trackNo = ps.trackNo;
                     }
                 }
             }
-            RebuildAll();
+            // Only republish the affected track — swapping every track's slot array
+            // under the playhead caused clicks/micro-pauses on unrelated tracks.
+            if (trackNo >= 0 && tracks.TryGetValue(trackNo, out var track)) {
+                PublishTrackSlots(track);
+            }
         }
 
         /// <summary>
@@ -384,16 +390,20 @@ namespace OpenUtau.Core {
         /// </summary>
         private void RebuildAll() {
             foreach (var track in trackOrder) {
-                var list = new List<SampleSlot>();
-                for (int p = 0; p < sessionParts.Count; ++p) {
-                    var ps = sessionParts[p];
-                    if (ps.trackNo != track.TrackNo) {
-                        continue;
-                    }
-                    list.AddRange(ps.samples);
-                }
-                track.Source.SetSlots(list.ToArray());
+                PublishTrackSlots(track);
             }
+        }
+
+        private void PublishTrackSlots(TrackState track) {
+            var list = new List<SampleSlot>();
+            for (int p = 0; p < sessionParts.Count; ++p) {
+                var ps = sessionParts[p];
+                if (ps.trackNo != track.TrackNo) {
+                    continue;
+                }
+                list.AddRange(ps.samples);
+            }
+            track.Source.SetSlots(list.ToArray());
         }
     }
 }
