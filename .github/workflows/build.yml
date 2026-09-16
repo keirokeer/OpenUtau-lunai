@@ -83,7 +83,7 @@ jobs:
 
       # Test
       - name: Test
-        run: dotnet test OpenUtau.Test
+        run: dotnet run --project OpenUtau.Test/OpenUtau.Test.csproj
 
       # Build
       - name: Restore

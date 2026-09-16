@@ -68,7 +68,7 @@ jobs:
 
       # Test
       - name: Run Tests
-        run: dotnet test OpenUtau.Test
+        run: dotnet run --project OpenUtau.Test/OpenUtau.Test.csproj
 
       # Build
       - name: Restore dependencies
