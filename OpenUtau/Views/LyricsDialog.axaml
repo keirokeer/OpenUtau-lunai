@@ -67,7 +67,7 @@
     <StackPanel Grid.Row="4" Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
       <Button Content="{DynamicResource button.reset}" Margin="0" Command="{Binding Reset}"/>
       <Button Content="{DynamicResource button.cancel}" Margin="0" Click="OnCancel"/>
-      <Button Content="{DynamicResource button.apply}" Margin="0" Click="OnFinish"/>
+      <Button Content="{DynamicResource button.apply}" Margin="0" Classes="dialogPrimary" Click="OnFinish"/>
     </StackPanel>
   </Grid>
 </Window>

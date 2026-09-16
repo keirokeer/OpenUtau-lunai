@@ -164,6 +164,9 @@ namespace OpenUtau.App.Views {
 
             void AddButton(string caption, MessageBoxResult r, bool def = false) {
                 var btn = new Button { Content = caption };
+                if (r == MessageBoxResult.Ok || r == MessageBoxResult.Yes) {
+                    btn.Classes.Add("dialogPrimary");
+                }
                 btn.Click += (_, __) => {
                     res = r;
                     msgbox.Close();
@@ -219,6 +222,9 @@ namespace OpenUtau.App.Views {
             var res = MessageBoxResult.Cancel;
             void AddActionButton(string caption, MessageBoxResult result, bool isDefault = false) {
                 var btn = new Button { Content = caption, IsDefault = isDefault };
+                if (isDefault || result == MessageBoxResult.Ok || result == MessageBoxResult.Yes) {
+                    btn.Classes.Add("dialogPrimary");
+                }
                 btn.Click += (_, __) => {
                     res = result;
                     msgbox.Close();

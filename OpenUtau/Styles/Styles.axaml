@@ -166,6 +166,43 @@
     <Setter Property="Background" Value="{DynamicResource AppTopBarTransportStripBrush}"/>
     <Setter Property="Opacity" Value="1"/>
   </Style>
+  <!-- Dialog primary (OK): matches checked checkbox (accent / white+black hover / dark press) -->
+  <Style Selector="Button.dialogPrimary">
+    <Setter Property="Background" Value="{DynamicResource SelectedTrackAccentBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource NeutralAccentBrush}"/>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <ContentPresenter x:Name="PART_ContentPresenter"
+                          Background="{TemplateBinding Background}"
+                          BorderBrush="{TemplateBinding BorderBrush}"
+                          BorderThickness="{TemplateBinding BorderThickness}"
+                          CornerRadius="{TemplateBinding CornerRadius}"
+                          Content="{TemplateBinding Content}"
+                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                          Padding="{TemplateBinding Padding}"
+                          Foreground="{TemplateBinding Foreground}"
+                          RecognizesAccessKey="False"
+                          HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                          VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+      </ControlTemplate>
+    </Setter>
+    <Style Selector="^:pointerover:not(:pressed):not(:disabled)">
+      <Setter Property="Background" Value="{DynamicResource NeutralAccentBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource WhiteKeyNameBrush}"/>
+    </Style>
+    <Style Selector="^:pointerover:not(:pressed):not(:disabled) /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource NeutralAccentBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource WhiteKeyNameBrush}"/>
+    </Style>
+    <Style Selector="^:pressed:not(:disabled)">
+      <Setter Property="Background" Value="{DynamicResource SelectedTrackAccentDarkBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource NeutralAccentBrush}"/>
+    </Style>
+    <Style Selector="^:pressed:not(:disabled) /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource SelectedTrackAccentDarkBrush}"/>
+      <Setter Property="Foreground" Value="{DynamicResource NeutralAccentBrush}"/>
+    </Style>
+  </Style>
   <Style Selector="Button.iconButton">
     <Setter Property="Padding" Value="0"/>
     <Setter Property="Margin" Value="0"/>
@@ -417,6 +454,36 @@
   </Style>
   <Style Selector="CheckBox /template/ Viewbox">
     <Setter Property="VerticalAlignment" Value="Top" />
+  </Style>
+  <!-- Checked: track accent; hover = near-white fill + dark glyph -->
+  <Style Selector="CheckBox:checked /template/ Border#NormalRectangle">
+    <Setter Property="Background" Value="{DynamicResource SelectedTrackAccentBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource SelectedTrackAccentBrush}"/>
+  </Style>
+  <Style Selector="CheckBox:checked /template/ Path#CheckGlyph">
+    <Setter Property="Fill" Value="{DynamicResource NeutralAccentBrush}"/>
+  </Style>
+  <Style Selector="CheckBox:checked:pointerover /template/ Border#NormalRectangle">
+    <Setter Property="Background" Value="{DynamicResource NeutralAccentBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource NeutralAccentBrush}"/>
+  </Style>
+  <Style Selector="CheckBox:checked:pointerover /template/ Path#CheckGlyph">
+    <Setter Property="Fill" Value="{DynamicResource WhiteKeyNameBrush}"/>
+  </Style>
+  <Style Selector="CheckBox:checked:pressed /template/ Border#NormalRectangle">
+    <Setter Property="Background" Value="{DynamicResource SelectedTrackAccentDarkBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource SelectedTrackAccentDarkBrush}"/>
+  </Style>
+  <Style Selector="CheckBox:checked:pressed /template/ Path#CheckGlyph">
+    <Setter Property="Fill" Value="{DynamicResource NeutralAccentBrush}"/>
+  </Style>
+  <!-- While pressing with pointer still over, keep the pressed look (not the white hover). -->
+  <Style Selector="CheckBox:checked:pressed:pointerover /template/ Border#NormalRectangle">
+    <Setter Property="Background" Value="{DynamicResource SelectedTrackAccentDarkBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource SelectedTrackAccentDarkBrush}"/>
+  </Style>
+  <Style Selector="CheckBox:checked:pressed:pointerover /template/ Path#CheckGlyph">
+    <Setter Property="Fill" Value="{DynamicResource NeutralAccentBrush}"/>
   </Style>
 
   <Style Selector="CheckBox.menu">

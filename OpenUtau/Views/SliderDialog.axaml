@@ -14,6 +14,6 @@
       <TextBlock Name="TextBlock" Width="20" />
     </StackPanel>
     <Button Name="OkButton" Content="OK" Click="OkButtonClick"
-            Margin="10" HorizontalAlignment="Center" MinWidth="100" />
+            Margin="10" HorizontalAlignment="Center" MinWidth="100" Classes="dialogPrimary"/>
   </StackPanel>
 </Window>

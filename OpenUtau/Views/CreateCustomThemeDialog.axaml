@@ -18,6 +18,6 @@
         <ComboBoxItem Content="{DynamicResource prefs.appearance.customtheme.create.basedark}"/>
       </c:WorkspacePanelComboBox>
     </Panel>
-    <Button Name="OkButton" Content="OK" Margin="12,0,12,12" HorizontalAlignment="Stretch"/>
+    <Button Name="OkButton" Content="OK" Margin="12,0,12,12" HorizontalAlignment="Stretch" Classes="dialogPrimary"/>
   </StackPanel>
 </Window>

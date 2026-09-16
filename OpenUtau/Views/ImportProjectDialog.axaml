@@ -169,7 +169,7 @@
 
       <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right" Margin="0,12,0,0">
         <Button x:Name="CancelButton" Content="{DynamicResource button.cancel}" MinWidth="72" Click="OnCancel"/>
-        <Button x:Name="ApplyButton" Content="{DynamicResource button.apply}" MinWidth="72" IsDefault="True" Click="OnApply"/>
+        <Button x:Name="ApplyButton" Content="{DynamicResource button.apply}" MinWidth="72" Classes="dialogPrimary" IsDefault="True" Click="OnApply"/>
       </StackPanel>
 
     </Grid>

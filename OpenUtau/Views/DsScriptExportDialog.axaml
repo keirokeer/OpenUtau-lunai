@@ -40,7 +40,7 @@
       <!-- OK / Cancel -->
       <Grid ColumnDefinitions="*,8,*" Margin="0,4,0,0">
         <Button Grid.Column="0" Content="{DynamicResource button.ok}"
-                HorizontalAlignment="Stretch"
+                HorizontalAlignment="Stretch" Classes="dialogPrimary"
                 Click="OnOkClicked"/>
         <Button Grid.Column="2" Content="{DynamicResource button.cancel}"
                 HorizontalAlignment="Stretch"

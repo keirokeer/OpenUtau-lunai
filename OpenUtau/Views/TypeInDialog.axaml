@@ -10,6 +10,6 @@
   <StackPanel VerticalAlignment="Center" Margin="{Binding $parent.WindowDecorationMargin}">
     <TextBlock Margin="20" Name="Prompt" IsVisible="False" TextWrapping="Wrap" MaxWidth="560"/>
     <ac:WorkspacePanelTextBox Name="TextBox" Classes="workspacePanelTextBox" Margin="4"/>
-    <Button Name="OkButton" Content="OK" Margin="4" HorizontalAlignment="Stretch"/>
+    <Button Name="OkButton" Content="OK" Margin="4" HorizontalAlignment="Stretch" Classes="dialogPrimary"/>
   </StackPanel>
 </Window>

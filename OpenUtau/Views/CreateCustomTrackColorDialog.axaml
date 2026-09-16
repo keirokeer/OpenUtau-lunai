@@ -28,7 +28,7 @@
 
     <StackPanel Orientation="Horizontal" Spacing="10" Margin="12,4,12,12" HorizontalAlignment="Right">
       <Button Name="CancelButton" MinWidth="72" Content="{DynamicResource button.cancel}"/>
-      <Button Name="OkButton" MinWidth="72" Content="{DynamicResource button.apply}"/>
+      <Button Name="OkButton" MinWidth="72" Classes="dialogPrimary" Content="{DynamicResource button.apply}"/>
     </StackPanel>
   </StackPanel>
 </Window>

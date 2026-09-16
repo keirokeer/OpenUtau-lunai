@@ -39,7 +39,7 @@
                 HorizontalAlignment="Stretch" Command="{Binding SetDefaultWavtool}"/>
       </Grid>
       <Button Margin="0,8,0,0" Content="{DynamicResource button.ok}"
-              HorizontalAlignment="Stretch" Click="OnOkClicked"/>
+              HorizontalAlignment="Stretch" Classes="dialogPrimary" Click="OnOkClicked"/>
     </StackPanel>
   </Border>
 </Window>

@@ -35,7 +35,7 @@
     </StackPanel>
 
     <StackPanel Grid.Row="8" Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right">
-      <Button Content="{DynamicResource button.apply}" Margin="0" MinWidth="50" Click="OnFinish"/>
+      <Button Content="{DynamicResource button.apply}" Margin="0" MinWidth="50" Classes="dialogPrimary" Click="OnFinish"/>
     </StackPanel>
   </Grid>
 </Window>

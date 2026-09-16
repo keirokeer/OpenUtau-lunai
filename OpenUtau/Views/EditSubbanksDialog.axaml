@@ -43,7 +43,7 @@
         </StackPanel>
         <StackPanel VerticalAlignment="Bottom" Grid.Row="4">
           <Button Content="{DynamicResource button.reset}" HorizontalAlignment="Stretch" Command="{Binding LoadSubbanks}"/>
-          <Button Content="{DynamicResource button.save}" HorizontalAlignment="Stretch" Click="OnSave"/>
+          <Button Content="{DynamicResource button.save}" HorizontalAlignment="Stretch" Classes="dialogPrimary" Click="OnSave"/>
           <Button Content="{DynamicResource singers.subbanks.export}" HorizontalAlignment="Stretch" Click="OnExportMap"/>
           <Button Content="{DynamicResource button.cancel}" Margin="0,4,0,0" HorizontalAlignment="Stretch" Click="OnCancel"/>
         </StackPanel>

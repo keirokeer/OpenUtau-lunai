@@ -75,7 +75,7 @@
     <StackPanel Grid.Row="5" Orientation="Horizontal" Spacing="10"
                 Margin="14,0,14,14" HorizontalAlignment="Right">
       <Button Name="CancelButton" MinWidth="80" Content="{DynamicResource button.cancel}"/>
-      <Button Name="OkButton" MinWidth="80" Content="{DynamicResource button.save}"/>
+      <Button Name="OkButton" MinWidth="80" Classes="dialogPrimary" Content="{DynamicResource button.save}"/>
     </StackPanel>
   </Grid>
 </Window>

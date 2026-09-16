@@ -3,49 +3,59 @@
         xmlns:vm="using:OpenUtau.App.ViewModels"
         xmlns:c="using:OpenUtau.App.Controls"
         x:Class="OpenUtau.App.Views.GenerateHarmonyDialog"
-        Width="420" SizeToContent="Height"
+        Width="420" SizeToContent="Height" CanResize="False"
         WindowStartupLocation="CenterOwner"
         Icon="/Assets/open-utau.ico"
         Title="{DynamicResource dialogs.harmony.caption}">
-  <StackPanel Margin="16" Spacing="10">
-    <TextBlock TextWrapping="Wrap"
-               Text="{DynamicResource dialogs.harmony.description}"/>
-    <Grid ColumnDefinitions="Auto,*" Margin="0,0,0,4">
-      <TextBlock Grid.Column="0" VerticalAlignment="Center" Classes="lbl" Margin="0,0,12,0"
-                 Text="{DynamicResource dialogs.harmony.key}"/>
-      <c:WorkspacePanelComboBox x:Name="KeyComboBox" Grid.Column="1" Classes="workspacePanelCombo"
-                SelectedItem="{Binding SelectedKeyOption}">
-        <ComboBox.ItemTemplate>
-          <DataTemplate x:DataType="vm:KeyOptionViewModel">
-            <TextBlock Text="{Binding DisplayName}"/>
-          </DataTemplate>
-        </ComboBox.ItemTemplate>
-        </c:WorkspacePanelComboBox>
-    </Grid>
-    <StackPanel Spacing="6">
-      <TextBlock Classes="lbl" Text="{DynamicResource dialogs.harmony.intervals}"/>
-      <StackPanel Orientation="Horizontal" Spacing="8">
-        <CheckBox VerticalAlignment="Center" IsChecked="{Binding ThirdAbove}"/>
-        <TextBlock VerticalAlignment="Center" Text="{DynamicResource harmony.interval.thirdabove}"/>
+  <Border Margin="{Binding $parent.WindowDecorationMargin}">
+    <DockPanel Margin="14" LastChildFill="True">
+      <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="10"
+                  HorizontalAlignment="Right" Margin="0,12,0,0">
+        <Button Name="CancelButton" MinWidth="72"
+                Content="{DynamicResource button.cancel}"
+                IsCancel="True" Click="OnCancel"/>
+        <Button Name="OkButton" MinWidth="72" Classes="dialogPrimary"
+                Content="{DynamicResource button.ok}"
+                IsDefault="True" Click="OnOk"/>
       </StackPanel>
-      <StackPanel Orientation="Horizontal" Spacing="8">
-        <CheckBox VerticalAlignment="Center" IsChecked="{Binding ThirdBelow}"/>
-        <TextBlock VerticalAlignment="Center" Text="{DynamicResource harmony.interval.thirdbelow}"/>
+
+      <StackPanel Spacing="12">
+        <TextBlock TextWrapping="Wrap"
+                   Text="{DynamicResource dialogs.harmony.description}"/>
+        <Grid ColumnDefinitions="Auto,*" Margin="0,0,0,4">
+          <TextBlock Grid.Column="0" VerticalAlignment="Center" Classes="lbl" Margin="0,0,12,0"
+                     Text="{DynamicResource dialogs.harmony.key}"/>
+          <c:WorkspacePanelComboBox x:Name="KeyComboBox" Grid.Column="1" Classes="workspacePanelCombo"
+                    SelectedItem="{Binding SelectedKeyOption}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:KeyOptionViewModel">
+                <TextBlock Text="{Binding DisplayName}"/>
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </c:WorkspacePanelComboBox>
+        </Grid>
+        <StackPanel Spacing="6">
+          <TextBlock Classes="lbl" Text="{DynamicResource dialogs.harmony.intervals}"/>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <CheckBox VerticalAlignment="Center" IsChecked="{Binding ThirdAbove}"/>
+            <TextBlock VerticalAlignment="Center" Text="{DynamicResource harmony.interval.thirdabove}"/>
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <CheckBox VerticalAlignment="Center" IsChecked="{Binding ThirdBelow}"/>
+            <TextBlock VerticalAlignment="Center" Text="{DynamicResource harmony.interval.thirdbelow}"/>
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <CheckBox VerticalAlignment="Center" IsChecked="{Binding FifthAbove}"/>
+            <TextBlock VerticalAlignment="Center" Text="{DynamicResource harmony.interval.fifthabove}"/>
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <CheckBox VerticalAlignment="Center" IsChecked="{Binding FifthBelow}"/>
+            <TextBlock VerticalAlignment="Center" Text="{DynamicResource harmony.interval.fifthbelow}"/>
+          </StackPanel>
+        </StackPanel>
+        <TextBlock Opacity="0.75" FontSize="11" TextWrapping="Wrap"
+                   Text="{DynamicResource dialogs.harmony.hint}"/>
       </StackPanel>
-      <StackPanel Orientation="Horizontal" Spacing="8">
-        <CheckBox VerticalAlignment="Center" IsChecked="{Binding FifthAbove}"/>
-        <TextBlock VerticalAlignment="Center" Text="{DynamicResource harmony.interval.fifthabove}"/>
-      </StackPanel>
-      <StackPanel Orientation="Horizontal" Spacing="8">
-        <CheckBox VerticalAlignment="Center" IsChecked="{Binding FifthBelow}"/>
-        <TextBlock VerticalAlignment="Center" Text="{DynamicResource harmony.interval.fifthbelow}"/>
-      </StackPanel>
-    </StackPanel>
-    <TextBlock Opacity="0.75" TextWrapping="Wrap"
-               Text="{DynamicResource dialogs.harmony.hint}"/>
-    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,8,0,0">
-      <Button MinWidth="80" Content="{DynamicResource button.cancel}" Click="OnCancel"/>
-      <Button MinWidth="80" Content="{DynamicResource button.ok}" Classes="accent" Click="OnOk"/>
-    </StackPanel>
-  </StackPanel>
+    </DockPanel>
+  </Border>
 </Window>
