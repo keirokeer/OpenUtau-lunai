@@ -4,11 +4,11 @@
                     xmlns:system="clr-namespace:System;assembly=mscorlib"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-  <system:String x:Key="context.part.generateharmonies">Luo harmonioita...</system:String>
-  <system:String x:Key="context.part.createdoublevocal">Luo double vocal</system:String>
+  <system:String x:Key="context.part.generateharmonies">Luo harmoniat...</system:String>
+  <system:String x:Key="context.part.createdoublevocal">Luo double vocal...</system:String>
   <system:String x:Key="command.part.createdoublevocal">Luo double vocal</system:String>
   <system:String x:Key="dialogs.doublevocal.running">Luodaan double vocal</system:String>
-  <system:String x:Key="dialogs.doublevocal.caption">Create double vocal</system:String>
+  <system:String x:Key="dialogs.doublevocal.caption">Luo double vocal</system:String>
   <system:String x:Key="dialogs.doublevocal.count">Number of doubles</system:String>
   <system:String x:Key="dialogs.doublevocal.steps">Steps</system:String>
   <system:String x:Key="dialogs.doublevocal.description">Clone the selected DiffSinger part onto a new track, then optionally randomize phoneme timings, warp the pitch curve, and blend a new pitch generation.</system:String>
@@ -150,8 +150,8 @@
 
   <system:String x:Key="phoneme.show.error">Alt + napsauta nähdäksesi koko virheen</system:String>
 
-  <system:String x:Key="pianoroll.menu.part.generateharmonies">Luo harmonioita...</system:String>
-  <system:String x:Key="pianoroll.menu.part.createdoublevocal">Luo double vocal</system:String>
+  <system:String x:Key="pianoroll.menu.part.generateharmonies">Luo harmoniat...</system:String>
+  <system:String x:Key="pianoroll.menu.part.createdoublevocal">Luo double vocal...</system:String>
   <system:String x:Key="pianoroll.menu.part.legacypluginexp.shortcuts">(vanha)</system:String>
   <system:String x:Key="pianoroll.menu.view.pianoroll.fullscreen">Laajenna pianorulla ikkunassa</system:String>
   <system:String x:Key="pianoroll.menu.view.tiktokmode">TikTok-tallennustila</system:String>

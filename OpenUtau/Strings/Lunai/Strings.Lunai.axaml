@@ -4,8 +4,8 @@
                     xmlns:system="clr-namespace:System;assembly=mscorlib"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-  <system:String x:Key="context.part.generateharmonies">Generate harmonies...</system:String>
-  <system:String x:Key="context.part.createdoublevocal">Create double vocal</system:String>
+  <system:String x:Key="context.part.generateharmonies">Create harmonies...</system:String>
+  <system:String x:Key="context.part.createdoublevocal">Create double vocal...</system:String>
   <system:String x:Key="command.part.createdoublevocal">Create double vocal</system:String>
   <system:String x:Key="dialogs.doublevocal.running">Creating double vocal</system:String>
   <system:String x:Key="dialogs.doublevocal.caption">Create double vocal</system:String>
@@ -49,7 +49,7 @@
   <system:String x:Key="dialogs.exportds.caption">Export DiffSinger script</system:String>
   <system:String x:Key="dialogs.exportds.variance">Variance parameters</system:String>
   <system:String x:Key="dialogs.exportds.variance.hint">Enable DiffSinger tensor cache in Preferences to export variance parameter curves.</system:String>
-  <system:String x:Key="dialogs.harmony.caption">Generate Harmonies</system:String>
+  <system:String x:Key="dialogs.harmony.caption">Create harmonies</system:String>
   <system:String x:Key="dialogs.harmony.description">Create new harmony tracks from the selected part. Notes are transposed diatonically in the chosen key.</system:String>
   <system:String x:Key="dialogs.harmony.hint">Each selected voice creates a new track below the source with transposed notes. Singer and settings are copied from the source track.</system:String>
   <system:String x:Key="dialogs.harmony.intervals">Harmony voices</system:String>
@@ -152,8 +152,8 @@
 
   <system:String x:Key="phoneme.show.error">Alt + Click to view the full error</system:String>
 
-  <system:String x:Key="pianoroll.menu.part.generateharmonies">Generate harmonies...</system:String>
-  <system:String x:Key="pianoroll.menu.part.createdoublevocal">Create double vocal</system:String>
+  <system:String x:Key="pianoroll.menu.part.generateharmonies">Create harmonies...</system:String>
+  <system:String x:Key="pianoroll.menu.part.createdoublevocal">Create double vocal...</system:String>
   <system:String x:Key="pianoroll.menu.part.legacypluginexp.shortcuts">(legacy)</system:String>
   <system:String x:Key="pianoroll.menu.view.pianoroll.fullscreen">Expand piano roll in window</system:String>
   <system:String x:Key="pianoroll.menu.view.tiktokmode">TikTok recording mode</system:String>

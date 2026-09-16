@@ -5,7 +5,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
   <system:String x:Key="context.part.generateharmonies">Создать гармонии...</system:String>
-  <system:String x:Key="context.part.createdoublevocal">Создать дабл-вокал</system:String>
+  <system:String x:Key="context.part.createdoublevocal">Создать дабл-вокал...</system:String>
   <system:String x:Key="command.part.createdoublevocal">Создать дабл-вокал</system:String>
   <system:String x:Key="dialogs.doublevocal.running">Создание дабл-вокала</system:String>
   <system:String x:Key="dialogs.doublevocal.caption">Создать дабл-вокал</system:String>
@@ -49,7 +49,7 @@
   <system:String x:Key="dialogs.exportds.caption">Экспорт скрипта DiffSinger</system:String>
   <system:String x:Key="dialogs.exportds.variance">Параметры variance</system:String>
   <system:String x:Key="dialogs.exportds.variance.hint">Включите кэш тензоров DiffSinger в настройках, чтобы экспортировать кривые параметров variance.</system:String>
-  <system:String x:Key="dialogs.harmony.caption">Создание гармоний</system:String>
+  <system:String x:Key="dialogs.harmony.caption">Создать гармонии</system:String>
   <system:String x:Key="dialogs.harmony.description">Создать новые треки с гармониями на основе выбранной партии. Ноты транспонируются диатонически в выбранной тональности.</system:String>
   <system:String x:Key="dialogs.harmony.hint">Для каждого выбранного голоса создаётся новый трек под исходным с транспонированными нотами. Вокалист и настройки копируются с исходного трека.</system:String>
   <system:String x:Key="dialogs.harmony.intervals">Голоса гармонии</system:String>
@@ -153,7 +153,7 @@
   <system:String x:Key="phoneme.show.error">Alt + щелчок — полный текст ошибки</system:String>
 
   <system:String x:Key="pianoroll.menu.part.generateharmonies">Создать гармонии...</system:String>
-  <system:String x:Key="pianoroll.menu.part.createdoublevocal">Создать дабл-вокал</system:String>
+  <system:String x:Key="pianoroll.menu.part.createdoublevocal">Создать дабл-вокал...</system:String>
   <system:String x:Key="pianoroll.menu.part.legacypluginexp.shortcuts">(устаревшее)</system:String>
   <system:String x:Key="pianoroll.menu.view.pianoroll.fullscreen">Пианоролл на всё окно</system:String>
   <system:String x:Key="pianoroll.menu.view.tiktokmode">Режим съёмки для TikTok</system:String>

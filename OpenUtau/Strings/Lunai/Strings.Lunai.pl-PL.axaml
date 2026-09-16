@@ -4,11 +4,11 @@
                     xmlns:system="clr-namespace:System;assembly=mscorlib"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-  <system:String x:Key="context.part.generateharmonies">Generuj harmonie...</system:String>
-  <system:String x:Key="context.part.createdoublevocal">Utwórz double vocal</system:String>
+  <system:String x:Key="context.part.generateharmonies">Utwórz harmonie...</system:String>
+  <system:String x:Key="context.part.createdoublevocal">Utwórz double vocal...</system:String>
   <system:String x:Key="command.part.createdoublevocal">Utwórz double vocal</system:String>
   <system:String x:Key="dialogs.doublevocal.running">Tworzenie double vocal</system:String>
-  <system:String x:Key="dialogs.doublevocal.caption">Create double vocal</system:String>
+  <system:String x:Key="dialogs.doublevocal.caption">Utwórz double vocal</system:String>
   <system:String x:Key="dialogs.doublevocal.count">Number of doubles</system:String>
   <system:String x:Key="dialogs.doublevocal.steps">Steps</system:String>
   <system:String x:Key="dialogs.doublevocal.description">Clone the selected DiffSinger part onto a new track, then optionally randomize phoneme timings, warp the pitch curve, and blend a new pitch generation.</system:String>
@@ -47,7 +47,7 @@
   <system:String x:Key="dialogs.exportds.caption">Eksportuj DiffSinger skrypt</system:String>
   <system:String x:Key="dialogs.exportds.variance">Wariancja parametry</system:String>
   <system:String x:Key="dialogs.exportds.variance.hint">Włącz pamięć podręczną tensorów DiffSinger w Preferencjach, aby eksportować krzywe parametrów wariancji.</system:String>
-  <system:String x:Key="dialogs.harmony.caption">Generate Harmonie</system:String>
+  <system:String x:Key="dialogs.harmony.caption">Utwórz harmonie</system:String>
   <system:String x:Key="dialogs.harmony.description">Utwórz nowe ścieżki harmonii z wybranej części. Nuty są transponowane diatonicznie w wybranej tonacji.</system:String>
   <system:String x:Key="dialogs.harmony.hint">Każdy wybrany głos tworzy nową ścieżkę pod źródłową z transponowanymi nutami. Wokalista i ustawienia są kopiowane ze ścieżki źródłowej.</system:String>
   <system:String x:Key="dialogs.harmony.intervals">Głosy harmonii</system:String>
@@ -150,8 +150,8 @@
 
   <system:String x:Key="phoneme.show.error">Alt + kliknij, aby wyświetlić pełny błąd</system:String>
 
-  <system:String x:Key="pianoroll.menu.part.generateharmonies">Generuj harmonie...</system:String>
-  <system:String x:Key="pianoroll.menu.part.createdoublevocal">Utwórz double vocal</system:String>
+  <system:String x:Key="pianoroll.menu.part.generateharmonies">Utwórz harmonie...</system:String>
+  <system:String x:Key="pianoroll.menu.part.createdoublevocal">Utwórz double vocal...</system:String>
   <system:String x:Key="pianoroll.menu.part.legacypluginexp.shortcuts">(starsze)</system:String>
   <system:String x:Key="pianoroll.menu.view.pianoroll.fullscreen">Rozwiń edytor pianinowy w oknie</system:String>
   <system:String x:Key="pianoroll.menu.view.tiktokmode">TikTok tryb nagrywania</system:String>

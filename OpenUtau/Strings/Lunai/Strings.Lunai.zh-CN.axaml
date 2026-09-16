@@ -4,11 +4,11 @@
                     xmlns:system="clr-namespace:System;assembly=mscorlib"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-  <system:String x:Key="context.part.generateharmonies">生成和声...</system:String>
-  <system:String x:Key="context.part.createdoublevocal">创建双重人声</system:String>
+  <system:String x:Key="context.part.generateharmonies">创建和声...</system:String>
+  <system:String x:Key="context.part.createdoublevocal">创建双重人声...</system:String>
   <system:String x:Key="command.part.createdoublevocal">创建双重人声</system:String>
   <system:String x:Key="dialogs.doublevocal.running">正在创建双重人声</system:String>
-  <system:String x:Key="dialogs.doublevocal.caption">Create double vocal</system:String>
+  <system:String x:Key="dialogs.doublevocal.caption">创建双重人声</system:String>
   <system:String x:Key="dialogs.doublevocal.count">Number of doubles</system:String>
   <system:String x:Key="dialogs.doublevocal.steps">Steps</system:String>
   <system:String x:Key="dialogs.doublevocal.description">Clone the selected DiffSinger part onto a new track, then optionally randomize phoneme timings, warp the pitch curve, and blend a new pitch generation.</system:String>
@@ -47,7 +47,7 @@
   <system:String x:Key="dialogs.exportds.caption">导出 DiffSinger 脚本</system:String>
   <system:String x:Key="dialogs.exportds.variance">Variance 参数</system:String>
   <system:String x:Key="dialogs.exportds.variance.hint">请在偏好设置中启用 DiffSinger 张量缓存，以导出 variance 参数曲线。</system:String>
-  <system:String x:Key="dialogs.harmony.caption">生成和声</system:String>
+  <system:String x:Key="dialogs.harmony.caption">创建和声</system:String>
   <system:String x:Key="dialogs.harmony.description">根据所选片段创建新的和声音轨。音符将按所选调性做自然音阶移调。</system:String>
   <system:String x:Key="dialogs.harmony.hint">每个选中的声部都会在源音轨下方创建一条带有移调音符的新音轨。歌手与设置将从源音轨复制。</system:String>
   <system:String x:Key="dialogs.harmony.intervals">和声声部</system:String>
@@ -150,8 +150,8 @@
 
   <system:String x:Key="phoneme.show.error">Alt + 单击查看完整错误</system:String>
 
-  <system:String x:Key="pianoroll.menu.part.generateharmonies">生成和声...</system:String>
-  <system:String x:Key="pianoroll.menu.part.createdoublevocal">创建双重人声</system:String>
+  <system:String x:Key="pianoroll.menu.part.generateharmonies">创建和声...</system:String>
+  <system:String x:Key="pianoroll.menu.part.createdoublevocal">创建双重人声...</system:String>
   <system:String x:Key="pianoroll.menu.part.legacypluginexp.shortcuts">（传统）</system:String>
   <system:String x:Key="pianoroll.menu.view.pianoroll.fullscreen">在窗口中展开钢琴卷轴</system:String>
   <system:String x:Key="pianoroll.menu.view.tiktokmode">TikTok 录制模式</system:String>

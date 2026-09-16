@@ -4,11 +4,11 @@
                     xmlns:system="clr-namespace:System;assembly=mscorlib"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-  <system:String x:Key="context.part.generateharmonies">Generează armonii...</system:String>
-  <system:String x:Key="context.part.createdoublevocal">Creează double vocal</system:String>
+  <system:String x:Key="context.part.generateharmonies">Creează armonii...</system:String>
+  <system:String x:Key="context.part.createdoublevocal">Creează double vocal...</system:String>
   <system:String x:Key="command.part.createdoublevocal">Creează double vocal</system:String>
   <system:String x:Key="dialogs.doublevocal.running">Se creează double vocal</system:String>
-  <system:String x:Key="dialogs.doublevocal.caption">Create double vocal</system:String>
+  <system:String x:Key="dialogs.doublevocal.caption">Creează double vocal</system:String>
   <system:String x:Key="dialogs.doublevocal.count">Number of doubles</system:String>
   <system:String x:Key="dialogs.doublevocal.steps">Steps</system:String>
   <system:String x:Key="dialogs.doublevocal.description">Clone the selected DiffSinger part onto a new track, then optionally randomize phoneme timings, warp the pitch curve, and blend a new pitch generation.</system:String>
@@ -47,7 +47,7 @@
   <system:String x:Key="dialogs.exportds.caption">Exportă DiffSinger script</system:String>
   <system:String x:Key="dialogs.exportds.variance">Variație parametri</system:String>
   <system:String x:Key="dialogs.exportds.variance.hint">Activați memoria cache de tensori DiffSinger în Preferințe pentru a exporta curbele parametrilor de variație.</system:String>
-  <system:String x:Key="dialogs.harmony.caption">Generate Armonii</system:String>
+  <system:String x:Key="dialogs.harmony.caption">Creează armonii</system:String>
   <system:String x:Key="dialogs.harmony.description">Creați piste noi de armonie din partea selectată. Notele sunt transpuse diatonic în tonalitatea aleasă.</system:String>
   <system:String x:Key="dialogs.harmony.hint">Fiecare voce selectată creează o pistă nouă sub cea sursă, cu note transpuse. Interpretul și setările sunt copiate de pe pista sursă.</system:String>
   <system:String x:Key="dialogs.harmony.intervals">Voci de armonie</system:String>
@@ -150,8 +150,8 @@
 
   <system:String x:Key="phoneme.show.error">Alt + clic pentru a vedea eroarea completă</system:String>
 
-  <system:String x:Key="pianoroll.menu.part.generateharmonies">Generează armonii...</system:String>
-  <system:String x:Key="pianoroll.menu.part.createdoublevocal">Creează double vocal</system:String>
+  <system:String x:Key="pianoroll.menu.part.generateharmonies">Creează armonii...</system:String>
+  <system:String x:Key="pianoroll.menu.part.createdoublevocal">Creează double vocal...</system:String>
   <system:String x:Key="pianoroll.menu.part.legacypluginexp.shortcuts">(moștenit)</system:String>
   <system:String x:Key="pianoroll.menu.view.pianoroll.fullscreen">Extinde rola de pian în fereastră</system:String>
   <system:String x:Key="pianoroll.menu.view.tiktokmode">TikTok mod de înregistrare</system:String>

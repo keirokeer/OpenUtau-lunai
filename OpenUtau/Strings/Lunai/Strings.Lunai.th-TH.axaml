@@ -5,10 +5,10 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
   <system:String x:Key="context.part.generateharmonies">สร้างเสียงประสาน...</system:String>
-  <system:String x:Key="context.part.createdoublevocal">สร้าง double vocal</system:String>
+  <system:String x:Key="context.part.createdoublevocal">สร้าง double vocal...</system:String>
   <system:String x:Key="command.part.createdoublevocal">สร้าง double vocal</system:String>
   <system:String x:Key="dialogs.doublevocal.running">กำลังสร้าง double vocal</system:String>
-  <system:String x:Key="dialogs.doublevocal.caption">Create double vocal</system:String>
+  <system:String x:Key="dialogs.doublevocal.caption">สร้าง double vocal</system:String>
   <system:String x:Key="dialogs.doublevocal.count">Number of doubles</system:String>
   <system:String x:Key="dialogs.doublevocal.steps">Steps</system:String>
   <system:String x:Key="dialogs.doublevocal.description">Clone the selected DiffSinger part onto a new track, then optionally randomize phoneme timings, warp the pitch curve, and blend a new pitch generation.</system:String>
@@ -151,7 +151,7 @@
   <system:String x:Key="phoneme.show.error">Alt + คลิกเพื่อดูข้อผิดพลาดทั้งหมด</system:String>
 
   <system:String x:Key="pianoroll.menu.part.generateharmonies">สร้างเสียงประสาน...</system:String>
-  <system:String x:Key="pianoroll.menu.part.createdoublevocal">สร้าง double vocal</system:String>
+  <system:String x:Key="pianoroll.menu.part.createdoublevocal">สร้าง double vocal...</system:String>
   <system:String x:Key="pianoroll.menu.part.legacypluginexp.shortcuts">(รุ่นเก่า)</system:String>
   <system:String x:Key="pianoroll.menu.view.pianoroll.fullscreen">ขยายเปียโนโรลในหน้าต่าง</system:String>
   <system:String x:Key="pianoroll.menu.view.tiktokmode">โหมดบันทึก TikTok</system:String>

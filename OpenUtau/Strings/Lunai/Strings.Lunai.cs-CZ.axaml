@@ -4,11 +4,11 @@
                     xmlns:system="clr-namespace:System;assembly=mscorlib"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-  <system:String x:Key="context.part.generateharmonies">Generovat harmonie...</system:String>
-  <system:String x:Key="context.part.createdoublevocal">Vytvořit double vocal</system:String>
+  <system:String x:Key="context.part.generateharmonies">Vytvořit harmonie...</system:String>
+  <system:String x:Key="context.part.createdoublevocal">Vytvořit double vocal...</system:String>
   <system:String x:Key="command.part.createdoublevocal">Vytvořit double vocal</system:String>
   <system:String x:Key="dialogs.doublevocal.running">Vytváření double vocal</system:String>
-  <system:String x:Key="dialogs.doublevocal.caption">Create double vocal</system:String>
+  <system:String x:Key="dialogs.doublevocal.caption">Vytvořit double vocal</system:String>
   <system:String x:Key="dialogs.doublevocal.count">Number of doubles</system:String>
   <system:String x:Key="dialogs.doublevocal.steps">Steps</system:String>
   <system:String x:Key="dialogs.doublevocal.description">Clone the selected DiffSinger part onto a new track, then optionally randomize phoneme timings, warp the pitch curve, and blend a new pitch generation.</system:String>
@@ -47,7 +47,7 @@
   <system:String x:Key="dialogs.exportds.caption">Exportovat DiffSinger skript</system:String>
   <system:String x:Key="dialogs.exportds.variance">Variabilita parametry</system:String>
   <system:String x:Key="dialogs.exportds.variance.hint">Chcete-li exportovat křivky parametrů variability, povolte v Předvolbách tensorovou mezipaměť DiffSinger.</system:String>
-  <system:String x:Key="dialogs.harmony.caption">Generate Harmonie</system:String>
+  <system:String x:Key="dialogs.harmony.caption">Vytvořit harmonie</system:String>
   <system:String x:Key="dialogs.harmony.description">Vytvořte nové harmonické stopy z vybrané části. Noty jsou diatonicky transponovány do zvolené tóniny.</system:String>
   <system:String x:Key="dialogs.harmony.hint">Každý vybraný hlas vytvoří pod zdrojovou stopou novou stopu s transponovanými notami. Zpěvák a nastavení se zkopírují ze zdrojové stopy.</system:String>
   <system:String x:Key="dialogs.harmony.intervals">Hlasy harmonie</system:String>
@@ -150,8 +150,8 @@
 
   <system:String x:Key="phoneme.show.error">Alt + kliknutím zobrazíte úplnou chybu</system:String>
 
-  <system:String x:Key="pianoroll.menu.part.generateharmonies">Generovat harmonie...</system:String>
-  <system:String x:Key="pianoroll.menu.part.createdoublevocal">Vytvořit double vocal</system:String>
+  <system:String x:Key="pianoroll.menu.part.generateharmonies">Vytvořit harmonie...</system:String>
+  <system:String x:Key="pianoroll.menu.part.createdoublevocal">Vytvořit double vocal...</system:String>
   <system:String x:Key="pianoroll.menu.part.legacypluginexp.shortcuts">(starší)</system:String>
   <system:String x:Key="pianoroll.menu.view.pianoroll.fullscreen">Rozbalit klavírní roli v okně</system:String>
   <system:String x:Key="pianoroll.menu.view.tiktokmode">TikTok režim nahrávání</system:String>

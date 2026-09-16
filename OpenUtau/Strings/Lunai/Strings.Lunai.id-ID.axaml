@@ -5,10 +5,10 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
   <system:String x:Key="context.part.generateharmonies">Buat harmoni...</system:String>
-  <system:String x:Key="context.part.createdoublevocal">Buat double vocal</system:String>
+  <system:String x:Key="context.part.createdoublevocal">Buat double vocal...</system:String>
   <system:String x:Key="command.part.createdoublevocal">Buat double vocal</system:String>
   <system:String x:Key="dialogs.doublevocal.running">Membuat double vocal</system:String>
-  <system:String x:Key="dialogs.doublevocal.caption">Create double vocal</system:String>
+  <system:String x:Key="dialogs.doublevocal.caption">Buat double vocal</system:String>
   <system:String x:Key="dialogs.doublevocal.count">Number of doubles</system:String>
   <system:String x:Key="dialogs.doublevocal.steps">Steps</system:String>
   <system:String x:Key="dialogs.doublevocal.description">Clone the selected DiffSinger part onto a new track, then optionally randomize phoneme timings, warp the pitch curve, and blend a new pitch generation.</system:String>
@@ -47,7 +47,7 @@
   <system:String x:Key="dialogs.exportds.caption">Ekspor skrip DiffSinger</system:String>
   <system:String x:Key="dialogs.exportds.variance">Parameter variasi</system:String>
   <system:String x:Key="dialogs.exportds.variance.hint">Aktifkan cache tensor DiffSinger di Preferensi untuk mengekspor kurva parameter variasi.</system:String>
-  <system:String x:Key="dialogs.harmony.caption">Buat Harmoni</system:String>
+  <system:String x:Key="dialogs.harmony.caption">Buat harmoni</system:String>
   <system:String x:Key="dialogs.harmony.description">Buat trek harmoni baru dari bagian yang dipilih. Not ditransposisi secara diatonik dalam kunci yang dipilih.</system:String>
   <system:String x:Key="dialogs.harmony.hint">Setiap suara yang dipilih membuat trek baru di bawah sumber dengan not yang ditransposisi. Penyanyi dan pengaturan disalin dari trek sumber.</system:String>
   <system:String x:Key="dialogs.harmony.intervals">Suara harmoni</system:String>
@@ -151,7 +151,7 @@
   <system:String x:Key="phoneme.show.error">Alt + Klik untuk melihat kesalahan lengkap</system:String>
 
   <system:String x:Key="pianoroll.menu.part.generateharmonies">Buat harmoni...</system:String>
-  <system:String x:Key="pianoroll.menu.part.createdoublevocal">Buat double vocal</system:String>
+  <system:String x:Key="pianoroll.menu.part.createdoublevocal">Buat double vocal...</system:String>
   <system:String x:Key="pianoroll.menu.part.legacypluginexp.shortcuts">(warisan)</system:String>
   <system:String x:Key="pianoroll.menu.view.pianoroll.fullscreen">Perluas piano roll di jendela</system:String>
   <system:String x:Key="pianoroll.menu.view.tiktokmode">Mode rekaman TikTok</system:String>

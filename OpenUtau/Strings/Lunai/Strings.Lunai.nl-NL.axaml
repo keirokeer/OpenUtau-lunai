@@ -4,11 +4,11 @@
                     xmlns:system="clr-namespace:System;assembly=mscorlib"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-  <system:String x:Key="context.part.generateharmonies">Harmonieën genereren...</system:String>
-  <system:String x:Key="context.part.createdoublevocal">Double vocal maken</system:String>
+  <system:String x:Key="context.part.generateharmonies">Harmonieën maken...</system:String>
+  <system:String x:Key="context.part.createdoublevocal">Double vocal maken...</system:String>
   <system:String x:Key="command.part.createdoublevocal">Double vocal maken</system:String>
   <system:String x:Key="dialogs.doublevocal.running">Double vocal maken</system:String>
-  <system:String x:Key="dialogs.doublevocal.caption">Create double vocal</system:String>
+  <system:String x:Key="dialogs.doublevocal.caption">Double vocal maken</system:String>
   <system:String x:Key="dialogs.doublevocal.count">Number of doubles</system:String>
   <system:String x:Key="dialogs.doublevocal.steps">Steps</system:String>
   <system:String x:Key="dialogs.doublevocal.description">Clone the selected DiffSinger part onto a new track, then optionally randomize phoneme timings, warp the pitch curve, and blend a new pitch generation.</system:String>
@@ -47,7 +47,7 @@
   <system:String x:Key="dialogs.exportds.caption">Exporteren DiffSinger script</system:String>
   <system:String x:Key="dialogs.exportds.variance">Variantie parameters</system:String>
   <system:String x:Key="dialogs.exportds.variance.hint">Schakel de DiffSinger-tensorcache in Voorkeuren in om curven voor variantieparameters te exporteren.</system:String>
-  <system:String x:Key="dialogs.harmony.caption">Generate Harmonieën</system:String>
+  <system:String x:Key="dialogs.harmony.caption">Harmonieën maken</system:String>
   <system:String x:Key="dialogs.harmony.description">Maak nieuwe harmoniesporen vanuit het geselecteerde deel. Noten worden diatonisch getransponeerd in de gekozen toonsoort.</system:String>
   <system:String x:Key="dialogs.harmony.hint">Elke geselecteerde stem maakt onder het bronspeur een nieuw spoor met getransponeerde noten. Zanger en instellingen worden gekopieerd van het bronspoor.</system:String>
   <system:String x:Key="dialogs.harmony.intervals">Harmoniestemmen</system:String>
@@ -150,8 +150,8 @@
 
   <system:String x:Key="phoneme.show.error">Alt + klik om de volledige fout te bekijken</system:String>
 
-  <system:String x:Key="pianoroll.menu.part.generateharmonies">Harmonieën genereren...</system:String>
-  <system:String x:Key="pianoroll.menu.part.createdoublevocal">Double vocal maken</system:String>
+  <system:String x:Key="pianoroll.menu.part.generateharmonies">Harmonieën maken...</system:String>
+  <system:String x:Key="pianoroll.menu.part.createdoublevocal">Double vocal maken...</system:String>
   <system:String x:Key="pianoroll.menu.part.legacypluginexp.shortcuts">(verouderd)</system:String>
   <system:String x:Key="pianoroll.menu.view.pianoroll.fullscreen">Pianorol in venster uitbreiden</system:String>
   <system:String x:Key="pianoroll.menu.view.tiktokmode">TikTok opnamemodus</system:String>

@@ -5,10 +5,10 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
   <system:String x:Key="context.part.generateharmonies">إنشاء توافقيات...</system:String>
-  <system:String x:Key="context.part.createdoublevocal">إنشاء صوت مزدوج</system:String>
+  <system:String x:Key="context.part.createdoublevocal">إنشاء صوت مزدوج...</system:String>
   <system:String x:Key="command.part.createdoublevocal">إنشاء صوت مزدوج</system:String>
   <system:String x:Key="dialogs.doublevocal.running">جاري إنشاء صوت مزدوج</system:String>
-  <system:String x:Key="dialogs.doublevocal.caption">Create double vocal</system:String>
+  <system:String x:Key="dialogs.doublevocal.caption">إنشاء صوت مزدوج</system:String>
   <system:String x:Key="dialogs.doublevocal.count">Number of doubles</system:String>
   <system:String x:Key="dialogs.doublevocal.steps">Steps</system:String>
   <system:String x:Key="dialogs.doublevocal.description">Clone the selected DiffSinger part onto a new track, then optionally randomize phoneme timings, warp the pitch curve, and blend a new pitch generation.</system:String>
@@ -47,7 +47,7 @@
   <system:String x:Key="dialogs.exportds.caption">تصدير سكربت DiffSinger</system:String>
   <system:String x:Key="dialogs.exportds.variance">معلمات التباين (Variance)</system:String>
   <system:String x:Key="dialogs.exportds.variance.hint">فعّل ذاكرة التخزين المؤقت لمصفوفات DiffSinger في التفضيلات لتصدير منحنيات معلمات التباين.</system:String>
-  <system:String x:Key="dialogs.harmony.caption">إنشاء التوافقيات</system:String>
+  <system:String x:Key="dialogs.harmony.caption">إنشاء توافقيات</system:String>
   <system:String x:Key="dialogs.harmony.description">إنشاء مسارات توافقية جديدة من الجزء المحدد. تُنقَل النغمات دياتونيًا ضمن المفتاح المختار.</system:String>
   <system:String x:Key="dialogs.harmony.hint">كل صوت محدد ينشئ مسارًا جديدًا أسفل المصدر المصدر بنغمات منقولة. يُنسَخ المغني والإعدادات من مسار المصدر.</system:String>
   <system:String x:Key="dialogs.harmony.intervals">أصوات التوافق</system:String>
@@ -151,7 +151,7 @@
   <system:String x:Key="phoneme.show.error">Alt + نقرة لعرض الخطأ بالكامل</system:String>
 
   <system:String x:Key="pianoroll.menu.part.generateharmonies">إنشاء توافقيات...</system:String>
-  <system:String x:Key="pianoroll.menu.part.createdoublevocal">إنشاء صوت مزدوج</system:String>
+  <system:String x:Key="pianoroll.menu.part.createdoublevocal">إنشاء صوت مزدوج...</system:String>
   <system:String x:Key="pianoroll.menu.part.legacypluginexp.shortcuts">(قديم)</system:String>
   <system:String x:Key="pianoroll.menu.view.pianoroll.fullscreen">توسيع لفة البيانو في النافذة</system:String>
   <system:String x:Key="pianoroll.menu.view.tiktokmode">وضع التسجيل لـ TikTok</system:String>

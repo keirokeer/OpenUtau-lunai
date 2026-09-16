@@ -4,11 +4,11 @@
                     xmlns:system="clr-namespace:System;assembly=mscorlib"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-  <system:String x:Key="context.part.generateharmonies">ハーモニーを生成...</system:String>
-  <system:String x:Key="context.part.createdoublevocal">ダブルボーカルを作成</system:String>
+  <system:String x:Key="context.part.generateharmonies">ハーモニーを作成...</system:String>
+  <system:String x:Key="context.part.createdoublevocal">ダブルボーカルを作成...</system:String>
   <system:String x:Key="command.part.createdoublevocal">ダブルボーカルを作成</system:String>
   <system:String x:Key="dialogs.doublevocal.running">ダブルボーカルを作成中</system:String>
-  <system:String x:Key="dialogs.doublevocal.caption">Create double vocal</system:String>
+  <system:String x:Key="dialogs.doublevocal.caption">ダブルボーカルを作成</system:String>
   <system:String x:Key="dialogs.doublevocal.count">Number of doubles</system:String>
   <system:String x:Key="dialogs.doublevocal.steps">Steps</system:String>
   <system:String x:Key="dialogs.doublevocal.description">Clone the selected DiffSinger part onto a new track, then optionally randomize phoneme timings, warp the pitch curve, and blend a new pitch generation.</system:String>
@@ -47,7 +47,7 @@
   <system:String x:Key="dialogs.exportds.caption">DiffSingerスクリプトをエクスポート</system:String>
   <system:String x:Key="dialogs.exportds.variance">Varianceパラメータ</system:String>
   <system:String x:Key="dialogs.exportds.variance.hint">Varianceパラメータ曲線をエクスポートするには、環境設定で DiffSinger テンソルキャッシュを有効にしてください。</system:String>
-  <system:String x:Key="dialogs.harmony.caption">ハーモニーを生成</system:String>
+  <system:String x:Key="dialogs.harmony.caption">ハーモニーを作成</system:String>
   <system:String x:Key="dialogs.harmony.description">選択したパートから新しいハーモニートラックを作成します。ノートは指定したキーでダイアトニックに移調されます。</system:String>
   <system:String x:Key="dialogs.harmony.hint">選択した各ボイスは、ソースの下に移調済みノートの新しいトラックとして作成されます。シンガーと設定はソーストラックからコピーされます。</system:String>
   <system:String x:Key="dialogs.harmony.intervals">ハーモニーボイス</system:String>
@@ -150,8 +150,8 @@
 
   <system:String x:Key="phoneme.show.error">Alt + クリックでエラー全文を表示</system:String>
 
-  <system:String x:Key="pianoroll.menu.part.generateharmonies">ハーモニーを生成...</system:String>
-  <system:String x:Key="pianoroll.menu.part.createdoublevocal">ダブルボーカルを作成</system:String>
+  <system:String x:Key="pianoroll.menu.part.generateharmonies">ハーモニーを作成...</system:String>
+  <system:String x:Key="pianoroll.menu.part.createdoublevocal">ダブルボーカルを作成...</system:String>
   <system:String x:Key="pianoroll.menu.part.legacypluginexp.shortcuts">（レガシー）</system:String>
   <system:String x:Key="pianoroll.menu.view.pianoroll.fullscreen">ウィンドウ内でピアノロールを拡大</system:String>
   <system:String x:Key="pianoroll.menu.view.tiktokmode">TikTok録画モード</system:String>
