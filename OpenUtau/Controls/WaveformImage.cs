@@ -159,10 +159,18 @@ namespace OpenUtau.App.Controls {
                         }
 
                         float amplitudeGain = GetAmplitudeGain(part, project);
+                        var renderRanges = PhraseWaveformCache.GetRenderingRanges(part.trackNo);
                         int startSample = 0;
                         for (int i = 0; i < bitmap.PixelSize.Width; ++i) {
+                            double startTick = viewModel.TickOrigin + viewModel.TickOffset + i / viewModel.TickWidth;
                             double endTick = viewModel.TickOrigin + viewModel.TickOffset + (i + 1.0) / viewModel.TickWidth;
+                            double colStartMs = project.timeAxis.TickPosToMsPos(startTick);
                             double endMs = project.timeAxis.TickPosToMsPos(endTick);
+                            // Hide real waveform under active render placeholders.
+                            if (OverlapsRenderingRange(renderRanges, colStartMs, endMs)) {
+                                startSample = Math.Clamp((int)((endMs - leftMs) * 44100 / 1000) * 2, 0, sampleCount);
+                                continue;
+                            }
                             int endSample = Math.Clamp((int)((endMs - leftMs) * 44100 / 1000) * 2, 0, sampleCount);
 
                             if (endSample > startSample) {
@@ -202,6 +210,116 @@ namespace OpenUtau.App.Controls {
                 var rect = Bounds.WithX(0).WithY(0);
                 context.DrawImage(bitmap, rect, rect);
             }
+            var vm = DataContext as NotesViewModel;
+            if (vm != null && ShowWaveform &&
+                vm.TickWidth > ViewConstants.PianoRollTickWidthShowDetails &&
+                vm.Project != null && vm.Part != null) {
+                bool animating = DrawRenderPlaceholders(context, vm);
+                if (animating) {
+                    RequestRedraw();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Draw traveling-wave placeholders over ms ranges currently rendering.
+        /// Returns true when another frame is needed.
+        /// </summary>
+        bool DrawRenderPlaceholders(DrawingContext context, NotesViewModel viewModel) {
+            var ranges = PhraseWaveformCache.GetRenderingRanges(viewModel.Part!.trackNo);
+            if (ranges.Count == 0) {
+                return false;
+            }
+            var project = viewModel.Project!;
+            double height = Bounds.Height;
+            double width = Bounds.Width;
+            if (height <= 1 || width <= 1) {
+                return false;
+            }
+            double phase = DateTime.UtcNow.TimeOfDay.TotalSeconds;
+            Color peak = GetWaveformPeakColorStruct();
+            bool any = false;
+            foreach (var range in ranges) {
+                double x0 = MsToX(project, viewModel, range.StartMs);
+                double x1 = MsToX(project, viewModel, range.EndMs);
+                if (x1 < 0 || x0 > width) {
+                    continue;
+                }
+                x0 = Math.Clamp(x0, 0, width);
+                x1 = Math.Clamp(x1, 0, width);
+                if (x1 - x0 < 1) {
+                    continue;
+                }
+                any = true;
+                DrawTravelingWave(context, new Rect(x0, 0, x1 - x0, height), peak, phase);
+            }
+            return any;
+        }
+
+        static double MsToX(UProject project, NotesViewModel viewModel, double ms) {
+            double tick = project.timeAxis.MsPosToTickPos(ms);
+            return (tick - viewModel.TickOrigin - viewModel.TickOffset) * viewModel.TickWidth;
+        }
+
+        static bool OverlapsRenderingRange(
+            IReadOnlyList<PhraseWaveformCache.RenderingRange> ranges,
+            double startMs,
+            double endMs) {
+            for (int i = 0; i < ranges.Count; i++) {
+                var r = ranges[i];
+                if (endMs > r.StartMs && startMs < r.EndMs) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        static void DrawTravelingWave(DrawingContext context, Rect band, Color peak, double phase) {
+            double midY = band.Center.Y;
+            // Vertical amp from lane height only — not from segment length.
+            double amp = band.Height * 0.16;
+            // Fixed spatial wavelength in pixels so long/short segments don't stretch.
+            const double pixelsPerCycle = 64;
+            const double edgeFlat = 0.14;
+            var pen = new Pen(new SolidColorBrush(peak), 1.5);
+            int steps = Math.Max(2, (int)Math.Ceiling(band.Width / 2.0));
+            double omega = 2 * Math.PI / pixelsPerCycle;
+            Point? prev = null;
+            for (int i = 0; i <= steps; i++) {
+                double t = (double)i / steps;
+                double x = band.X + t * band.Width;
+                double localX = x - band.X;
+                double wave = Math.Sin(localX * omega - phase * 6)
+                    * (0.55 + 0.45 * Math.Sin(phase * 2.2 + localX * omega * 0.25));
+                double env = AmplitudeEnvelope(t, edgeFlat);
+                double y = midY + wave * amp * env;
+                var pt = new Point(x, y);
+                if (prev.HasValue) {
+                    context.DrawLine(pen, prev.Value, pt);
+                }
+                prev = pt;
+            }
+        }
+
+        /// <summary>
+        /// 0 at the left/right edges (flat center line), smoothstep up to 1 in the middle.
+        /// </summary>
+        static double AmplitudeEnvelope(double t, double edgeFlat) {
+            if (edgeFlat <= 0) {
+                return 1;
+            }
+            if (t <= 0 || t >= 1) {
+                return 0;
+            }
+            if (t < edgeFlat) {
+                double u = t / edgeFlat;
+                return u * u * (3 - 2 * u);
+            }
+            if (t > 1 - edgeFlat) {
+                double u = (1 - t) / edgeFlat;
+                return u * u * (3 - 2 * u);
+            }
+            return 1;
         }
 
         void FillFromPhraseCache(int trackNo, double leftMs, ref bool needsAnotherFrame) {
@@ -252,12 +370,17 @@ namespace OpenUtau.App.Controls {
             return bitmap;
         }
 
-        private static int GetWaveformPeakColor() {
+        private static Color GetWaveformPeakColorStruct() {
             if (Application.Current?.TryFindResource("PianoRollWaveformPeakColor", out var resource) == true
                 && resource is Color color) {
-                return unchecked((int)(((uint)color.A << 24) | ((uint)color.R << 16) | ((uint)color.G << 8) | color.B));
+                return color;
             }
-            return unchecked((int)0x3BFFFFFF);
+            return Color.FromArgb(0x3B, 0xFF, 0xFF, 0xFF);
+        }
+
+        private static int GetWaveformPeakColor() {
+            var color = GetWaveformPeakColorStruct();
+            return unchecked((int)(((uint)color.A << 24) | ((uint)color.R << 16) | ((uint)color.G << 8) | color.B));
         }
 
         private void DrawPeak(int[] data, int width, int x, int y1, int y2) {

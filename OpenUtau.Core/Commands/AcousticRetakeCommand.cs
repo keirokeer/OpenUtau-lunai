@@ -72,14 +72,19 @@ namespace OpenUtau.Core {
                     var selectedInPhrase = phrase.notes
                         .Where(n => selectedAbsoluteNotePositions.Contains(phrase.position + n.position))
                         .ToArray();
+                    var layout = phrase.renderer.Layout(phrase);
+                    double phraseStartMs = layout.positionMs - layout.leadingMs;
+                    double phraseEndMs = phraseStartMs + layout.estimatedLengthMs;
                     if (selectedInPhrase.Length >= phrase.notes.Length || selectedInPhrase.Length == 0) {
                         PhraseWaveformCache.ClearDisplayAll(hash);
+                        PhraseWaveformCache.SetRendering(
+                            part.trackNo, hash, new[] { (phraseStartMs, phraseEndMs) });
                     } else {
-                        PhraseWaveformCache.ClearDisplayRanges(
-                            hash,
-                            selectedInPhrase.Select(n => (
-                                n.positionMs - holePadMs,
-                                n.endMs + holePadMs)));
+                        var holes = selectedInPhrase
+                            .Select(n => (n.positionMs - holePadMs, n.endMs + holePadMs))
+                            .ToArray();
+                        PhraseWaveformCache.ClearDisplayRanges(hash, holes);
+                        PhraseWaveformCache.SetRendering(part.trackNo, hash, holes);
                     }
                 } else {
                     PhraseWaveformCache.ClearDisplayAll(hash);

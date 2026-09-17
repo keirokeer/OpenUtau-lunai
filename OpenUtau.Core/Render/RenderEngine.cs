@@ -394,10 +394,17 @@ namespace OpenUtau.Core.Render {
                     : null;
                 bool useXsy = phrase.xsy != null && phrase.xsy.Any(x => x > 0);
                 RenderResult result;
+                var layoutBefore = phrase.renderer.Layout(phrase);
+                double renderStartMs = layoutBefore.positionMs - layoutBefore.leadingMs;
+                double renderEndMs = renderStartMs + layoutBefore.estimatedLengthMs;
+                PhraseWaveformCache.MarkRendering(
+                    request.trackNo, phrase.hash, new[] { (renderStartMs, renderEndMs) });
+                try {
                 if (!useXsy) {
                     var task = phrase.renderer.Render(phrase, progress, request.trackNo, cancellation, true, renderEvents);
                     task.Wait();
                     if (cancellation.IsCancellationRequested) {
+                        PhraseWaveformCache.ClearRendering(phrase.hash);
                         break;
                     }
                     result = task.Result;
@@ -409,6 +416,7 @@ namespace OpenUtau.Core.Render {
                         var taskA = phrase.renderer.Render(phrase, progress, request.trackNo, cancellation, true, renderEvents);
                         taskA.Wait();
                         if (cancellation.IsCancellationRequested) {
+                            PhraseWaveformCache.ClearRendering(phrase.hash);
                             break;
                         }
                         float[] samplesA = taskA.Result.samples;
@@ -419,6 +427,7 @@ namespace OpenUtau.Core.Render {
                         var taskB = phrase.renderer.Render(variant, progress, request.trackNo, cancellation, true);
                         taskB.Wait();
                         if (cancellation.IsCancellationRequested) {
+                            PhraseWaveformCache.ClearRendering(phrase.hash);
                             break;
                         }
                         float[] samplesB = taskB.Result.samples;
@@ -457,6 +466,12 @@ namespace OpenUtau.Core.Render {
                         layout.positionMs - layout.leadingMs,
                         result.samples,
                         result.waveformSamples);
+                } else {
+                    PhraseWaveformCache.ClearRendering(phrase.hash);
+                }
+                } catch {
+                    PhraseWaveformCache.ClearRendering(phrase.hash);
+                    throw;
                 }
                 // Progressive waveform: coalesced to a ~10 Hz repaint rate.
                 WaveformRefresh.Request();

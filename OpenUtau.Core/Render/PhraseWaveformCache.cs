@@ -29,6 +29,26 @@ namespace OpenUtau.Core.Render {
             }
         }
 
+        public readonly struct RenderingRange {
+            public readonly int TrackNo;
+            public readonly ulong PhraseHash;
+            public readonly double StartMs;
+            public readonly double EndMs;
+
+            public RenderingRange(int trackNo, ulong phraseHash, double startMs, double endMs) {
+                TrackNo = trackNo;
+                PhraseHash = phraseHash;
+                StartMs = startMs;
+                EndMs = endMs;
+            }
+        }
+
+        sealed class RenderingEntry {
+            public int TrackNo;
+            public ulong PhraseHash;
+            public List<(double startMs, double endMs)> Ranges = new();
+        }
+
         internal sealed class CacheEntry {
             public int TrackNo;
             public double PosMs;
@@ -39,20 +59,150 @@ namespace OpenUtau.Core.Render {
         }
 
         static readonly ConcurrentDictionary<string, CacheEntry> entries = new ConcurrentDictionary<string, CacheEntry>();
+        static readonly ConcurrentDictionary<string, RenderingEntry> rendering = new ConcurrentDictionary<string, RenderingEntry>();
 
         public static event Action? Changed;
 
         public static void Clear() {
             entries.Clear();
+            rendering.Clear();
             Changed?.Invoke();
         }
 
         public static bool Remove(ulong phraseHash) {
-            if (entries.TryRemove(phraseHash.ToString(), out _)) {
+            string key = phraseHash.ToString();
+            bool removed = entries.TryRemove(key, out _);
+            bool cleared = ClearRendering(phraseHash);
+            return removed || cleared;
+        }
+
+        /// <summary>
+        /// Mark absolute-ms ranges as currently rendering (waveform placeholder animation).
+        /// Does not replace ranges already marked for this phrase (e.g. retake holes).
+        /// </summary>
+        public static void MarkRendering(
+            int trackNo,
+            ulong phraseHash,
+            IEnumerable<(double startMs, double endMs)> absoluteRanges) {
+            string key = phraseHash.ToString();
+            if (rendering.ContainsKey(key)) {
+                Changed?.Invoke();
+                return;
+            }
+            var ranges = MergeRanges(absoluteRanges);
+            if (ranges.Count == 0) {
+                return;
+            }
+            rendering[key] = new RenderingEntry {
+                TrackNo = trackNo,
+                PhraseHash = phraseHash,
+                Ranges = ranges,
+            };
+            Changed?.Invoke();
+        }
+
+        /// <summary>
+        /// Replace rendering ranges for a phrase (used when clearing display for retake).
+        /// Overlapping / adjacent note holes are merged into contiguous spans.
+        /// </summary>
+        public static void SetRendering(
+            int trackNo,
+            ulong phraseHash,
+            IEnumerable<(double startMs, double endMs)> absoluteRanges) {
+            var ranges = MergeRanges(absoluteRanges);
+            string key = phraseHash.ToString();
+            if (ranges.Count == 0) {
+                ClearRendering(phraseHash);
+                return;
+            }
+            rendering[key] = new RenderingEntry {
+                TrackNo = trackNo,
+                PhraseHash = phraseHash,
+                Ranges = ranges,
+            };
+            Changed?.Invoke();
+        }
+
+        public static bool ClearRendering(ulong phraseHash) {
+            if (rendering.TryRemove(phraseHash.ToString(), out _)) {
                 Changed?.Invoke();
                 return true;
             }
             return false;
+        }
+
+        public static bool HasRendering(int trackNo) {
+            return rendering.Values.Any(e => e.TrackNo == trackNo);
+        }
+
+        public static IReadOnlyList<RenderingRange> GetRenderingRanges(int trackNo) {
+            var list = new List<RenderingRange>();
+            foreach (var entry in rendering.Values) {
+                if (entry.TrackNo != trackNo) {
+                    continue;
+                }
+                foreach (var (startMs, endMs) in entry.Ranges) {
+                    list.Add(new RenderingRange(entry.TrackNo, entry.PhraseHash, startMs, endMs));
+                }
+            }
+            // Merge across phrases on the same track so contiguous retake holes
+            // draw as one animation band.
+            return MergeRenderingRanges(list);
+        }
+
+        /// <summary>
+        /// Merge overlapping or touching absolute-ms ranges (pad gap ≤ 1 ms).
+        /// </summary>
+        static List<(double startMs, double endMs)> MergeRanges(
+            IEnumerable<(double startMs, double endMs)> absoluteRanges) {
+            const double gapMs = 1.0;
+            var sorted = absoluteRanges
+                .Where(r => r.endMs > r.startMs)
+                .OrderBy(r => r.startMs)
+                .ToList();
+            if (sorted.Count == 0) {
+                return sorted;
+            }
+            var merged = new List<(double startMs, double endMs)>(sorted.Count);
+            double start = sorted[0].startMs;
+            double end = sorted[0].endMs;
+            for (int i = 1; i < sorted.Count; i++) {
+                if (sorted[i].startMs <= end + gapMs) {
+                    end = Math.Max(end, sorted[i].endMs);
+                } else {
+                    merged.Add((start, end));
+                    start = sorted[i].startMs;
+                    end = sorted[i].endMs;
+                }
+            }
+            merged.Add((start, end));
+            return merged;
+        }
+
+        static IReadOnlyList<RenderingRange> MergeRenderingRanges(
+            List<RenderingRange> ranges) {
+            if (ranges.Count <= 1) {
+                return ranges;
+            }
+            const double gapMs = 1.0;
+            var sorted = ranges.OrderBy(r => r.StartMs).ToList();
+            var merged = new List<RenderingRange>(sorted.Count);
+            var cur = sorted[0];
+            for (int i = 1; i < sorted.Count; i++) {
+                var next = sorted[i];
+                if (next.StartMs <= cur.EndMs + gapMs) {
+                    cur = new RenderingRange(
+                        cur.TrackNo,
+                        cur.PhraseHash,
+                        cur.StartMs,
+                        Math.Max(cur.EndMs, next.EndMs));
+                } else {
+                    merged.Add(cur);
+                    cur = next;
+                }
+            }
+            merged.Add(cur);
+            return merged;
         }
 
         /// <summary>
@@ -196,6 +346,7 @@ namespace OpenUtau.Core.Render {
                 }
                 if (pair.Key != key) {
                     entries.TryRemove(pair.Key, out _);
+                    rendering.TryRemove(pair.Key, out _);
                 }
             }
 
@@ -225,7 +376,8 @@ namespace OpenUtau.Core.Render {
                 RenderTime = continuity ? renderTime : DateTime.Now,
                 FadeOutSince = null,
             };
-            if (visualChanged || !continuity) {
+            bool clearedRendering = rendering.TryRemove(key, out _);
+            if (visualChanged || !continuity || clearedRendering) {
                 Changed?.Invoke();
                 return true;
             }
@@ -267,6 +419,7 @@ namespace OpenUtau.Core.Render {
             }
             foreach (var key in removeKeys) {
                 entries.TryRemove(key, out _);
+                rendering.TryRemove(key, out _);
             }
             return true;
         }
