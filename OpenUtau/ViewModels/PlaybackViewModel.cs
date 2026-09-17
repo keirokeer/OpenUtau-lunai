@@ -51,12 +51,33 @@ namespace OpenUtau.App.ViewModels {
             NotifyPlaybackActiveChanged();
         }
         public void PlayOrPause(int tick = -1, int endTick = -1, int trackNo = -1) {
+            bool wasPlaying = PlaybackManager.Inst.PlayingMaster;
             PlaybackManager.Inst.PlayOrPause(tick: tick, endTick: endTick, trackNo: trackNo);
+            if (wasPlaying && !PlaybackManager.Inst.PlayingMaster && !PlaybackManager.Inst.StartingToPlay) {
+                ApplyLockStartTimeOnPause();
+            }
             NotifyPlaybackActiveChanged();
         }
         public void Pause() {
+            bool wasPlaying = PlaybackManager.Inst.PlayingMaster;
             PlaybackManager.Inst.PausePlayback();
+            if (wasPlaying) {
+                ApplyLockStartTimeOnPause();
+            }
             NotifyPlaybackActiveChanged();
+        }
+
+        /// <summary>
+        /// LockStartTime 1: move playhead + scroll view to session start.
+        /// LockStartTime 2: move playhead only (SetPlayPosTick.pause skips autoscroll).
+        /// LockStartTime 0: leave playhead where pause landed (handled in PausePlayback).
+        /// </summary>
+        static void ApplyLockStartTimeOnPause() {
+            if (Preferences.Default.LockStartTime == 0) {
+                return;
+            }
+            DocManager.Inst.ExecuteCmd(new SetPlayPosTickNotification(
+                PlaybackManager.Inst.PlaybackStartTick, pause: true));
         }
 
         public void PollPlaybackActiveChanged() {

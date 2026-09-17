@@ -256,6 +256,11 @@ namespace OpenUtau.Core {
 
         double startMs;
         int playbackStartTick;
+        /// <summary>
+        /// While the master mix is holding for unready audio, freeze the playhead
+        /// clock so GetPosition/Waited races cannot jitter it forward/back.
+        /// </summary>
+        double? playheadHoldMs;
         public int StartTick => DocManager.Inst.Project.timeAxis.MsPosToTickPos(startMs);
         /// <summary>Tick where the current playback session started (for lock start time on pause).</summary>
         public int PlaybackStartTick => playbackStartTick;
@@ -382,7 +387,8 @@ namespace OpenUtau.Core {
             if (!forceFreshRender && pausedWithMix && masterMix != null) {
                 var timeAxis = project.timeAxis;
                 startMs = timeAxis.TickPosToMsPos(tick);
-                playbackStartTick = tick;
+                // Keep playbackStartTick: warm resume is the same play session
+                // (LockStartTime 1/2 must still jump back to where Play began).
                 masterMix.SetPosition((int)(startMs * 44100 / 1000) * 2);
                 pausedWithMix = false;
                 PlayingMaster = true;
@@ -394,9 +400,15 @@ namespace OpenUtau.Core {
                 return;
             }
             if (!forceFreshRender && AudioOutput.PlaybackState == PlaybackState.Paused) {
+                var timeAxis = project.timeAxis;
+                startMs = timeAxis.TickPosToMsPos(tick);
+                // Seek the paused mix to the requested tick — required when
+                // LockStartTime moved the playhead back while audio stayed paused.
+                if (masterMix != null) {
+                    masterMix.SetPosition((int)(startMs * 44100 / 1000) * 2);
+                }
                 PlayingMaster = true;
-                playbackStartTick = DocManager.Inst.playPosTick;
-                metronomeEngine.StartPlayback(project.timeAxis, DocManager.Inst.playPosTick);
+                metronomeEngine.StartPlayback(timeAxis, tick);
                 AudioOutput.Play();
                 return;
             }
@@ -418,6 +430,7 @@ namespace OpenUtau.Core {
             PlayingMaster = false;
             metronomeEngine.Stop();
             loopEndTick = -1;
+            playheadHoldMs = null;
         }
 
         public void PausePlayback() {
@@ -434,6 +447,11 @@ namespace OpenUtau.Core {
             PlayingMaster = false;
             metronomeEngine.Stop();
             loopEndTick = -1;
+            // "Do nothing": the pause position becomes the next session start.
+            // LockStartTime 1/2 keep the original playbackStartTick for jump-back.
+            if (Preferences.Default.LockStartTime == 0) {
+                playbackStartTick = DocManager.Inst.playPosTick;
+            }
         }
 
         public void PlayMetronome(bool enabled) {
@@ -448,6 +466,7 @@ namespace OpenUtau.Core {
             toneGenerator.EndAllTones();
             this.startMs = startMs;
             playbackStartTick = StartTick;
+            playheadHoldMs = null;
             metronomeEngine.StartPlayback(DocManager.Inst.Project.timeAxis, playbackStartTick);
             var start = TimeSpan.FromMilliseconds(startMs);
             Log.Information($"StartPlayback at {start}");
@@ -560,8 +579,7 @@ namespace OpenUtau.Core {
                 if (currentMasterMix == null) {
                     return;
                 }
-                double ms = (AudioOutput.GetPosition() / sizeof(float) - currentMasterMix.Waited / 2) * 1000.0 / 44100;
-                double currentMs = startMs + ms;
+                double currentMs = GetPlayheadClockMs(currentMasterMix);
                 var timeAxis = DocManager.Inst.Project.timeAxis;
                 int tick = timeAxis.MsPosToTickPos(currentMs);
                 if (loopEndTick > 0 && tick >= loopEndTick) {
@@ -587,8 +605,7 @@ namespace OpenUtau.Core {
             if (currentMasterMix == null) {
                 return false;
             }
-            double ms = (AudioOutput.GetPosition() / sizeof(float) - currentMasterMix.Waited / 2) * 1000.0 / 44100;
-            double currentMs = startMs + ms;
+            double currentMs = GetPlayheadClockMs(currentMasterMix);
             var timeAxis = DocManager.Inst.Project.timeAxis;
             int baseTick = timeAxis.MsPosToTickPos(currentMs);
             double tickStartMs = timeAxis.TickPosToMsPos(baseTick);
@@ -597,6 +614,21 @@ namespace OpenUtau.Core {
             double frac = span > 1e-6 ? Math.Clamp((currentMs - tickStartMs) / span, 0, 1) : 0;
             tick = baseTick + frac;
             return true;
+        }
+
+        /// <summary>
+        /// Playback clock in project ms. While the mix holds for render, reuse the
+        /// first held sample so the playhead freezes instead of jittering.
+        /// </summary>
+        double GetPlayheadClockMs(MasterAdapter mix) {
+            double ms = (AudioOutput.GetPosition() / sizeof(float) - mix.Waited / 2) * 1000.0 / 44100;
+            double currentMs = startMs + ms;
+            if (mix.IsWaiting) {
+                playheadHoldMs ??= currentMs;
+                return playheadHoldMs.Value;
+            }
+            playheadHoldMs = null;
+            return currentMs;
         }
 
         public static float DecibelToVolume(double db) {
@@ -700,6 +732,7 @@ namespace OpenUtau.Core {
                     PlayingMaster = false;
                     metronomeEngine.Stop();
                     loopEndTick = -1;
+                    playheadHoldMs = null;
                 } else {
                     StopPlayback();
                 }
