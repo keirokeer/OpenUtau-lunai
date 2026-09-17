@@ -461,6 +461,37 @@ namespace OpenUtau.Core.Editing {
             return ticks;
         }
 
+        /// <summary>
+        /// UTAU continuation / slur notes ("+", "+~", …): keep their phoneme
+        /// offsets untouched when randomizing double-vocal timings. Also leave
+        /// the first phoneme of the following note alone (e.g. "hh" in
+        /// hello / + / here), so the slur boundary stays fixed.
+        /// </summary>
+        static bool IsPlusLyricNote(UNote? note) {
+            return note != null
+                && !string.IsNullOrEmpty(note.lyric)
+                && note.lyric.StartsWith("+", StringComparison.Ordinal);
+        }
+
+        static bool IsFirstPhonemeOfNote(UPhoneme phoneme) {
+            return phoneme.Prev == null || phoneme.Prev.Parent != phoneme.Parent;
+        }
+
+        static bool ShouldSkipPhonemeTimingRandomize(UPhoneme phoneme) {
+            var note = phoneme.Parent;
+            if (note == null) {
+                return true;
+            }
+            if (IsPlusLyricNote(note)) {
+                return true;
+            }
+            // First phoneme after a + / +~ note (onset of the resume lyric).
+            if (IsFirstPhonemeOfNote(phoneme) && IsPlusLyricNote(note.Prev)) {
+                return true;
+            }
+            return false;
+        }
+
         static void ApplyPhonemeOffsetRandomize(UProject project, UVoicePart part, int maxPhonemeOffsetTick) {
             var notes = part.notes.ToList();
             if (notes.Count == 0 || part.phonemes.Count == 0) {
@@ -471,6 +502,9 @@ namespace OpenUtau.Core.Editing {
                 for (int i = 0; i < part.phonemes.Count; i++) {
                     UPhoneme phoneme = part.phonemes[i];
                     if (phoneme.Parent != note) {
+                        continue;
+                    }
+                    if (ShouldSkipPhonemeTimingRandomize(phoneme)) {
                         continue;
                     }
                     int existing = note.GetPhonemeOverride(phoneme.index).offset ?? 0;
