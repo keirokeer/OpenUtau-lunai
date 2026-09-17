@@ -8,6 +8,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Threading;
 using OpenUtau.App.Views;
+using OpenUtau.Core.Util;
 using Serilog;
 
 namespace OpenUtau.App {
@@ -38,16 +39,15 @@ namespace OpenUtau.App {
         }
 
         public static void ReportFatal(Exception ex) {
-            Log.Fatal(ex, "Fatal application error");
-            try { Log.CloseAndFlush(); } catch { }
+            CrashReport.Write(ex, "report-fatal");
             ShowNativeFatalDialog(ex);
         }
 
         static void OnDispatcherUnhandledException(object? sender, DispatcherUnhandledExceptionEventArgs e) {
             Log.Error(e.Exception, "Unhandled UI thread exception");
-            try { Log.CloseAndFlush(); } catch { }
             bool fatal = IsNonRecoverable(e.Exception);
             if (fatal) {
+                CrashReport.Write(e.Exception, "ui-nonrecoverable");
                 ShowNativeFatalDialog(e.Exception);
                 return;
             }
@@ -57,7 +57,6 @@ namespace OpenUtau.App {
 
         static void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e) {
             Log.Error(e.Exception, "Unobserved task exception");
-            try { Log.CloseAndFlush(); } catch { }
             e.SetObserved();
             ShowUserDialog(e.Exception);
         }
@@ -66,7 +65,10 @@ namespace OpenUtau.App {
             var ex = e.ExceptionObject as Exception
                 ?? new Exception($"Non-Exception unhandled: {e.ExceptionObject}");
             Log.Fatal(ex, "Unhandled domain exception (IsTerminating={IsTerminating})", e.IsTerminating);
-            try { Log.CloseAndFlush(); } catch { }
+            CrashReport.Write(
+                ex,
+                e.IsTerminating ? "domain-terminating" : "domain-nonterminating",
+                writeDump: e.IsTerminating || IsNonRecoverable(ex));
             if (e.IsTerminating || IsNonRecoverable(ex)) {
                 ShowNativeFatalDialog(ex);
             } else {

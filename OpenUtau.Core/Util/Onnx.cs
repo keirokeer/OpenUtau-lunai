@@ -147,8 +147,8 @@ namespace OpenUtau.Core {
             if (runnerChoice == OnnxRunnerChoice.CPU ||
                 (runnerChoice == OnnxRunnerChoice.CPUForCoreML && Preferences.Default.OnnxRunner == "CoreML")) {
                 return new InferenceSession(model);
-            } else {
-                // Try with CoreML subgraphs enabled first, fallback to default if it fails
+            }
+            return CreateAcceleratorSession(() => {
                 if (OS.IsMacOS() && Preferences.Default.OnnxRunner == "CoreML") {
                     try {
                         return new InferenceSession(model, getOnnxSessionOptions(coremlEnableOnSubgraphs: true));
@@ -157,15 +157,15 @@ namespace OpenUtau.Core {
                     }
                 }
                 return new InferenceSession(model, getOnnxSessionOptions());
-            }
+            });
         }
 
         public static InferenceSession getInferenceSession(string modelPath, OnnxRunnerChoice runnerChoice = OnnxRunnerChoice.Default) {
             if (runnerChoice == OnnxRunnerChoice.CPU ||
                 (runnerChoice == OnnxRunnerChoice.CPUForCoreML && Preferences.Default.OnnxRunner == "CoreML")) {
                 return new InferenceSession(modelPath);
-            } else {
-                // Try with CoreML subgraphs enabled first, fallback to default if it fails
+            }
+            return CreateAcceleratorSession(() => {
                 if (OS.IsMacOS() && Preferences.Default.OnnxRunner == "CoreML") {
                     try {
                         return new InferenceSession(modelPath, getOnnxSessionOptions(coremlEnableOnSubgraphs: true));
@@ -174,6 +174,25 @@ namespace OpenUtau.Core {
                     }
                 }
                 return new InferenceSession(modelPath, getOnnxSessionOptions());
+            });
+        }
+
+        /// <summary>
+        /// Breadcrumb + crash report for accelerator session create. Does not change runner prefs.
+        /// Managed failures are rethrown so the render pipeline can show them; native AV still
+        /// kills the process, but leaves evidence for CrashReport on the next launch.
+        /// </summary>
+        static InferenceSession CreateAcceleratorSession(Func<InferenceSession> factory) {
+            CrashReport.MarkOnnxSessionCreateStarting();
+            try {
+                var session = factory();
+                CrashReport.MarkOnnxSessionCreateFinished();
+                return session;
+            } catch (Exception e) {
+                CrashReport.MarkOnnxSessionCreateFinished();
+                CrashReport.Write(e, "onnx-session-create", writeDump: false);
+                Log.Error(e, "ONNX accelerator session create failed");
+                throw;
             }
         }
 

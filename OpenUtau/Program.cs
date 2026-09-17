@@ -29,6 +29,8 @@ namespace OpenUtau.App {
 
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             InitLogging();
+            OpenUtau.Core.Util.CrashReport.InstallNativeHandlers();
+            OpenUtau.Core.Util.CrashReport.CheckPreviousOnnxAttempt();
             UnhandledExceptionGuard.InstallEarly();
             string processName = Process.GetCurrentProcess().ProcessName;
             if (processName != "dotnet") {

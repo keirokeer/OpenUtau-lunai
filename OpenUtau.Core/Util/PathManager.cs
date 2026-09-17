@@ -160,6 +160,7 @@ namespace OpenUtau.Core {
         public string TemplatesPath => Path.Combine(DataPath, "Templates");
         public string LogsPath => Path.Combine(DataPath, "Logs");
         public string LogFilePath => Path.Combine(DataPath, "Logs", "log.txt");
+        public string CrashReportsPath => Path.Combine(DataPath, "CrashReports");
         public string PrefsFilePath => Path.Combine(DataPath, "prefs.json");
         public string ThemesPath => Path.Combine(DataPath, "Themes");
         public string TrackColorsPath => Path.Combine(DataPath, "TrackColors");
