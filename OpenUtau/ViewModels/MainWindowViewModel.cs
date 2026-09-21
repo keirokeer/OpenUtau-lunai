@@ -64,8 +64,9 @@ namespace OpenUtau.App.ViewModels {
         ///0: welcome page, 1: tracks page
         /// </summary>
         [Reactive] public partial int Page { get; set; } = 0;
-        ObservableCollectionExtended<RecentFileInfo> RecentFiles { get; } = new ObservableCollectionExtended<RecentFileInfo>();
-        ObservableCollectionExtended<RecentFileInfo> TemplateFiles { get; } = new ObservableCollectionExtended<RecentFileInfo>();
+        // Public for welcome-page bindings (upstream #2410).
+        public ObservableCollectionExtended<RecentFileInfo> RecentFiles { get; } = new ObservableCollectionExtended<RecentFileInfo>();
+        public ObservableCollectionExtended<RecentFileInfo> TemplateFiles { get; } = new ObservableCollectionExtended<RecentFileInfo>();
         [Reactive] public partial bool HasRecovery { get; set; } = false;
         [Reactive] public partial string RecoveryPath { get; set; } = String.Empty;
         [Reactive] public partial string RecoveryString { get; set; } = String.Empty;
