@@ -327,7 +327,7 @@
   "welcome.singerhub.open": "Singer Hub 열기",
   "workspace.panel.close": "패널 닫기",
   "workspace.panel.expressions": "Project Expressions",
-  "workspace.panel.expressions.defaultcolor": "Default color",
+  "workspace.panel.expressions.defaultcolor": "Default voice color for new notes",
   "workspace.panel.expressions.openinexppanel": "Open in expression panel",
   "workspace.panel.expressions.parameters": "Parameters",
   "workspace.panel.expressions.resettooltip": "Right click to reset to the built-in default",

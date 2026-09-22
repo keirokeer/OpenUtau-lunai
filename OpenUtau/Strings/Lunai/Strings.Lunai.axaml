@@ -424,9 +424,9 @@
   <system:String x:Key="workspace.panel.expressions.mode.track">Track</system:String>
   <system:String x:Key="workspace.panel.expressions.track.clear">Clear all track overrides</system:String>
   <system:String x:Key="workspace.panel.expressions.track.clear.tip">Remove all track-level defaults so this track inherits Project Expressions</system:String>
-  <system:String x:Key="workspace.panel.expressions.defaultcolor">Default color</system:String>
+  <system:String x:Key="workspace.panel.expressions.defaultcolor">Default voice color for new notes</system:String>
   <system:String x:Key="workspace.panel.expressions.voicecolors">Voice colors</system:String>
-  <system:String x:Key="workspace.panel.expressions.voicecolormax">Voice color max %</system:String>
+  <system:String x:Key="workspace.panel.expressions.voicecolormax">Voice color max</system:String>
   <system:String x:Key="prefs.voicecolormax">Voice color max %</system:String>
   <system:String x:Key="prefs.voicecolormax.default">Default voice color max %</system:String>
   <system:String x:Key="prefs.voicecolormax.hint">Default ceiling for DiffSinger voice-color curves (0–1000). Also editable in Project Expressions.</system:String>

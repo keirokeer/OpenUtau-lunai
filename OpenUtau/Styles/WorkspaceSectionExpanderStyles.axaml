@@ -283,6 +283,11 @@
           ComboBox.workspacePanelCombo ComboBoxItem:selected:pointerover /template/ Border#HoverFill">
     <Setter Property="Background" Value="{DynamicResource SelectedTrackAccentLightBrushSemi}"/>
   </Style>
+  <!-- Ordinal in selected dropdown row: same foreground as name (accent bg kills muted color). -->
+  <Style Selector="ComboBox.workspacePanelCombo ComboBoxItem:selected TextBlock.expDefaultLabelOrdinal,
+          ComboBox.workspacePanelCombo ComboBoxItem:selected:pointerover TextBlock.expDefaultLabelOrdinal">
+    <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+  </Style>
 
   <Style Selector="TextBox.workspacePanelTextBox,
                    pe|FloatEditor.workspacePanelTextBox,

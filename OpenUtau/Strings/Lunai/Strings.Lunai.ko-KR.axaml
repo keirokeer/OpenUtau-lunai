@@ -390,7 +390,7 @@
 
   <system:String x:Key="workspace.panel.close">패널 닫기</system:String>
   <system:String x:Key="workspace.panel.expressions">Project Expressions</system:String>
-  <system:String x:Key="workspace.panel.expressions.defaultcolor">Default color</system:String>
+  <system:String x:Key="workspace.panel.expressions.defaultcolor">Default voice color for new notes</system:String>
   <system:String x:Key="workspace.panel.expressions.openinexppanel">Open in expression panel</system:String>
   <system:String x:Key="workspace.panel.expressions.styles.singer">가수</system:String>
   <system:String x:Key="workspace.panel.expressions.styles.savedwith">저장 시 가수</system:String>

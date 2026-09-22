@@ -390,7 +390,7 @@
 
   <system:String x:Key="workspace.panel.close">Chiudi pannello</system:String>
   <system:String x:Key="workspace.panel.expressions">Project Expressions</system:String>
-  <system:String x:Key="workspace.panel.expressions.defaultcolor">Default color</system:String>
+  <system:String x:Key="workspace.panel.expressions.defaultcolor">Default voice color for new notes</system:String>
   <system:String x:Key="workspace.panel.expressions.openinexppanel">Open in expression panel</system:String>
   <system:String x:Key="workspace.panel.expressions.styles.singer">Cantante</system:String>
   <system:String x:Key="workspace.panel.expressions.styles.savedwith">Salvato con</system:String>

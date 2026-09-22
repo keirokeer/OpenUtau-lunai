@@ -427,7 +427,7 @@
   <system:String x:Key="workspace.panel.expressions.mode.track">Трек</system:String>
   <system:String x:Key="workspace.panel.expressions.track.clear">Сбросить все значения трека</system:String>
   <system:String x:Key="workspace.panel.expressions.track.clear.tip">Убрать локальные значения трека — снова действуют выражения проекта</system:String>
-  <system:String x:Key="workspace.panel.expressions.defaultcolor">Оттенок по умолчанию</system:String>
+  <system:String x:Key="workspace.panel.expressions.defaultcolor">Оттенок голоса для новых нот</system:String>
   <system:String x:Key="workspace.panel.expressions.openinexppanel">Открыть на панели выражений</system:String>
   <system:String x:Key="workspace.panel.expressions.styles">Стили исполнителя</system:String>
   <system:String x:Key="workspace.panel.expressions.styles.delete">Удалить стиль</system:String>
@@ -449,7 +449,7 @@
   <system:String x:Key="workspace.panel.expressions.resettooltip.track">ПКМ — убрать значение трека (наследовать проект)</system:String>
   <system:String x:Key="workspace.panel.expressions.styles.projecthint">Стили исполнителя всегда применяются к выражениям проекта (не к значениям трека).</system:String>
   <system:String x:Key="workspace.panel.expressions.voicecolors">Оттенки голоса</system:String>
-  <system:String x:Key="workspace.panel.expressions.voicecolormax">Макс. % оттенка голоса</system:String>
+  <system:String x:Key="workspace.panel.expressions.voicecolormax">Макс. оттенок голоса</system:String>
   <system:String x:Key="prefs.voicecolormax">Макс. % оттенка голоса</system:String>
   <system:String x:Key="prefs.voicecolormax.default">Макс. % оттенка голоса по умолчанию</system:String>
   <system:String x:Key="prefs.voicecolormax.hint">Потолок кривых voice color DiffSinger по умолчанию (0–1000). Также можно менять в Project Expressions.</system:String>

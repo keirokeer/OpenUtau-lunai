@@ -5,6 +5,7 @@ using System.Linq;
 using DynamicData.Binding;
 using OpenUtau.App;
 using OpenUtau.Core;
+using OpenUtau.Core.DiffSinger;
 using OpenUtau.Core.Format;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
@@ -15,6 +16,9 @@ namespace OpenUtau.App.ViewModels {
     public partial class ExpressionDefaultItem : ReactiveObject {
         public string Abbr { get; }
         [Reactive] public partial string Name { get; set; }
+        [Reactive] public partial string? NameOrdinal { get; set; }
+        [Reactive] public partial string NameBody { get; set; } = string.Empty;
+        [Reactive] public partial bool HasNameOrdinal { get; set; }
         [Reactive] public partial string? Tip { get; set; }
         [Reactive] public partial bool HasTip { get; set; }
         [Reactive] public partial float Min { get; set; }
@@ -23,10 +27,14 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial float PlayheadValue { get; set; }
         [Reactive] public partial bool ShowPlayheadMarker { get; set; }
         [Reactive] public partial bool HasTrackOverride { get; set; }
+        /// <summary>
+        /// First vocal mode (cl01 / standard): listed for clarity, no mix slider.
+        /// </summary>
+        [Reactive] public partial bool ShowMixSlider { get; set; } = true;
 
         public ExpressionDefaultItem(UExpressionDescriptor descriptor, string? tip = null) {
             Abbr = descriptor.abbr;
-            Name = ExpressionSuggestionSync.GetPanelDisplayName(descriptor);
+            ApplyDisplayName(ExpressionSuggestionSync.GetPanelDisplayName(descriptor));
             Tip = tip;
             HasTip = !string.IsNullOrWhiteSpace(tip);
             Min = descriptor.min;
@@ -35,24 +43,55 @@ namespace OpenUtau.App.ViewModels {
             PlayheadValue = DefaultValue;
             ShowPlayheadMarker = false;
             HasTrackOverride = false;
+            ShowMixSlider = !IsBaseVoiceColorAbbr(descriptor.abbr);
         }
 
         public void SyncFromDescriptor(UExpressionDescriptor descriptor, string? tip = null) {
-            Name = ExpressionSuggestionSync.GetPanelDisplayName(descriptor);
+            ApplyDisplayName(ExpressionSuggestionSync.GetPanelDisplayName(descriptor));
             Tip = tip;
             HasTip = !string.IsNullOrWhiteSpace(tip);
             Min = descriptor.min;
             Max = descriptor.max;
+            ShowMixSlider = !IsBaseVoiceColorAbbr(descriptor.abbr);
+        }
+
+        void ApplyDisplayName(string displayName) {
+            Name = displayName;
+            if (DiffSingerUtils.TrySplitVoiceColorDisplayName(displayName, out var ordinal, out var body)) {
+                NameOrdinal = ordinal;
+                NameBody = body;
+                HasNameOrdinal = true;
+            } else {
+                NameOrdinal = null;
+                NameBody = displayName;
+                HasNameOrdinal = false;
+            }
+        }
+
+        public static bool IsBaseVoiceColorAbbr(string? abbr) {
+            return DiffSingerUtils.IsVoiceColorAbbr(abbr, out int colorIndex) && colorIndex == 1;
         }
     }
 
     public class VoiceColorOptionItem {
         public string Name { get; }
+        public string? NameOrdinal { get; }
+        public string NameBody { get; }
+        public bool HasNameOrdinal { get; }
         public string? Tip { get; }
         public bool HasTip => !string.IsNullOrWhiteSpace(Tip);
         public VoiceColorOptionItem(string name, string? tip) {
             Name = name;
             Tip = tip;
+            if (DiffSingerUtils.TrySplitVoiceColorDisplayName(name, out var ordinal, out var body)) {
+                NameOrdinal = ordinal;
+                NameBody = body;
+                HasNameOrdinal = true;
+            } else {
+                NameOrdinal = null;
+                NameBody = name;
+                HasNameOrdinal = false;
+            }
         }
         public override string ToString() => Name;
     }
@@ -278,6 +317,9 @@ namespace OpenUtau.App.ViewModels {
             var changes = new List<(string abbr, float newValue, float oldValue)>();
             foreach (var pair in style.Values) {
                 var abbr = pair.Key;
+                if (ExpressionDefaultItem.IsBaseVoiceColorAbbr(abbr)) {
+                    continue;
+                }
                 UExpressionDescriptor? descriptor = null;
                 if (string.Equals(abbr, Ustx.CLR, StringComparison.OrdinalIgnoreCase)
                     && trackNo >= 0
@@ -338,6 +380,9 @@ namespace OpenUtau.App.ViewModels {
         }
 
         public void BeginEdit(ExpressionDefaultItem item) {
+            if (item == null || !item.ShowMixSlider) {
+                return;
+            }
             if (pendingAbbr != null && pendingAbbr != item.Abbr) {
                 CommitPendingEdit();
             }
@@ -353,6 +398,9 @@ namespace OpenUtau.App.ViewModels {
         }
 
         public void PreviewEdit(ExpressionDefaultItem item, float value) {
+            if (item == null || !item.ShowMixSlider) {
+                return;
+            }
             applyingSlider = true;
             item.DefaultValue = value;
             pendingAbbr = item.Abbr;
@@ -362,6 +410,9 @@ namespace OpenUtau.App.ViewModels {
         }
 
         public void EndEdit(ExpressionDefaultItem item) {
+            if (item == null || !item.ShowMixSlider) {
+                return;
+            }
             pendingAbbr = item.Abbr;
             pendingNewValue = item.DefaultValue;
             CommitPendingEdit();
@@ -371,7 +422,7 @@ namespace OpenUtau.App.ViewModels {
         /// Project mode: reset to factory. Track mode: clear track override (inherit project).
         /// </summary>
         public void ResetSliderDefault(ExpressionDefaultItem item) {
-            if (item == null) {
+            if (item == null || !item.ShowMixSlider) {
                 return;
             }
             if (pendingAbbr != null) {
@@ -618,6 +669,11 @@ namespace OpenUtau.App.ViewModels {
                 item.DefaultValue = IsTrackMode && track != null
                     ? ExpressionDefaultResolver.GetEffectiveDefault(project, track, descriptor.abbr)
                     : ExpressionDefaultResolver.GetProjectDefault(project, descriptor.abbr);
+                if (!item.ShowMixSlider) {
+                    // Base vocal mode is mix origin only — keep baseline at 0.
+                    item.DefaultValue = 0;
+                    item.HasTrackOverride = false;
+                }
                 target.Add(item);
             }
         }

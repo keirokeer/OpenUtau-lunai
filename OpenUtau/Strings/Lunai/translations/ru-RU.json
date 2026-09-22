@@ -340,7 +340,7 @@
   "workspace.panel.expressions.mode.track": "Трек",
   "workspace.panel.expressions.track.clear": "Сбросить все значения трека",
   "workspace.panel.expressions.track.clear.tip": "Убрать локальные значения трека — снова действуют выражения проекта",
-  "workspace.panel.expressions.defaultcolor": "Оттенок по умолчанию",
+  "workspace.panel.expressions.defaultcolor": "Оттенок голоса для новых нот",
   "workspace.panel.expressions.openinexppanel": "Открыть на панели выражений",
   "workspace.panel.expressions.parameters": "Параметры",
   "workspace.panel.expressions.resettooltip": "ПКМ — сбросить к встроенному значению по умолчанию",

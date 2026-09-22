@@ -107,6 +107,46 @@ namespace OpenUtau.App.Views {
             e.Handled = true;
         }
 
+        void OnDefaultValuePressed(object? sender, PointerPressedEventArgs e) {
+            if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) {
+                return;
+            }
+            if (sender is not Control { DataContext: ExpressionDefaultItem item } ||
+                !item.ShowMixSlider ||
+                Vm == null) {
+                return;
+            }
+            var owner = GetOwnerWindow();
+            if (owner == null) {
+                return;
+            }
+            var dialog = new TypeInDialog();
+            dialog.Title = item.Name;
+            dialog.SetText(item.DefaultValue.ToString(
+                "0.##", System.Globalization.CultureInfo.CurrentCulture));
+            dialog.onFinish = s => {
+                var raw = (s ?? string.Empty).Trim();
+                if (!(float.TryParse(raw, System.Globalization.NumberStyles.Float,
+                        System.Globalization.CultureInfo.CurrentCulture, out float value) ||
+                    float.TryParse(raw, System.Globalization.NumberStyles.Float,
+                        System.Globalization.CultureInfo.InvariantCulture, out value))) {
+                    return;
+                }
+                if (item.Max >= item.Min) {
+                    value = Math.Clamp(value, item.Min, item.Max);
+                }
+                if (Math.Abs(value - item.DefaultValue) < 0.0001f) {
+                    return;
+                }
+                Vm.BeginEdit(item);
+                Vm.PreviewEdit(item, value);
+                Vm.EndEdit(item);
+            };
+            dialog.ShowDialog(owner);
+            e.Pointer.Capture(null);
+            e.Handled = true;
+        }
+
         void OnStyleChipPointerPressed(object? sender, PointerPressedEventArgs e) {
             if (e.Source is Button) {
                 return;

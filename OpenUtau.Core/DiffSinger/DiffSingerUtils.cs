@@ -89,6 +89,52 @@ namespace OpenUtau.Core.DiffSinger {
             return name;
         }
 
+        /// <summary>
+        /// Splits "01: standard" / "01 standard" into ordinal "01" and body "standard".
+        /// </summary>
+        public static bool TrySplitVoiceColorDisplayName(
+            string? displayName, out string? ordinal, out string body) {
+            ordinal = null;
+            body = displayName ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(displayName)) {
+                return false;
+            }
+            var text = displayName.Trim();
+            // "01: sweet" or "01：sweet" (fullwidth colon) or "01 sweet"
+            int i = 0;
+            while (i < text.Length && char.IsDigit(text[i])) {
+                i++;
+            }
+            if (i == 0 || i > 3) {
+                return false;
+            }
+            int afterDigits = i;
+            while (i < text.Length && char.IsWhiteSpace(text[i])) {
+                i++;
+            }
+            bool hadColon = false;
+            if (i < text.Length && (text[i] == ':' || text[i] == '：')) {
+                hadColon = true;
+                i++;
+                while (i < text.Length && char.IsWhiteSpace(text[i])) {
+                    i++;
+                }
+            }
+            // Require separator (colon or space after digits) and a non-empty body.
+            if (!hadColon && afterDigits == text.Length) {
+                return false;
+            }
+            if (!hadColon && afterDigits < text.Length && !char.IsWhiteSpace(text[afterDigits])) {
+                return false;
+            }
+            if (i >= text.Length) {
+                return false;
+            }
+            ordinal = text.Substring(0, afterDigits);
+            body = text.Substring(i);
+            return !string.IsNullOrWhiteSpace(body);
+        }
+
         public static float GetHeadMs(double frameMs) {
             return (float)(frameMs * headFrames);
         }

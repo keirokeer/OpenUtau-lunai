@@ -390,7 +390,7 @@
 
   <system:String x:Key="workspace.panel.close">Sulje paneeli</system:String>
   <system:String x:Key="workspace.panel.expressions">Project Expressions</system:String>
-  <system:String x:Key="workspace.panel.expressions.defaultcolor">Default color</system:String>
+  <system:String x:Key="workspace.panel.expressions.defaultcolor">Default voice color for new notes</system:String>
   <system:String x:Key="workspace.panel.expressions.openinexppanel">Open in expression panel</system:String>
   <system:String x:Key="workspace.panel.expressions.styles.singer">Laulaja</system:String>
   <system:String x:Key="workspace.panel.expressions.styles.savedwith">Tallennettu laulajalle</system:String>

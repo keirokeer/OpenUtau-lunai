@@ -390,7 +390,7 @@
 
   <system:String x:Key="workspace.panel.close">Закрити панель</system:String>
   <system:String x:Key="workspace.panel.expressions">Вирази проєкту</system:String>
-  <system:String x:Key="workspace.panel.expressions.defaultcolor">Відтінок за замовчуванням</system:String>
+  <system:String x:Key="workspace.panel.expressions.defaultcolor">Відтінок голосу для нових нот</system:String>
   <system:String x:Key="workspace.panel.expressions.openinexppanel">Відкрити на панелі виразів</system:String>
   <system:String x:Key="workspace.panel.expressions.styles">Стилі виконавця</system:String>
   <system:String x:Key="workspace.panel.expressions.styles.delete">Видалити стиль</system:String>

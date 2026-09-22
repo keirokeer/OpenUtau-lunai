@@ -327,7 +327,7 @@
   "welcome.singerhub.open": "打开 Singer Hub",
   "workspace.panel.close": "关闭面板",
   "workspace.panel.expressions": "Project Expressions",
-  "workspace.panel.expressions.defaultcolor": "Default color",
+  "workspace.panel.expressions.defaultcolor": "Default voice color for new notes",
   "workspace.panel.expressions.openinexppanel": "Open in expression panel",
   "workspace.panel.expressions.parameters": "Parameters",
   "workspace.panel.expressions.resettooltip": "Right click to reset to the built-in default",

@@ -327,7 +327,7 @@
   "welcome.singerhub.open": "Відкрити Центр виконавців",
   "workspace.panel.close": "Закрити панель",
   "workspace.panel.expressions": "Вирази проєкту",
-  "workspace.panel.expressions.defaultcolor": "Відтінок за замовчуванням",
+  "workspace.panel.expressions.defaultcolor": "Відтінок голосу для нових нот",
   "workspace.panel.expressions.openinexppanel": "Відкрити на панелі виразів",
   "workspace.panel.expressions.parameters": "Параметри",
   "workspace.panel.expressions.resettooltip": "ПКМ — скинути до вбудованого значення за замовчуванням",

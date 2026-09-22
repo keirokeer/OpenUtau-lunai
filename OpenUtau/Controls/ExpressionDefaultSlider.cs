@@ -71,7 +71,8 @@ namespace OpenUtau.App.Controls {
                 Focusable = true,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 VerticalAlignment = VerticalAlignment.Center,
-                MinHeight = 24,
+                MinHeight = 18,
+                Height = 18,
                 Background = Brushes.Transparent,
                 ZIndex = 3,
             };

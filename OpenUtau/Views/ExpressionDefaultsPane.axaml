@@ -33,18 +33,51 @@
       <Setter Property="FontFamily" Value="monospace"/>
       <Setter Property="MinWidth" Value="36"/>
       <Setter Property="Margin" Value="8,0,0,0"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="TextBlock.expDefaultUnit">
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="Margin" Value="4,0,0,0"/>
+      <Setter Property="Opacity" Value="0.75"/>
+      <Setter Property="FontSize" Value="12"/>
     </Style>
     <Style Selector="Slider.fader">
       <Setter Property="Focusable" Value="True"/>
     </Style>
     <Style Selector="Grid.expDefaultRow">
-      <Setter Property="Margin" Value="0,4,0,4"/>
+      <!-- Vertical gap comes from ItemsControl panel Spacing, not row margins. -->
+      <Setter Property="Margin" Value="0"/>
     </Style>
     <Style Selector="Grid.expDefaultSliderRow">
-      <Setter Property="Margin" Value="0,4,-10,4"/>
+      <Setter Property="Margin" Value="0,0,-10,0"/>
+    </Style>
+    <!-- Same typography as expDefaultLabel; only Foreground differs (M/S/fx off brush). -->
+    <Style Selector="TextBlock.expDefaultLabelOrdinal">
+      <Setter Property="TextWrapping" Value="NoWrap"/>
+      <Setter Property="TextTrimming" Value="None"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="Margin" Value="0,0,5,0"/>
+      <Setter Property="Foreground" Value="{DynamicResource TransportChipIconOffBrush}"/>
+    </Style>
+    <!-- Must live here (UserControl.Styles beat App styles on popup descendants). -->
+    <Style Selector="ComboBoxItem:selected TextBlock.expDefaultLabelOrdinal,
+                     ComboBoxItem:selected:pointerover TextBlock.expDefaultLabelOrdinal">
+      <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
+    </Style>
+    <!-- Spacing between parameter / voice-color rows (ItemsControl children). -->
+    <Style Selector="ItemsControl.expDefaultItemList">
+      <Setter Property="ItemsPanel">
+        <ItemsPanelTemplate>
+          <StackPanel Classes="expDefaultItemListPanel"/>
+        </ItemsPanelTemplate>
+      </Setter>
+    </Style>
+    <Style Selector="StackPanel.expDefaultItemListPanel">
+      <Setter Property="Spacing" Value="12"/>
     </Style>
     <Style Selector="StackPanel.expDefaultSectionContent">
-      <Setter Property="Spacing" Value="2"/>
+      <Setter Property="Spacing" Value="8"/>
     </Style>
     <Style Selector="Border.expModeTab">
       <Setter Property="Background" Value="Transparent"/>
@@ -157,7 +190,7 @@
                   IsVisible="{Binding HasParameters}"
                   Header="{DynamicResource workspace.panel.expressions.parameters}">
           <StackPanel Classes="expDefaultSectionContent">
-            <ItemsControl ItemsSource="{Binding ParameterItems}">
+            <ItemsControl Classes="expDefaultItemList" ItemsSource="{Binding ParameterItems}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="vm:ExpressionDefaultItem">
                   <Grid Classes="expDefaultRow expDefaultSliderRow" ColumnDefinitions="110,*,Auto">
@@ -174,7 +207,8 @@
                     </Border>
                     <c:ExpressionDefaultSlider Grid.Column="1" Item="{Binding}"/>
                     <TextBlock Classes="expDefaultValue" Grid.Column="2"
-                               Text="{Binding DefaultValue, StringFormat={}{0:0}}"/>
+                               Text="{Binding DefaultValue, StringFormat={}{0:0}}"
+                               PointerPressed="OnDefaultValuePressed"/>
                   </Grid>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
@@ -186,34 +220,23 @@
                   IsVisible="{Binding HasVoiceColors}"
                   Header="{DynamicResource workspace.panel.expressions.voicecolors}">
           <StackPanel Classes="expDefaultSectionContent">
-            <Grid Classes="expDefaultRow" ColumnDefinitions="*,Auto" Margin="0,0,0,8">
+            <Grid Classes="expDefaultRow" ColumnDefinitions="*,Auto" Margin="0,0,0,0">
               <TextBlock Classes="expDefaultLabel" Margin="4,0,8,0"
                          Text="{DynamicResource workspace.panel.expressions.voicecolormax}"
                          TextWrapping="Wrap" Grid.Column="0" VerticalAlignment="Center"/>
-              <c:WorkspacePanelTextBox Classes="workspacePanelTextBox" Grid.Column="1" Width="72"
-                                       Text="{Binding VoiceColorCurveMaxText}"
-                                       VerticalAlignment="Center"/>
+              <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <c:WorkspacePanelTextBox Classes="workspacePanelTextBox" Width="56"
+                                         Text="{Binding VoiceColorCurveMaxText}"
+                                         VerticalAlignment="Center"/>
+                <TextBlock Classes="expDefaultUnit" Text="%"/>
+              </StackPanel>
             </Grid>
-            <Grid Classes="expDefaultRow" ColumnDefinitions="110,*"
-                  IsVisible="{Binding ShowDefaultVoiceColorPicker}">
-              <TextBlock Classes="expDefaultLabel" Margin="4,0,8,0"
-                         Text="{DynamicResource workspace.panel.expressions.defaultcolor}"
-                         Grid.Column="0"/>
-              <c:WorkspacePanelComboBox Grid.Column="1" Classes="workspacePanelCombo"
-                                        ItemsSource="{Binding VoiceColorOptions}"
-                                        SelectedIndex="{Binding SelectedVoiceColorIndex}">
-                <c:WorkspacePanelComboBox.ItemTemplate>
-                  <DataTemplate x:DataType="vm:VoiceColorOptionItem">
-                    <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/>
-                  </DataTemplate>
-                </c:WorkspacePanelComboBox.ItemTemplate>
-              </c:WorkspacePanelComboBox>
-            </Grid>
-            <ItemsControl ItemsSource="{Binding VoiceColorItems}">
+            <ItemsControl Classes="expDefaultItemList" ItemsSource="{Binding VoiceColorItems}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="vm:ExpressionDefaultItem">
-                  <Grid Classes="expDefaultRow expDefaultSliderRow" ColumnDefinitions="110,*,Auto">
-                    <DockPanel Grid.Column="0" LastChildFill="True">
+                  <Grid Classes="expDefaultRow expDefaultSliderRow"
+                        ColumnDefinitions="110,*,Auto">
+                    <DockPanel Grid.Column="0" LastChildFill="True" VerticalAlignment="Center">
                       <TextBlock DockPanel.Dock="Right"
                                  Text="?"
                                  FontSize="12"
@@ -233,18 +256,50 @@
                                    Margin="0,4,4,0" VerticalAlignment="Top"
                                    IsVisible="{Binding HasTrackOverride}"
                                    Fill="{DynamicResource SystemAccentColorDark1Brush}"/>
-                          <TextBlock Classes="expDefaultLabel" Text="{Binding Name}"
-                                     TextTrimming="CharacterEllipsis"/>
+                          <StackPanel Orientation="Horizontal">
+                            <TextBlock Classes="expDefaultLabelOrdinal"
+                                       Text="{Binding NameOrdinal}"
+                                       IsVisible="{Binding HasNameOrdinal}"/>
+                            <TextBlock Classes="expDefaultLabel" Text="{Binding NameBody}"
+                                       TextTrimming="CharacterEllipsis"/>
+                          </StackPanel>
                         </DockPanel>
                       </Border>
                     </DockPanel>
-                    <c:ExpressionDefaultSlider Grid.Column="1" Item="{Binding}"/>
+                    <c:ExpressionDefaultSlider Grid.Column="1" Item="{Binding}"
+                                               IsVisible="{Binding ShowMixSlider}"
+                                               VerticalAlignment="Center"/>
                     <TextBlock Classes="expDefaultValue" Grid.Column="2"
-                               Text="{Binding DefaultValue, StringFormat={}{0:0}}"/>
+                               Text="{Binding DefaultValue, StringFormat={}{0:0}}"
+                               IsVisible="{Binding ShowMixSlider}"
+                               PointerPressed="OnDefaultValuePressed"/>
                   </Grid>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
+            <Grid Classes="expDefaultRow" ColumnDefinitions="110,*" Margin="0,0,0,0"
+                  IsVisible="{Binding ShowDefaultVoiceColorPicker}">
+              <TextBlock Classes="expDefaultLabel" Margin="4,0,8,0"
+                         Text="{DynamicResource workspace.panel.expressions.defaultcolor}"
+                         TextWrapping="Wrap"
+                         Grid.Column="0"/>
+              <c:WorkspacePanelComboBox Grid.Column="1" Classes="workspacePanelCombo"
+                                        ItemsSource="{Binding VoiceColorOptions}"
+                                        SelectedIndex="{Binding SelectedVoiceColorIndex}">
+                <c:WorkspacePanelComboBox.ItemTemplate>
+                  <DataTemplate x:DataType="vm:VoiceColorOptionItem">
+                    <StackPanel Orientation="Horizontal">
+                      <TextBlock Classes="expDefaultLabelOrdinal"
+                                 Text="{Binding NameOrdinal}"
+                                 IsVisible="{Binding HasNameOrdinal}"/>
+                      <TextBlock Classes="expDefaultLabel"
+                                 Text="{Binding NameBody}"
+                                 TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                  </DataTemplate>
+                </c:WorkspacePanelComboBox.ItemTemplate>
+              </c:WorkspacePanelComboBox>
+            </Grid>
           </StackPanel>
         </Expander>
 
