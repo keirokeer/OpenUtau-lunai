@@ -295,13 +295,18 @@ namespace OpenUtau.App.Controls {
             args.Handled = true;
         }
 
-        void TrackSettingsButtonClicked(object sender, RoutedEventArgs args) {
+        async void TrackSettingsButtonClicked(object sender, RoutedEventArgs args) {
+            args.Handled = true;
             if (track?.Singer is not { Found: true, SingerType: USingerType.Classic }) {
                 return;
             }
-            if (VisualRoot is Window window) {
-                var dialog = new Views.TrackSettingsDialog(track);
-                dialog.ShowDialog(window);
+            try {
+                if (TopLevel.GetTopLevel(this) is Window window) {
+                    var dialog = new Views.TrackSettingsDialog(track);
+                    await dialog.ShowDialog(window);
+                }
+            } catch (Exception e) {
+                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(e));
             }
         }
 
