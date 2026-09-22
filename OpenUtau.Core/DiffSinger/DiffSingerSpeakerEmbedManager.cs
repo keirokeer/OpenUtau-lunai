@@ -114,10 +114,15 @@ namespace OpenUtau.Core.DiffSinger
             var singer = phrase.singer;
             var hiddenSize = dsConfig.hiddenSize;
             var speakerEmbeds = getSpeakerEmbeds();
-            // Per-frame CLR / phoneme suffix is always weight 1.0 ("100%").
-            // Voice-color curves add on top; then weights are normalized to a convex mix.
-            // Example: CLR=A and cl_B=100% → A:B = 1:1 (not pure B).
-            //get default speaker for each padded segment
+            // Linear embed mix from the first vocal mode (usually "01: standard"), not CLR:
+            //   out = base + Σ a_i * (spk_i − base),  a = curve%/100, no L1 normalize.
+            //   a=0 → base, a=1 → pure target, a>1 → extrapolate past target.
+            // When all |a| ≈ 0, fall back to one-hot CLR / phoneme suffix so note-level
+            // voice color and "Default voice color for new notes" stay pure.
+            int baseSpkId = 0;
+            if (singer.Subbanks != null && singer.Subbanks.Count > 0) {
+                baseSpkId = getSpeakerIndexBySuffix(singer.Subbanks[0].Suffix);
+            }
             var segments = DiffSingerUtils.PaddedSegments(phrase, frameMs, headFrames, tailFrames);
             var defaultSpkByFrame = new List<int>();
             var currentSpk = getSpeakerIndexBySuffix(phrase.phones[0].suffix);
@@ -127,7 +132,6 @@ namespace OpenUtau.Core.DiffSinger
                 }
                 defaultSpkByFrame.AddRange(Enumerable.Repeat(currentSpk, durations[i]));
             }
-            //get speaker curves
             NDArray spkCurves = np.zeros<float>(totalFrames, dsConfig.speakers.Count);
             foreach(var curve in phrase.curves) {
                 if(IsVoiceColorCurve(curve.Item1,out int subBankId) && subBankId < singer.Subbanks.Count) {
@@ -139,38 +143,35 @@ namespace OpenUtau.Core.DiffSinger
             }
 
             int speakerCount = dsConfig.speakers.Count;
+            var baseEmbed = speakerEmbeds[":", baseSpkId].ToArray<float>();
             var result = new float[totalFrames * hiddenSize];
-            var weights = new float[speakerCount];
             for (int frameId = 0; frameId < totalFrames; frameId++) {
-                Array.Clear(weights, 0, speakerCount);
-                int clrSpkId = defaultSpkByFrame[frameId];
-                weights[clrSpkId] = 1f;
-                for (int spk = 0; spk < speakerCount; spk++) {
-                    weights[spk] += (float)spkCurves[frameId, spk];
-                }
-
-                float weightSum = 0f;
-                for (int spk = 0; spk < speakerCount; spk++) {
-                    if (weights[spk] < 0f) {
-                        weights[spk] = 0f;
-                    }
-                    weightSum += weights[spk];
-                }
-                if (weightSum < 1e-8f) {
-                    weights[clrSpkId] = 1f;
-                    weightSum = 1f;
-                }
-
                 var dest = result.AsSpan(frameId * hiddenSize, hiddenSize);
-                dest.Clear();
+                bool anyCurve = false;
                 for (int spk = 0; spk < speakerCount; spk++) {
-                    float w = weights[spk] / weightSum;
-                    if (w < 1e-8f) {
+                    if (Math.Abs((float)spkCurves[frameId, spk]) >= 1e-8f) {
+                        anyCurve = true;
+                        break;
+                    }
+                }
+                if (!anyCurve) {
+                    // Pure note / default CLR when voice-color curves are idle.
+                    var clrEmbed = speakerEmbeds[":", defaultSpkByFrame[frameId]].ToArray<float>();
+                    clrEmbed.CopyTo(dest);
+                    continue;
+                }
+                baseEmbed.CopyTo(dest);
+                for (int spk = 0; spk < speakerCount; spk++) {
+                    if (spk == baseSpkId) {
+                        continue; // amount on base is always a no-op (spk − base = 0)
+                    }
+                    float amount = (float)spkCurves[frameId, spk];
+                    if (Math.Abs(amount) < 1e-8f) {
                         continue;
                     }
-                    var embed = speakerEmbeds[":", spk].ToArray<float>();
+                    var target = speakerEmbeds[":", spk].ToArray<float>();
                     for (int j = 0; j < dest.Length; j++) {
-                        dest[j] += w * embed[j];
+                        dest[j] += amount * (target[j] - baseEmbed[j]);
                     }
                 }
             }
