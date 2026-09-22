@@ -577,6 +577,12 @@ namespace OpenUtau.App.ViewModels {
             OnnxGpu = OnnxGpuOptions.Count > 0
                 ? OnnxGpuOptions.FirstOrDefault(x => x.deviceId == Preferences.Default.OnnxGpu, OnnxGpuOptions[0])
                 : new GpuInfo();
+            // FirstOrDefault fallback only fixes the combo display; prefs may still hold a stale
+            // index (e.g. 1) that crashes DirectML session create — persist the resolved device.
+            if (OnnxGpuOptions.Count > 0 && Preferences.Default.OnnxGpu != OnnxGpu.deviceId) {
+                Preferences.Default.OnnxGpu = OnnxGpu.deviceId;
+                Preferences.Save();
+            }
             ShowOnnxGpu = OnnxRunner == "DirectML" || OnnxRunner == "CUDA";
             // GAME backend: ONNX is the default, GGML is available when installed.
             GameBackend = Preferences.Default.GameBackend switch {

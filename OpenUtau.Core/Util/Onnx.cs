@@ -115,10 +115,15 @@ namespace OpenUtau.Core {
             }
             switch (runner) {
                 case "DirectML":
-                    var d = devices[Preferences.Default.OnnxGpu];
+                    if (!TryResolveDirectMlDevice(out var dmlDevice)) {
+                        Log.Warning(
+                            "DirectML requested but no EP device is available (OnnxGpu={Gpu}); using CPU session options",
+                            Preferences.Default.OnnxGpu);
+                        break;
+                    }
                     options.AppendExecutionProvider(
                         OrtEnv.Instance(),
-                        new List<OrtEpDevice> { d },
+                        new List<OrtEpDevice> { dmlDevice },
                         new Dictionary<string, string> { }
                      );
                     break;
@@ -141,6 +146,40 @@ namespace OpenUtau.Core {
                     break;
             }
             return options;
+        }
+
+        /// <summary>
+        /// Prefs may keep a stale OnnxGpu index (e.g. 1) after GPU count changes or prefs copy.
+        /// Fall back to the first available DirectML device instead of throwing KeyNotFoundException.
+        /// </summary>
+        static bool TryResolveDirectMlDevice(out OrtEpDevice device) {
+            device = null!;
+            int requested = Preferences.Default.OnnxGpu;
+            if (devices.TryGetValue(requested, out device!)) {
+                return true;
+            }
+            if (devices.Count == 0) {
+                // Static init may have been empty; refresh once from ORT.
+                _ = getGpuInfo();
+            }
+            if (devices.TryGetValue(requested, out device!)) {
+                return true;
+            }
+            if (devices.Count == 0) {
+                return false;
+            }
+            int fallbackId = devices.Keys.Min();
+            device = devices[fallbackId];
+            Log.Warning(
+                "OnnxGpu index {Requested} is not available among DirectML devices [{Available}]; using {Fallback}",
+                requested,
+                string.Join(", ", devices.Keys.OrderBy(k => k)),
+                fallbackId);
+            if (Preferences.Default.OnnxGpu != fallbackId) {
+                Preferences.Default.OnnxGpu = fallbackId;
+                Preferences.Save();
+            }
+            return true;
         }
 
         public static InferenceSession getInferenceSession(byte[] model, OnnxRunnerChoice runnerChoice = OnnxRunnerChoice.Default) {

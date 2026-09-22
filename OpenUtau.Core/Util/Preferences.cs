@@ -215,6 +215,10 @@ namespace OpenUtau.Core.Util {
                     Default.NotePropertiesPanelWidth = Math.Clamp(Default.NotePropertiesPanelWidth, 350, 450);
                     if (!Renderers.getRendererOptions().Contains(Default.DefaultRenderer)) Default.DefaultRenderer = string.Empty;
                     if (!Onnx.getRunnerOptions().Contains(Default.OnnxRunner)) Default.OnnxRunner = string.Empty;
+                    // Stale GPU index (e.g. copied prefs / removed second GPU) must not crash DirectML render.
+                    if (Default.OnnxGpu < 0) {
+                        Default.OnnxGpu = 0;
+                    }
                     if (Default.Theme != null) {
                         Default.ThemeName = Default.Theme switch {
                             1 => "Dark",
