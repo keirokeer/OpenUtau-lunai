@@ -219,6 +219,7 @@ namespace OpenUtau.Core.Util {
                     if (Default.OnnxGpu < 0) {
                         Default.OnnxGpu = 0;
                     }
+                    if (OS.IsWindows()) Default.WinePath = string.Empty;
                     if (Default.Theme != null) {
                         Default.ThemeName = Default.Theme switch {
                             1 => "Dark",
