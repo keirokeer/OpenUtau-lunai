@@ -29,6 +29,15 @@ namespace OpenUtau.App.Controls {
         }
 
         /// <summary>
+        /// Whether the open track's renderer uses Classic-style envelope handles.
+        /// DiffSinger / Enunu / Voicevox ignore envelopes and draw phoneme bars instead.
+        /// </summary>
+        public static bool SupportsPhonemeEnvelope(UVoicePart? part) {
+            var track = TrackForPart(part);
+            return track?.RendererSettings.Renderer?.SupportsPhonemeEnvelope ?? true;
+        }
+
+        /// <summary>
         /// Whether to hide the language prefix in the phoneme panel for the open track (display only; does not change preferences).
         /// DiffSinger bank: follows "Hide language prefix" preference.
         /// UTAU bank with DiffSinger-friendly panel: always hidden visually.

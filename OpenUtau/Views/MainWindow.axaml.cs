@@ -86,7 +86,6 @@ namespace OpenUtau.App.Views {
                 AskIfSaveAndContinue = AskIfSaveAndContinue
             };
 
-            viewModel.NewProject();
             viewModel.AddTempoChangeCmd = ReactiveCommand.Create<int>(tick => AddTempoChange(tick));
             viewModel.DelTempoChangeCmd = ReactiveCommand.Create<int>(tick => DelTempoChange(tick));
             viewModel.AddTimeSigChangeCmd = ReactiveCommand.Create<int>(bar => AddTimeSigChange(bar));
@@ -1023,20 +1022,16 @@ namespace OpenUtau.App.Views {
                 return;
             }
 
-            var tracksVm = viewModel.TracksViewModel;
+            GlobalHotkey(args);
+            if (!args.Handled && viewModel.Page == 1) {
+                EditorHotkey(args);
+            }
+        }
 
+        void GlobalHotkey(KeyEventArgs args) {
             if (args.KeyModifiers == KeyModifiers.None) {
                 args.Handled = true;
                 switch (args.Key) {
-                    case Key.Delete: viewModel.TracksViewModel.DeleteSelectedParts(); break;
-                    case Key.Space: PlayOrPause(); break;
-                    case Key.Home: viewModel.PlaybackViewModel.MovePlayPos(0); break;
-                    case Key.End:
-                        if (viewModel.TracksViewModel.Parts.Count > 0) {
-                            int endTick = viewModel.TracksViewModel.Parts.Max(part => part.End);
-                            viewModel.PlaybackViewModel.MovePlayPos(endTick);
-                        }
-                        break;
                     case Key.F11:
                         OnMenuFullScreen(this, new RoutedEventArgs());
                         break;
@@ -1057,9 +1052,38 @@ namespace OpenUtau.App.Views {
             } else if (args.KeyModifiers == cmdKey) {
                 args.Handled = true;
                 switch (args.Key) {
-                    case Key.A: viewModel.TracksViewModel.SelectAllParts(); break;
                     case Key.N: NewProject(); break;
                     case Key.O: Open(); break;
+                    default:
+                        args.Handled = false;
+                        break;
+                }
+            }
+        }
+
+        void EditorHotkey(KeyEventArgs args) {
+            var tracksVm = viewModel.TracksViewModel;
+
+            if (args.KeyModifiers == KeyModifiers.None) {
+                args.Handled = true;
+                switch (args.Key) {
+                    case Key.Delete: viewModel.TracksViewModel.DeleteSelectedParts(); break;
+                    case Key.Space: PlayOrPause(); break;
+                    case Key.Home: viewModel.PlaybackViewModel.MovePlayPos(0); break;
+                    case Key.End:
+                        if (viewModel.TracksViewModel.Parts.Count > 0) {
+                            int endTick = viewModel.TracksViewModel.Parts.Max(part => part.End);
+                            viewModel.PlaybackViewModel.MovePlayPos(endTick);
+                        }
+                        break;
+                    default:
+                        args.Handled = false;
+                        break;
+                }
+            } else if (args.KeyModifiers == cmdKey) {
+                args.Handled = true;
+                switch (args.Key) {
+                    case Key.A: viewModel.TracksViewModel.SelectAllParts(); break;
                     case Key.S: _ = Save(); break;
                     case Key.Z: viewModel.Undo(); break;
                     case Key.Y: viewModel.Redo(); break;
@@ -1462,7 +1486,6 @@ namespace OpenUtau.App.Views {
             }
             var control = (Control)sender;
             var point = args.GetCurrentPoint(control);
-            partEditState.Update(point.Pointer, point.Position);
             partEditState.End(point.Pointer, point.Position);
             partEditState = null;
             Cursor = null;

@@ -396,8 +396,9 @@ namespace OpenUtau.App.ViewModels {
                     continue;
                 }
                 Point point;
-                // In DiffSinger phoneme panel mode, preutter/overlap handles are not shown or draggable
-                if (!Preferences.Default.DiffSingerPhonemePanelMode) {
+                // Skip envelope handles when DiffSinger panel mode is on, or the renderer ignores envelopes.
+                if (!Preferences.Default.DiffSingerPhonemePanelMode
+                    && PhonemeUIRender.SupportsPhonemeEnvelope(part)) {
                     var (barY, barHeight) = ViewConstants.GetClassicPhonemeEnvelopeLayout();
                     int p0Tick = timeAxis.MsPosToTickPos(phoneme.PositionMs + phoneme.envelope.data[0].X) - part.position;
                     double p0x = viewModel.TickToneToPoint(p0Tick, 0).X;

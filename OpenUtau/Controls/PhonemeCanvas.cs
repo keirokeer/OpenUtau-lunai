@@ -139,6 +139,7 @@ namespace OpenUtau.App.Controls {
                 return;
             }
             bool diffSingerMode = Preferences.Default.DiffSingerPhonemePanelMode;
+            bool usePhonemeBars = diffSingerMode || !PhonemeUIRender.SupportsPhonemeEnvelope(Part);
             var track = Part.trackNo < viewModel.Project.tracks.Count ? viewModel.Project.tracks[Part.trackNo] : null;
             bool hideLangPrefix = PhonemeUIRender.ShouldHideLangPrefixForDisplay(track);
             if (!diffSingerMode) {
@@ -173,7 +174,7 @@ namespace OpenUtau.App.Controls {
                     var pen = selectedNotes.Contains(phoneme.Parent) ? ThemeManager.NoteBorderPenPressed : ThemeManager.NoteBorderPen;
                     IBrush brush;
 
-                    if (diffSingerMode) {
+                    if (usePhonemeBars) {
                         brush = selectedNotes.Contains(phoneme.Parent) ? ThemeManager.PhonemeBrush : ThemeManager.PhonemeEmptyBrush;
                         double xLeft = viewModel.TickToneToPoint(phoneme.position, 0).X;
                         double xRight = viewModel.TickToneToPoint(phoneme.End, 0).X;

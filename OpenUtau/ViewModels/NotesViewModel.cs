@@ -514,6 +514,7 @@ namespace OpenUtau.App.ViewModels {
             DocManager.Inst.AddSubscriber(this);
 
             this.WhenAnyValue(x => x.Part)
+                .WhereNotNull()
                 .Subscribe(p => {
                     MessageBus.Current.SendMessage(new PianoRollOpenPartChangedEvent(p));
                     PublishPianoRollViewport();
