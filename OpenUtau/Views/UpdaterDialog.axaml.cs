@@ -18,7 +18,13 @@ namespace OpenUtau.App.Views {
             ViewModel.OnClosing();
         }
 
+        /// <summary>Whether CheckForUpdate runs. UI tests turn it off to stay offline.</summary>
+        public static bool CheckForUpdateEnabled { get; set; } = true;
+
         public static void CheckForUpdate(Action<Window> showDialog, Action closeApplication, TaskScheduler scheduler) {
+            if (!CheckForUpdateEnabled) {
+                return;
+            }
             Task.Run(async () => await UpdaterViewModel.IsUpdateAvailableQuietlyAsync())
                 .ContinueWith(t => {
                     if (t.IsCompletedSuccessfully && t.Result) {

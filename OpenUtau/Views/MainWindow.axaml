@@ -474,14 +474,14 @@
                       Canvas.Left="{Binding PlayPosHighlightX, Mode=OneWay}"
                       Canvas.Top="0"
                       Fill="{DynamicResource NeutralAccentBrushSemi2}"
-                      IsVisible="{Binding TracksViewModel.ShowWidePlayPosBar, Mode=OneWay}"
+                      IsVisible="{Binding ShowWidePlayPosBar, Mode=OneWay}"
                       IsHitTestVisible="False"/>
             <Rectangle Name="PlayPosLine"
                        Canvas.Left="{Binding PlayPosX}"
                        Canvas.Top="0" Width="1"
                        Height="{Binding $parent.Bounds.Height, Mode=OneWay}"
                        ZIndex="99" IsHitTestVisible="False"
-                       IsVisible="{Binding TracksViewModel.ShowThinPlayPosLine, Mode=OneWay}"
+                       IsVisible="{Binding ShowThinPlayPosLine, Mode=OneWay}"
                        Fill="{DynamicResource PlaybackLineSolidBrush}"/>
             <Rectangle Name="SelectionBox" StrokeThickness="2"
                       Stroke="{DynamicResource SystemControlForegroundBaseHighBrush}"
