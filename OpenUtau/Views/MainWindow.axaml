@@ -464,6 +464,7 @@
                         Items="{Binding Parts}"
                         PointerPressed="PartsCanvasPointerPressed"
                         PointerMoved="PartsCanvasPointerMoved"
+                        PointerExited="PartsCanvasPointerExited"
                         PointerReleased="PartsCanvasPointerReleased"
                         DoubleTapped="PartsCanvasDoubleTapped"
                         PointerWheelChanged="MainPagePointerWheelChanged">

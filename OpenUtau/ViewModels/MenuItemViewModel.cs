@@ -40,8 +40,7 @@ namespace OpenUtau.App.ViewModels {
 
     public sealed class MenuSeparatorViewModel : MenuItemViewModel {
         public MenuSeparatorViewModel() {
-            // Visual header is lazy: RefreshSingersAsync builds the menu on a
-            // worker thread, and Avalonia controls must be created on the UI thread.
+            // Visual header is lazy: Avalonia controls must be created on the UI thread.
             Height = 8;
             IsEnabled = false;
         }
@@ -154,7 +153,6 @@ namespace OpenUtau.App.ViewModels {
             set {
                 if (CommandParameter is USinger singer) {
                     singer.IsFavourite = value;
-                    TrackHeaderViewModel.InvalidateSingerMenuCache();
                 }
             }
         }

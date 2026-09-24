@@ -57,23 +57,8 @@ namespace OpenUtau.App.Controls {
         public TrackHeader() {
             InitializeComponent();
             Width = ViewConstants.TrackHeaderBaseWidth;
-            SingersMenu.ContainerPrepared += OnSingersMenuContainerPrepared;
             PhonemizersMenu.ContainerPrepared += OnPhonemizersMenuContainerPrepared;
             SyncAvatarChromeSize();
-        }
-
-        void OnSingersMenuContainerPrepared(object? sender, ContainerPreparedEventArgs e) {
-            if (e.Container is not MenuItem menuItem) {
-                return;
-            }
-            switch (menuItem.DataContext) {
-                case SingerMenuItemViewModel:
-                    menuItem.Classes.Set("singerMenuItem", true);
-                    break;
-                case MenuSeparatorViewModel:
-                    menuItem.Classes.Set("singerMenuSpacer", true);
-                    break;
-            }
         }
 
         void OnPhonemizersMenuContainerPrepared(object? sender, ContainerPreparedEventArgs e) {
@@ -237,24 +222,46 @@ namespace OpenUtau.App.Controls {
             args.Handled = true;
         }
 
-        async void SingerButtonClicked(object sender, RoutedEventArgs args) {
+        void SingerButtonClicked(object sender, RoutedEventArgs args) {
             args.Handled = true;
-            try {
-                if (SingerManager.Inst.Singers.Count > 0) {
-                    if (ViewModel != null) {
-                        await ViewModel.RefreshSingersAsync();
-                    }
-                    SingersMenu.Open((Control)sender);
-                } else {
-                    DocManager.Inst.ExecuteCmd(new ErrorMessageNotification("There is no singer."));
-                }
-            } catch (Exception e) {
-                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(e));
-            }
+            ShowSingerFlyout(sender);
         }
 
         void SingerButtonContextRequested(object sender, ContextRequestedEventArgs args) {
             args.Handled = true;
+            ShowSingerFlyout(sender);
+        }
+
+        void ShowSingerFlyout(object sender) {
+            if (ViewModel == null) {
+                return;
+            }
+            try {
+                Control anchor = SingerButton;
+                if (sender != SingerButton) {
+                    // Opened from the "⋯" flyout: close it and anchor to its button instead of stacking flyouts.
+                    MoreButton.Flyout?.Hide();
+                    anchor = MoreButton;
+                }
+                var viewModel = new SingerFlyoutViewModel(
+                    () => ViewModel.Singer,
+                    ViewModel.SelectSingerCommand,
+                    ViewModel.AllSetSingerCommand);
+                var content = new SingerFlyout() { DataContext = viewModel };
+                var flyout = new Flyout() {
+                    Content = content,
+                    Placement = PlacementMode.BottomEdgeAlignedLeft,
+                    ShowMode = FlyoutShowMode.Standard,
+                };
+                flyout.FlyoutPresenterClasses.Add("singerFlyout");
+                viewModel.CloseRequested += flyout.Hide;
+                flyout.Opened += (_, _) => DocManager.Inst.AddSubscriber(viewModel);
+                flyout.Closed += (_, _) => DocManager.Inst.RemoveSubscriber(viewModel);
+                content.FitToScreen(anchor);
+                flyout.ShowAt(anchor);
+            } catch (Exception e) {
+                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(e));
+            }
         }
 
         void PhonemizerButtonClicked(object sender, RoutedEventArgs args) {
@@ -374,7 +381,6 @@ namespace OpenUtau.App.Controls {
         }
 
         public void Dispose() {
-            SingersMenu.ContainerPrepared -= OnSingersMenuContainerPrepared;
             unbinds.ForEach(u => u.Dispose());
             unbinds.Clear();
         }

@@ -30,7 +30,6 @@ namespace OpenUtau.App.ViewModels {
         public USinger Singer => track.Singer;
         public Phonemizer Phonemizer => track.Phonemizer;
         public string PhonemizerTag => track.Phonemizer.Tag;
-        public IReadOnlyList<MenuItemViewModel>? SingerMenuItems { get; set; }
         public ReactiveCommand<USinger, RxVoid> SelectSingerCommand { get; }
         public ReactiveCommand<USinger?, RxVoid> AllSetSingerCommand { get; }
         public IReadOnlyList<MenuItemViewModel>? PhonemizerMenuItems { get; set; }
@@ -327,17 +326,7 @@ namespace OpenUtau.App.ViewModels {
                     Preferences.Default.RecentSingers.RemoveRange(
                         16, Preferences.Default.RecentSingers.Count - 16);
                 }
-                InvalidateSingerMenuCache();
             }
-        }
-
-        private SingerMenuItemViewModel CreateSingerMenuItem(USinger singer) {
-            return new SingerMenuItemViewModel() {
-                Header = singer.LocalizedName,
-                Command = SelectSingerCommand,
-                SecondaryCommand = AllSetSingerCommand,
-                CommandParameter = singer,
-            };
         }
 
         private bool TryChangePhonemizer(UTrack targetTrack, string phonemizerName) {
@@ -384,159 +373,7 @@ namespace OpenUtau.App.ViewModels {
             };
         }
 
-        static MenuSeparatorViewModel SingerMenuSeparator() => new();
-
         static MenuItemViewModel MenuLineSeparator() => new PhonemizerMenuSeparatorViewModel();
-
-        private static bool singersMenuDirty = true;
-
-        public static void InvalidateSingerMenuCache() {
-            singersMenuDirty = true;
-        }
-
-        public async Task RefreshSingersAsync() {
-            // Skip rebuild if cache is still valid
-            if (!singersMenuDirty && SingerMenuItems != null && SingerMenuItems.Count > 0) {
-                return;
-            }
-            var allSingers = SingerManager.Inst.Singers;
-
-            // Move the menu tree creation off the UI thread
-            var items = await Task.Run(() => {
-                var list = new List<MenuItemViewModel>();
-                var groupItems = new List<MenuItemViewModel>();
-
-                if (allSingers.Count > 0) {
-                    foreach (var id in Preferences.Default.RecentSingers) {
-                        if (!string.IsNullOrWhiteSpace(id) && allSingers.TryGetValue(id, out var singer) && singer != null) {
-                            list.Add(CreateSingerMenuItem(singer));
-                        }
-                    }
-
-                    var favList = new List<USinger>();
-                    foreach (var id in Preferences.Default.FavoriteSingers) {
-                        if (!string.IsNullOrWhiteSpace(id) && allSingers.TryGetValue(id, out var singer) && singer != null) {
-                            favList.Add(singer);
-                        }
-                    }
-                    groupItems.Add(new MenuItemViewModel() {
-                        Header = ThemeManager.GetString("tracks.favorite") + " ...",
-                        Items = favList
-                            .LocalizedOrderBy(singer => singer.LocalizedName)
-                            .Select(CreateSingerMenuItem)
-                            .ToArray(),
-                    });
-                    foreach (var pair in SingerManager.Inst.SingerGroups.OrderBy(kvp => kvp.Key)) {
-                        groupItems.Add(new MenuItemViewModel() {
-                            Header = $"{pair.Key} ...",
-                            Items = pair.Value
-                                .Select(CreateSingerMenuItem)
-                                .ToArray(),
-                        });
-                    }
-
-                    if (groupItems.Count > 0) {
-                        if (list.Count > 0) {
-                            list.Add(SingerMenuSeparator());
-                        }
-                        list.AddRange(groupItems);
-                    }
-                } else {
-                    list.Add(new MenuItemViewModel() {
-                        Header = ThemeManager.GetString("tracks.nosinger"),
-                        IsEnabled = false
-                    });
-                }
-
-                if (list.Count > 0) {
-                    list.Add(SingerMenuSeparator());
-                }
-                list.Add(new MenuItemViewModel() {
-                    Header = ThemeManager.GetString("tracks.installsinger"),
-                    Command = ReactiveCommand.Create(async () => {
-                        var mainWindow = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)
-                            ?.MainWindow as MainWindow;
-                        if (mainWindow == null) {
-                            return;
-                        }
-                        var file = await FilePicker.OpenFileAboutSinger(
-                            mainWindow, "menu.tools.singer.install", FilePicker.ArchiveFiles);
-                        if (file == null) {
-                            return;
-                        }
-                        try {
-                            if (file.EndsWith(Core.Vogen.VogenSingerInstaller.FileExt)) {
-                                Core.Vogen.VogenSingerInstaller.Install(file);
-                                return;
-                            }
-                            if (file.EndsWith(PackageManager.OudepExt)) {
-                                await PackageManager.Inst.InstallFromFileAsync(file);
-                                return;
-                            }
-
-                            var setup = new SingerSetupDialog() {
-                                DataContext = new SingerSetupViewModel() {
-                                    ArchiveFilePath = file,
-                                },
-                            };
-                            _ = setup.ShowDialog(mainWindow);
-                            if (setup.Position.Y < 0) {
-                                setup.Position = setup.Position.WithY(0);
-                            }
-                        } catch (Exception e) {
-                            Log.Error(e, $"Failed to install singer {file}");
-                            _ = await MessageBox.ShowError(mainWindow, new MessageCustomizableException($"Failed to install singer {file}", $"<translate:errors.failed.installsinger>: {file}", e));
-                        }
-                    })
-                });
-                list.Add(new MenuItemViewModel() {
-                    Header = ThemeManager.GetString("tracks.opensingers"),
-                    Command = ReactiveCommand.Create(() => {
-                        try {
-                            OS.OpenFolder(PathManager.Inst.SingersPath);
-                        } catch (Exception e) {
-                            DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(e));
-                        }
-                    })
-                });
-                if (!string.IsNullOrWhiteSpace(PathManager.Inst.AdditionalSingersPath) && Directory.Exists(PathManager.Inst.AdditionalSingersPath)) {
-                    list.Add(new MenuItemViewModel() {
-                        Header = ThemeManager.GetString("tracks.openaddsingers"),
-                        Command = ReactiveCommand.Create(() => {
-                            try {
-                                OS.OpenFolder(PathManager.Inst.AdditionalSingersPath);
-                            } catch (Exception e) {
-                                DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(e));
-                            }
-                        })
-                    });
-                }
-                list.Add(SingerMenuSeparator());
-                list.Add(new MenuItemViewModel() {
-                    Header = ThemeManager.GetString("singers.refresh"),
-                    Command = ReactiveCommand.Create(() => {
-                        DocManager.Inst.ExecuteCmd(new LoadingNotification(typeof(MainWindow), true, "singer"));
-                        SingerManager.Inst.SearchAllSingers();
-                        InvalidateSingerMenuCache();
-                        DocManager.Inst.ExecuteCmd(new SingersRefreshedNotification());
-                        DocManager.Inst.ExecuteCmd(new LoadingNotification(typeof(MainWindow), false, "singer"));
-                    })
-                });
-
-                return list;
-            });
-
-            // Publish menu on UI thread — separators may still lazy-create visuals on bind.
-            await Dispatcher.UIThread.InvokeAsync(() => {
-                SingerMenuItems = items;
-                singersMenuDirty = false;
-                this.RaisePropertyChanged(nameof(SingerMenuItems));
-            });
-        }
-
-        public void RefreshSingers() {
-            _ = RefreshSingersAsync();
-        }
 
         public string GetPhonemizerGroupHeader(string key) {
             if (key is null) {
@@ -610,20 +447,22 @@ namespace OpenUtau.App.ViewModels {
             this.RaisePropertyChanged(nameof(PhonemizerMenuItems));
         }
 
+        // Keeps the avatar column's width while there is no avatar to show.
+        private static Bitmap? emptyAvatar;
+        private static Bitmap EmptyAvatar => emptyAvatar ??= new RenderTargetBitmap(new PixelSize(1, 1));
+
         public void RefreshAvatar() {
             var singer = track?.Singer;
-            Avatar?.Dispose();
-            if (singer == null || singer.AvatarData == null) {
-                Avatar = new RenderTargetBitmap(new PixelSize(1, 1));
+            if (singer == null) {
+                Avatar = EmptyAvatar;
                 return;
             }
-            try {
-                using var stream = new MemoryStream(singer.AvatarData);
-                Avatar = new Bitmap(stream).CreateScaledBitmap(new PixelSize(100, 100));
-            } catch (Exception e) {
-                Avatar = null;
-                Log.Error(e, "Failed to decode avatar.");
-            }
+            // Cached bitmaps are shared, so they are never disposed here.
+            Avatar = SingerAvatarCache.Get(singer, bitmap => {
+                if (ReferenceEquals(track?.Singer, singer)) {
+                    Avatar = bitmap ?? EmptyAvatar;
+                }
+            }) ?? EmptyAvatar;
         }
 
         void UpdateTrackSettingsVisibility() {
