@@ -11,16 +11,19 @@ namespace OpenUtau.Core.ExpressionGraph {
         public readonly GraphContext Context;
         /// <summary>Part-relative ticks.</summary>
         public readonly int[] Ticks;
+        /// <summary>When the grid is the phonemes' own positions: the phoneme at each tick.</summary>
+        public readonly int[]? PhonemeIndices;
 
-        public NodeArgs(float[][] inputs, CompiledNode node, GraphContext context, int[] ticks) {
+        public NodeArgs(float[][] inputs, CompiledNode node, GraphContext context, int[] ticks, int[]? phonemeIndices = null) {
             Inputs = inputs;
             Node = node;
             Context = context;
             Ticks = ticks;
+            PhonemeIndices = phonemeIndices;
         }
     }
 
-    public enum GraphNodeRole { Input, Process, CurveOutput }
+    public enum GraphNodeRole { Input, Process, CurveOutput, PhonemeOutput }
 
     /// <summary>
     /// A node type. An unconnected input port takes the node's parameter of the same name, else the port's default.
@@ -40,6 +43,11 @@ namespace OpenUtau.Core.ExpressionGraph {
             this.evaluate = evaluate;
         }
 
+        public bool IsOutput => Role is GraphNodeRole.CurveOutput or GraphNodeRole.PhonemeOutput;
+
+        /// <summary>Reads or drives an expression, named by the "abbr" parameter.</summary>
+        public bool NeedsAbbr => IsOutput || Name is GraphNodeTypes.CurveInput or GraphNodeTypes.PhonemeInput;
+
         internal float[] Evaluate(NodeArgs args) => evaluate(args);
     }
 
@@ -47,6 +55,8 @@ namespace OpenUtau.Core.ExpressionGraph {
         public const string Constant = "constant";
         public const string CurveInput = "curve_input";
         public const string CurveOutput = "curve_output";
+        public const string PhonemeInput = "phoneme_input";
+        public const string PhonemeOutput = "phoneme_output";
         public const string Add = "add";
         public const string Subtract = "subtract";
         public const string Multiply = "multiply";
@@ -74,6 +84,26 @@ namespace OpenUtau.Core.ExpressionGraph {
             new GraphNodeType(CurveInput, GraphNodeRole.Input, none, new float[0],
                 a => Map(a, tick => a.Context.SampleCurve(a.Node.GetString("abbr"), tick))),
             new GraphNodeType(CurveOutput, GraphNodeRole.CurveOutput, value, new float[] { 0 },
+                a => (float[])a.Inputs[0].Clone()),
+            new GraphNodeType(PhonemeInput, GraphNodeRole.Input, none, new float[0], a => {
+                var anchors = a.Context.Phonemes;
+                var abbr = a.Node.GetString("abbr");
+                if (a.PhonemeIndices != null) {
+                    var indices = a.PhonemeIndices;
+                    var result = new float[indices.Length];
+                    for (int i = 0; i < result.Length; ++i) {
+                        result[i] = anchors.At(abbr, indices[i]);
+                    }
+                    return result;
+                }
+                var mode = a.Node.GetString("interpolation") switch {
+                    "linear" => AnchorInterpolation.Linear,
+                    "cubic" => AnchorInterpolation.Cubic,
+                    _ => AnchorInterpolation.Step,
+                };
+                return Map(a, tick => anchors.Sample(abbr, tick, mode));
+            }),
+            new GraphNodeType(PhonemeOutput, GraphNodeRole.PhonemeOutput, value, new float[] { 0 },
                 a => (float[])a.Inputs[0].Clone()),
 
             Binary(Add, 0, 0, (x, y) => x + y),

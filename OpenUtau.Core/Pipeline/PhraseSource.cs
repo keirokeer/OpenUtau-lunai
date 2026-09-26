@@ -232,19 +232,25 @@ namespace OpenUtau.Core.Pipeline {
 
         // Resolved render arguments (classic).
         public readonly string Resampler;
-        public readonly Tuple<string, int?, string>[] Flags;
+        public Tuple<string, int?, string>[] Flags { get; private set; }
         public readonly string Suffix;
         public readonly string Suffix2;
-        public readonly float Volume;
+        public float Volume { get; private set; }
         public readonly float Velocity;
-        public readonly float Modulation;
+        public float Modulation { get; private set; }
         public readonly bool Direct;
         public readonly int ToneShift;
-        public readonly Vector2[] Envelope;
+        public Vector2[] Envelope { get; private set; }
 
         // MOD+ inputs (raw values; the builder applies them).
         public readonly float VelRaw;
-        public readonly float ModpRaw;
+        public float ModpRaw { get; private set; }
+
+        /// <summary>
+        /// The value of each of the track's per-phoneme expressions, as <see cref="UPhoneme.GetExpression"/>
+        /// resolves it. Only copied when the track has an expression graph.
+        /// </summary>
+        public readonly IReadOnlyDictionary<string, float>? Values;
 
         // Voicebank resources, stable per singer.
         public readonly UOto Oto;
@@ -252,7 +258,7 @@ namespace OpenUtau.Core.Pipeline {
 
         internal PhonemeSource(UPhoneme phoneme, int noteIndex, TimeAxis axis,
                 int partPosition, UTrack track, UProject project,
-                string trackResampler, bool xsyAvailable) {
+                string trackResampler, bool xsyAvailable, IReadOnlyList<UExpressionDescriptor>? graphExpressions) {
             Position = phoneme.position;
             Duration = phoneme.Duration;
             End = phoneme.End;
@@ -321,6 +327,14 @@ namespace OpenUtau.Core.Pipeline {
             bool hasModp = track.TryGetExpDescriptor(project, Format.Ustx.MODP, out _);
             ModpRaw = hasModp ? phoneme.GetExpression(project, track, Format.Ustx.MODP).Item1 : 0f;
 
+            if (graphExpressions != null) {
+                var values = new Dictionary<string, float>();
+                foreach (var descriptor in graphExpressions) {
+                    values[descriptor.abbr] = phoneme.GetExpression(project, track, descriptor.abbr).Item1;
+                }
+                Values = values;
+            }
+
             Oto = phoneme.oto;
             if (Oto != null && !string.IsNullOrEmpty(targetColor)) {
                 string basePhoneme = Oto.Phonetic ?? phoneme.phoneme;
@@ -328,6 +342,39 @@ namespace OpenUtau.Core.Pipeline {
                     Oto2 = secondaryOto;
                 }
             }
+        }
+
+        /// <summary>
+        /// A copy with graph-driven values in place of the drawn ones, recomputing what they feed: volume, modulation,
+        /// MOD+, the envelope's levels and the resampler flags. Unchanged values are computed as the snapshot did.
+        /// </summary>
+        internal PhonemeSource WithDriven(IReadOnlyDictionary<string, float> driven, PhraseSource source) {
+            float Value(string abbr) => driven.TryGetValue(abbr, out var v) ? v : Values != null && Values.TryGetValue(abbr, out v) ? v : 0;
+            var copy = (PhonemeSource)MemberwiseClone();
+            if (driven.ContainsKey(Format.Ustx.VOL)) {
+                copy.Volume = Value(Format.Ustx.VOL) * 0.01f;
+            }
+            if (driven.ContainsKey(Format.Ustx.MOD)) {
+                copy.Modulation = Value(Format.Ustx.MOD) * 0.01f;
+            }
+            if (driven.ContainsKey(Format.Ustx.MODP)) {
+                copy.ModpRaw = Value(Format.Ustx.MODP);
+            }
+            if (driven.ContainsKey(Format.Ustx.VOL) || driven.ContainsKey(Format.Ustx.ATK) || driven.ContainsKey(Format.Ustx.DEC)) {
+                // The levels as UPhoneme.ValidateEnvelope sets them; the times don't depend on these values.
+                float vol = Value(Format.Ustx.VOL);
+                float atk = Value(Format.Ustx.ATK);
+                float dec = Value(Format.Ustx.DEC);
+                var envelope = Envelope.ToArray();
+                envelope[1].Y = atk * vol / 100f;
+                envelope[2].Y = vol;
+                envelope[3].Y = vol * (1f - dec / 100f);
+                copy.Envelope = envelope;
+            }
+            if (source.FlagExpressions.Any(d => driven.ContainsKey(d.abbr))) {
+                copy.Flags = UPhoneme.BuildResamplerFlags(source.FlagExpressions, Value);
+            }
+            return copy;
         }
     }
 
@@ -371,6 +418,21 @@ namespace OpenUtau.Core.Pipeline {
         public readonly IReadOnlyDictionary<string, int> CurveDefaults;
         /// <summary>The track's expression graph; null when it has none.</summary>
         public readonly ExpressionGraph.ExpressionGraphProgram? ExpressionGraph;
+        /// <summary>The per-phoneme values graph inputs read. Only set when the track has a graph.</summary>
+        public readonly ExpressionGraph.PhonemeAnchors? PhonemeAnchors;
+        /// <summary>The track's expressions in flag order. Only set when the track has a graph.</summary>
+        public readonly UExpressionDescriptor[] FlagExpressions = Array.Empty<UExpressionDescriptor>();
+        /// <summary>The per-phoneme expressions a graph can drive, by abbreviation.</summary>
+        public readonly IReadOnlyDictionary<string, UExpressionDescriptor> DrivablePhonemeExpressions =
+            new Dictionary<string, UExpressionDescriptor>();
+
+        /// <summary>
+        /// Expressions that change phonemizing or phoneme timing, which happen before the graph runs.
+        /// A graph can read them but not drive them.
+        /// </summary>
+        static readonly HashSet<string> timingExpressions = new HashSet<string> {
+            Format.Ustx.ALT, Format.Ustx.SHFT, Format.Ustx.VEL,
+        };
         public readonly PhonemeSource[] Phonemes;
         /// <summary>Half-open [start, end) index ranges into <see cref="Phonemes"/>.</summary>
         public readonly (int Start, int End)[] PhraseGroups;
@@ -423,15 +485,33 @@ namespace OpenUtau.Core.Pipeline {
                 .Where(d => d.type == UExpressionType.Curve)
                 .ToDictionary(d => d.abbr, d => Util.ExpressionDefaultResolver.GetEffectiveDefaultInt(project, track, d.abbr));
             ExpressionGraph = OpenUtau.Core.ExpressionGraph.ExpressionGraphProgram.ForTrack(project, track);
+            List<UExpressionDescriptor>? graphExpressions = null;
+            if (ExpressionGraph != null) {
+                FlagExpressions = UPhoneme.GetExpressionDescriptors(project, track).ToArray();
+                graphExpressions = FlagExpressions
+                    .Where(d => d.type is UExpressionType.Numerical or UExpressionType.Options)
+                    .ToList();
+                DrivablePhonemeExpressions = graphExpressions
+                    .Where(d => d.type == UExpressionType.Numerical && !timingExpressions.Contains(d.abbr)
+                        && (Renderer.SupportsExpression(d) || !string.IsNullOrEmpty(d.flag)))
+                    .ToDictionary(d => d.abbr);
+            }
 
             Phonemes = new PhonemeSource[phonemes.Count];
             for (int i = 0; i < phonemes.Count; i++) {
                 var p = phonemes[i];
                 Phonemes[i] = new PhonemeSource(p,
                     p.Parent != null ? noteIndexByNote[p.Parent] : -1,
-                    Axis, part.position, track, project, Resampler, XsyAvailable);
+                    Axis, part.position, track, project, Resampler, XsyAvailable, graphExpressions);
             }
             PhraseGroups = groups;
+            if (ExpressionGraph != null) {
+                // Options expressions are indices, not values; the graph neither reads nor drives them.
+                var numerical = graphExpressions!.Where(d => d.type == UExpressionType.Numerical).Select(d => d.abbr);
+                PhonemeAnchors = new ExpressionGraph.PhonemeAnchors(
+                    Phonemes.Select(p => p.Position).ToArray(),
+                    numerical.ToDictionary(abbr => abbr, abbr => Phonemes.Select(p => p.Values![abbr]).ToArray()));
+            }
         }
 
         /// <summary>
@@ -469,11 +549,39 @@ namespace OpenUtau.Core.Pipeline {
         }
 
         public RenderPhrase[] BuildPhrases() {
+            var phonemes = DrivenPhonemes();
             var phrases = new RenderPhrase[PhraseGroups.Length];
             for (int i = 0; i < PhraseGroups.Length; ++i) {
-                phrases[i] = new RenderPhrase(this, PhraseGroups[i].Start, PhraseGroups[i].End);
+                phrases[i] = new RenderPhrase(this, phonemes, PhraseGroups[i].Start, PhraseGroups[i].End);
             }
             return phrases;
+        }
+
+        /// <summary>
+        /// The phonemes with the graph's per-phoneme outputs applied. The graph runs once over the whole part,
+        /// reading each phoneme's value at its own position, so no value is ever resampled.
+        /// </summary>
+        PhonemeSource[] DrivenPhonemes() {
+            if (ExpressionGraph == null || ExpressionGraph.PhonemeOutputs.Count == 0) {
+                return Phonemes;
+            }
+            var outputs = ExpressionGraph.EvaluatePhonemes(new ExpressionGraph.GraphContext(this))
+                .Where(kv => DrivablePhonemeExpressions.ContainsKey(kv.Key))
+                .ToList();
+            if (outputs.Count == 0) {
+                return Phonemes;
+            }
+            var result = new PhonemeSource[Phonemes.Length];
+            for (int i = 0; i < result.Length; ++i) {
+                var driven = new Dictionary<string, float>();
+                foreach (var (abbr, values) in outputs) {
+                    // Kept within the range the value could be set in.
+                    var descriptor = DrivablePhonemeExpressions[abbr];
+                    driven[abbr] = Math.Clamp(values[i], descriptor.min, descriptor.max);
+                }
+                result[i] = Phonemes[i].WithDriven(driven, this);
+            }
+            return result;
         }
     }
 }

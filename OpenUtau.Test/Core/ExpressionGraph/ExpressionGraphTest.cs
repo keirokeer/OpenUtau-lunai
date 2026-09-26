@@ -11,11 +11,11 @@ namespace OpenUtau.Core.ExpressionGraph {
     public class ExpressionGraphTest {
         const string Renderer = "TEST";
 
-        // Reads every curve of the phrase fixture.
+        // Reads every expression of the phrase fixture.
         class CurveRenderer : IRenderer {
             public USingerType SingerType => USingerType.Classic;
             public bool SupportsRenderPitch => false;
-            public bool SupportsExpression(UExpressionDescriptor descriptor) => descriptor.type == UExpressionType.Curve;
+            public bool SupportsExpression(UExpressionDescriptor descriptor) => true;
             public RenderResult Layout(RenderPhrase phrase) => new RenderResult() {
                 leadingMs = phrase.leadingMs,
                 positionMs = phrase.positionMs,
@@ -43,9 +43,23 @@ namespace OpenUtau.Core.ExpressionGraph {
         static UExpressionGraph Graph(IEnumerable<UGraphNode> nodes, params UGraphLink[] links) =>
             new UExpressionGraph { id = "g", name = "G", renderer = Renderer, nodes = nodes.ToList(), links = links.ToList() };
 
+        /// <summary>
+        /// The phrase fixture, plus a numeric flag and an options flag, and per-phoneme values:
+        /// volume 80 on the first phoneme, gender 20 on the second and the "Y" option on the third and the fourth,
+        /// which extends the third's note.
+        /// </summary>
         static (UProject project, UTrack track, UVoicePart part) Fixture(UExpressionGraph graph) {
             var (project, track, part) = PhraseSourceHashTest.BuildFixture(new CurveRenderer());
             track.RendererSettings.renderer = Renderer;
+            project.RegisterExpression(new UExpressionDescriptor("gender", "gen", -100, 100, 0, "g"));
+            project.RegisterExpression(new UExpressionDescriptor("growl", "grw", true, new[] { "", "Y" }));
+            var notes = part.notes.ToArray();
+            notes[0].phonemeExpressions.Add(new UExpression(project.expressions["vol"]) { index = 0, value = 80 });
+            notes[1].phonemeExpressions.Add(new UExpression(project.expressions["gen"]) { index = 0, value = 20 });
+            notes[2].phonemeExpressions.Add(new UExpression(project.expressions["grw"]) { index = 0, value = 1 });
+            foreach (var phoneme in part.phonemes) {
+                phoneme.Validate(new ValidateOptions(), project, track, part, phoneme.Parent);
+            }
             if (graph != null) {
                 project.expressionGraphs = new List<UExpressionGraph> { graph };
                 project.defaultExpressionGraphs = new Dictionary<string, string> { [Renderer] = graph.id };
@@ -242,8 +256,24 @@ namespace OpenUtau.Core.ExpressionGraph {
                 foreach (var curve in phrase.curves) {
                     lines.Add(curve.Item1 + " " + string.Join(",", curve.Item2.Select(v => BitConverter.SingleToInt32Bits(v))));
                 }
+                foreach (var phone in phrase.phones) {
+                    lines.Add($"h {phone.hash:x16} {Flags(phone)} {phone.volume} {phone.velocity} {phone.modulation} "
+                        + string.Join(" ", phone.envelope.Select(p => $"{p.X},{p.Y}")));
+                }
             }
             return string.Join("\n", lines);
+        }
+
+        static string Flags(RenderPhone phone) => string.Join(" ", phone.flags.Select(f => f.Item1 + f.Item2));
+
+        /// <summary>Each expression wired straight to itself.</summary>
+        static void AddIdentity(List<UGraphNode> nodes, List<UGraphLink> links, IEnumerable<string> abbrs, string input, string output) {
+            foreach (var abbr in abbrs) {
+                int id = nodes.Count + 1;
+                nodes.Add(Node(id, input, ("abbr", abbr)));
+                nodes.Add(Node(id + 1, output, ("abbr", abbr)));
+                links.Add(Link(id, id + 1));
+            }
         }
 
         [Fact]
@@ -251,16 +281,15 @@ namespace OpenUtau.Core.ExpressionGraph {
             var (project, track, part) = Fixture(null);
             var withoutGraph = Snapshot(RenderPhrase.FromPart(project, track, part));
 
-            // Every curve the renderer reads, wired straight to itself.
-            var abbrs = project.expressions.Values.Where(d => d.type == UExpressionType.Curve).Select(d => d.abbr).ToList();
+            // Every curve and every numerical per-phoneme expression, wired straight to itself.
             var nodes = new List<UGraphNode>();
             var links = new List<UGraphLink>();
-            foreach (var abbr in abbrs) {
-                int id = nodes.Count + 1;
-                nodes.Add(Node(id, GraphNodeTypes.CurveInput, ("abbr", abbr)));
-                nodes.Add(Node(id + 1, GraphNodeTypes.CurveOutput, ("abbr", abbr)));
-                links.Add(Link(id, id + 1));
-            }
+            AddIdentity(nodes, links,
+                project.expressions.Values.Where(d => d.type == UExpressionType.Curve).Select(d => d.abbr),
+                GraphNodeTypes.CurveInput, GraphNodeTypes.CurveOutput);
+            AddIdentity(nodes, links,
+                project.expressions.Values.Where(d => d.type == UExpressionType.Numerical).Select(d => d.abbr),
+                GraphNodeTypes.PhonemeInput, GraphNodeTypes.PhonemeOutput);
             var graph = Graph(nodes, links.ToArray());
             (project, track, part) = Fixture(graph);
             Assert.NotNull(ExpressionGraphProgram.ForTrack(project, track));
@@ -298,6 +327,83 @@ namespace OpenUtau.Core.ExpressionGraph {
             }, Link(1, 2));
             var (project, track, part) = Fixture(graph);
             Assert.All(RenderPhrase.FromPart(project, track, part)[0].tension, v => Assert.Equal(100f, v));
+        }
+        [Fact]
+        public void DrivenPhonemeValuesReachThePhones() {
+            // Volume = dyn + 100 at each phoneme's position; gender = 30 everywhere.
+            var graph = Graph(new[] {
+                Node(1, GraphNodeTypes.CurveInput, ("abbr", "dyn")),
+                Node(2, GraphNodeTypes.Add, ("b", "100")),
+                Node(3, GraphNodeTypes.PhonemeOutput, ("abbr", "vol")),
+                Node(4, GraphNodeTypes.Constant, ("value", "30.7")),
+                Node(5, GraphNodeTypes.PhonemeOutput, ("abbr", "gen")),
+            }, Link(1, 2, "a"), Link(2, 3), Link(4, 5));
+            var (project, track, part) = Fixture(graph);
+            var phones = RenderPhrase.FromPart(project, track, part).SelectMany(p => p.phones).ToArray();
+
+            // The fixture's dyn at the phonemes (0, 480, 1200, 1680): -6, -3, -3 and -9.
+            Assert.Equal(new[] { 94f, 97f, 97f, 91f }.Select(v => v * 0.01f), phones.Select(p => p.volume));
+            // The envelope's levels follow: the fixture's attack and decay are both 100.
+            Assert.Equal(new[] { 94f, 94f, 0f }, phones[0].envelope.Skip(1).Take(3).Select(p => p.Y));
+            // Flags keep their order and the (int) conversion; the options flag is untouched (its first option is empty).
+            Assert.Equal(new[] { "g30 ", "g30 ", "g30 Y", "g30 Y" }, phones.Select(Flags));
+        }
+
+        [Fact]
+        public void TimingExpressionsCannotBeDriven() {
+            var (project, track, part) = Fixture(null);
+            var before = Snapshot(RenderPhrase.FromPart(project, track, part));
+            // Velocity, alternate and tone shift change phonemizing and timing, before the graph runs.
+            var graph = Graph(new[] {
+                Node(1, GraphNodeTypes.Constant, ("value", "50")),
+                Node(2, GraphNodeTypes.PhonemeOutput, ("abbr", "vel")),
+                Node(3, GraphNodeTypes.PhonemeOutput, ("abbr", "shft")),
+                // Options expressions aren't values either.
+                Node(4, GraphNodeTypes.PhonemeOutput, ("abbr", "grw")),
+            }, Link(1, 2), Link(1, 3), Link(1, 4));
+            (project, track, part) = Fixture(graph);
+            Assert.Equal(before, Snapshot(RenderPhrase.FromPart(project, track, part)));
+        }
+
+        [Fact]
+        public void PhonemeValuesDriveCurves() {
+            var graph = Graph(new[] {
+                Node(1, GraphNodeTypes.PhonemeInput, ("abbr", "vol")),
+                Node(2, GraphNodeTypes.CurveOutput, ("abbr", "a")),
+                Node(3, GraphNodeTypes.PhonemeInput, ("abbr", "vol"), ("interpolation", "linear")),
+                Node(4, GraphNodeTypes.CurveOutput, ("abbr", "b")),
+                // Options expressions read as nothing.
+                Node(5, GraphNodeTypes.PhonemeInput, ("abbr", "grw")),
+                Node(6, GraphNodeTypes.CurveOutput, ("abbr", "c")),
+            }, Link(1, 2), Link(3, 4), Link(5, 6));
+            var (project, track, part) = Fixture(graph);
+            // Volume 80 on the phoneme at 0 and 100 on the rest, at 480, 1200 and 1680.
+            var outputs = Evaluate(graph, project, track, part, new[] { -100, 0, 240, 480, 840, 2000 });
+            Assert.Equal(new[] { 80f, 80f, 80f, 100f, 100f, 100f }, outputs["a"]);
+            Assert.Equal(new[] { 80f, 80f, 90f, 100f, 100f, 100f }, outputs["b"]);
+            Assert.All(outputs["c"], v => Assert.Equal(0f, v));
+        }
+
+        [Fact]
+        public void InterpolatesBetweenAnchors() {
+            var anchors = new PhonemeAnchors(new[] { 0, 100, 100, 300, 400 },
+                new Dictionary<string, float[]> { ["x"] = new[] { 0f, 50f, 60f, 100f, 100f } });
+            // Each phoneme's own value, even where two share a position.
+            Assert.Equal(50f, anchors.At("x", 1));
+            Assert.Equal(60f, anchors.At("x", 2));
+            foreach (var mode in new[] { AnchorInterpolation.Step, AnchorInterpolation.Linear, AnchorInterpolation.Cubic }) {
+                // Through the anchors (the last of a shared position), flat beyond the ends.
+                Assert.Equal(new[] { 0f, 0f, 60f, 100f, 100f, 100f },
+                    new[] { -50, 0, 100, 300, 400, 500 }.Select(t => anchors.Sample("x", t, mode)));
+            }
+            Assert.Equal(0f, anchors.Sample("x", 50, AnchorInterpolation.Step));
+            Assert.Equal(30f, anchors.Sample("x", 50, AnchorInterpolation.Linear));
+            Assert.Equal(80f, anchors.Sample("x", 200, AnchorInterpolation.Linear));
+            // Cubic stays between its neighbours and never goes back down.
+            var cubic = Enumerable.Range(0, 401).Select(t => anchors.Sample("x", t, AnchorInterpolation.Cubic)).ToArray();
+            Assert.All(cubic, v => Assert.InRange(v, 0f, 100f));
+            Assert.All(cubic.Zip(cubic.Skip(1)), p => Assert.True(p.Second >= p.First - 1e-4f, $"{p.First} > {p.Second}"));
+            Assert.Equal(0f, anchors.Sample("y", 50, AnchorInterpolation.Linear));
         }
     }
 }

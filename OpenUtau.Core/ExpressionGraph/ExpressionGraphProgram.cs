@@ -39,15 +39,18 @@ namespace OpenUtau.Core.ExpressionGraph {
         public readonly TimeAxis Axis;
         public readonly int PartPosition;
         public readonly int Resolution;
+        public readonly PhonemeAnchors Phonemes;
         readonly Dictionary<string, CurveSource> curves;
         readonly Dictionary<string, int> defaults;
         readonly NoteSource[] notes;
 
         public GraphContext(TimeAxis axis, int partPosition, int resolution,
-                IEnumerable<CurveSource> curves, IReadOnlyDictionary<string, int> defaults, IEnumerable<NoteSource> notes) {
+                IEnumerable<CurveSource> curves, IReadOnlyDictionary<string, int> defaults, IEnumerable<NoteSource> notes,
+                PhonemeAnchors? phonemes = null) {
             Axis = axis;
             PartPosition = partPosition;
             Resolution = resolution;
+            Phonemes = phonemes ?? PhonemeAnchors.Empty;
             this.curves = new Dictionary<string, CurveSource>();
             foreach (var curve in curves) {
                 this.curves.TryAdd(curve.Abbr, curve);
@@ -57,7 +60,8 @@ namespace OpenUtau.Core.ExpressionGraph {
         }
 
         internal GraphContext(PhraseSource source)
-            : this(source.Axis, source.PartPosition, source.Resolution, source.Curves, source.CurveDefaults, source.Notes) { }
+            : this(source.Axis, source.PartPosition, source.Resolution, source.Curves, source.CurveDefaults, source.Notes,
+                source.PhonemeAnchors) { }
 
         /// <summary>A curve's value at a part-relative tick, exactly as the renderer reads it without a graph.</summary>
         public float SampleCurve(string? abbr, int tick) {
@@ -87,42 +91,68 @@ namespace OpenUtau.Core.ExpressionGraph {
     /// A validated graph, ready to evaluate off the UI thread. Immutable once compiled.
     /// </summary>
     public sealed class ExpressionGraphProgram {
-        // Only the nodes that feed an output, in evaluation order.
-        readonly CompiledNode[] order;
-        readonly Dictionary<string, int> curveOutputs;
+        /// <summary>The nodes feeding one kind of output, in evaluation order, and each output's node.</summary>
+        sealed class Plan {
+            public readonly CompiledNode[] Order;
+            public readonly Dictionary<string, int> Outputs;
 
-        ExpressionGraphProgram(CompiledNode[] order, Dictionary<string, int> curveOutputs) {
-            this.order = order;
-            this.curveOutputs = curveOutputs;
+            public Plan(CompiledNode[] order, Dictionary<string, int> outputs) {
+                Order = order;
+                Outputs = outputs;
+            }
+
+            public Dictionary<string, float[]> Evaluate(GraphContext context, int[] ticks, int[]? phonemeIndices) {
+                var values = new float[Order.Length][];
+                for (int i = 0; i < Order.Length; ++i) {
+                    var node = Order[i];
+                    var inputs = new float[node.sources.Length][];
+                    for (int p = 0; p < inputs.Length; ++p) {
+                        if (node.sources[p] >= 0) {
+                            inputs[p] = values[node.sources[p]];
+                        } else {
+                            inputs[p] = new float[ticks.Length];
+                            Array.Fill(inputs[p], node.constants[p]);
+                        }
+                    }
+                    values[i] = node.Type.Evaluate(new NodeArgs(inputs, node, context, ticks, phonemeIndices));
+                }
+                return Outputs.ToDictionary(kv => kv.Key, kv => values[kv.Value]);
+            }
+        }
+
+        readonly Plan curves;
+        readonly Plan phonemes;
+
+        ExpressionGraphProgram(Plan curves, Plan phonemes) {
+            this.curves = curves;
+            this.phonemes = phonemes;
         }
 
         /// <summary>The curves this graph drives. Every other curve reaches the renderer as drawn.</summary>
-        public IReadOnlyCollection<string> CurveOutputs => curveOutputs.Keys;
+        public IReadOnlyCollection<string> CurveOutputs => curves.Outputs.Keys;
 
-        public bool DrivesCurve(string abbr) => curveOutputs.ContainsKey(abbr);
+        /// <summary>The per-phoneme expressions this graph drives.</summary>
+        public IReadOnlyCollection<string> PhonemeOutputs => phonemes.Outputs.Keys;
+
+        public bool DrivesCurve(string abbr) => curves.Outputs.ContainsKey(abbr);
 
         /// <summary>Evaluates every driven curve at the given part-relative ticks.</summary>
-        public Dictionary<string, float[]> Evaluate(GraphContext context, int[] ticks) {
-            var values = new float[order.Length][];
-            for (int i = 0; i < order.Length; ++i) {
-                var node = order[i];
-                var inputs = new float[node.sources.Length][];
-                for (int p = 0; p < inputs.Length; ++p) {
-                    if (node.sources[p] >= 0) {
-                        inputs[p] = values[node.sources[p]];
-                    } else {
-                        inputs[p] = new float[ticks.Length];
-                        Array.Fill(inputs[p], node.constants[p]);
-                    }
-                }
-                values[i] = node.Type.Evaluate(new NodeArgs(inputs, node, context, ticks));
-            }
-            return curveOutputs.ToDictionary(kv => kv.Key, kv => values[kv.Value]);
+        public Dictionary<string, float[]> Evaluate(GraphContext context, int[] ticks) =>
+            curves.Evaluate(context, ticks, null);
+
+        /// <summary>
+        /// Evaluates every driven per-phoneme expression at each phoneme's own position, one value per phoneme.
+        /// Per-phoneme inputs read each phoneme's exact value there, without interpolating.
+        /// </summary>
+        public Dictionary<string, float[]> EvaluatePhonemes(GraphContext context) {
+            var anchors = context.Phonemes;
+            var indices = Enumerable.Range(0, anchors.Ticks.Length).ToArray();
+            return phonemes.Evaluate(context, anchors.Ticks, indices);
         }
 
         /// <summary>
         /// Checks a graph and prepares it for evaluation. Returns null with the reason when the graph can't run:
-        /// an unknown node type, a broken link, two outputs for the same curve, or a cycle.
+        /// an unknown node type, a broken link, two outputs for the same target, or a cycle.
         /// </summary>
         public static ExpressionGraphProgram? Compile(UExpressionGraph graph, out string? error) {
             error = null;
@@ -136,9 +166,8 @@ namespace OpenUtau.Core.ExpressionGraph {
                     error = $"Two nodes have id {node.id}.";
                     return null;
                 }
-                if ((type.Name == GraphNodeTypes.CurveInput || type.Name == GraphNodeTypes.CurveOutput)
-                        && string.IsNullOrEmpty(node.GetString("abbr"))) {
-                    error = $"Node {node.id} has no curve.";
+                if (type.NeedsAbbr && string.IsNullOrEmpty(node.GetString("abbr"))) {
+                    error = $"Node {node.id} has no expression.";
                     return null;
                 }
             }
@@ -149,7 +178,7 @@ namespace OpenUtau.Core.ExpressionGraph {
                     error = $"A link connects missing node {(nodes.ContainsKey(link.from) ? link.to : link.from)}.";
                     return null;
                 }
-                if (nodes[link.from].type.Role == GraphNodeRole.CurveOutput || link.fromPort != null) {
+                if (nodes[link.from].type.IsOutput || link.fromPort != null) {
                     error = $"Node {link.from} has no such output.";
                     return null;
                 }
@@ -167,10 +196,19 @@ namespace OpenUtau.Core.ExpressionGraph {
                 error = "The graph has a cycle.";
                 return null;
             }
+            var curvePlan = PlanFor(GraphNodeRole.CurveOutput, nodes, incoming, ref error);
+            var phonemePlan = PlanFor(GraphNodeRole.PhonemeOutput, nodes, incoming, ref error);
+            if (curvePlan == null || phonemePlan == null) {
+                return null;
+            }
+            return new ExpressionGraphProgram(curvePlan, phonemePlan);
+        }
 
-            // Outputs with a connected value, then everything they depend on.
+        /// <summary>The outputs of one kind that have a connected value, and everything they depend on.</summary>
+        static Plan? PlanFor(GraphNodeRole role, Dictionary<int, (UGraphNode node, GraphNodeType type)> nodes,
+                Dictionary<int, Dictionary<int, int>> incoming, ref string? error) {
             var outputs = new Dictionary<string, int>();
-            foreach (var (node, type) in nodes.Values.Where(n => n.type.Role == GraphNodeRole.CurveOutput)) {
+            foreach (var (node, _) in nodes.Values.Where(n => n.type.Role == role)) {
                 string abbr = node.GetString("abbr")!;
                 if (outputs.ContainsKey(abbr)) {
                     error = $"Two outputs drive \"{abbr}\".";
@@ -178,7 +216,7 @@ namespace OpenUtau.Core.ExpressionGraph {
                 }
                 outputs[abbr] = node.id;
             }
-            var connectedOutputs = outputs.Where(kv => incoming[kv.Value].Count > 0).ToDictionary(kv => kv.Key, kv => kv.Value);
+            var connected = outputs.Where(kv => incoming[kv.Value].Count > 0).ToDictionary(kv => kv.Key, kv => kv.Value);
 
             var ordered = new List<int>();
             var visited = new HashSet<int>();
@@ -191,7 +229,7 @@ namespace OpenUtau.Core.ExpressionGraph {
                 }
                 ordered.Add(id);
             }
-            foreach (var id in connectedOutputs.Values.OrderBy(id => id)) {
+            foreach (var id in connected.Values.OrderBy(id => id)) {
                 Visit(id);
             }
             var indexOf = ordered.Select((id, i) => (id, i)).ToDictionary(t => t.id, t => t.i);
@@ -201,8 +239,7 @@ namespace OpenUtau.Core.ExpressionGraph {
                     compiled[i].sources[port] = indexOf[from];
                 }
             }
-            return new ExpressionGraphProgram(compiled,
-                connectedOutputs.ToDictionary(kv => kv.Key, kv => indexOf[kv.Value]));
+            return new Plan(compiled, connected.ToDictionary(kv => kv.Key, kv => indexOf[kv.Value]));
         }
 
         static bool HasCycle(IEnumerable<int> ids, Dictionary<int, Dictionary<int, int>> incoming) {

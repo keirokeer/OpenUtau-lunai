@@ -223,8 +223,8 @@ namespace OpenUtau.Core.Render {
         /// The heavy phrase build over an immutable snapshot; pure over the
         /// snapshot, safe off the UI thread.
         /// </summary>
-        internal RenderPhrase(Pipeline.PhraseSource source, int phraseStart, int phraseEnd) {
-            var phrasePhonemes = source.Phonemes
+        internal RenderPhrase(Pipeline.PhraseSource source, Pipeline.PhonemeSource[] phonemes, int phraseStart, int phraseEnd) {
+            var phrasePhonemes = phonemes
                 .Skip(phraseStart)
                 .Take(phraseEnd - phraseStart)
                 .ToList();
