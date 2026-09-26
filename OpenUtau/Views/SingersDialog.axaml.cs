@@ -34,7 +34,7 @@ namespace OpenUtau.App.Views {
             }
             DataContextChanged += (s, e) => {
                 if (DataContext is SingersViewModel viewModel) {
-                    viewModel.WhenAnyValue(vm => vm.Singer).Subscribe(singer => LoadYaml(viewModel, singer));
+                    ObservableMixins.WhereNotNull(viewModel.WhenAnyValue(vm => vm.Singer)).Subscribe(singer => LoadYaml(viewModel, singer));
                 }
             };
         }
