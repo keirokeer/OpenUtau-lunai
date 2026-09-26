@@ -53,6 +53,9 @@ namespace OpenUtau.Core.ExpressionGraph {
             track.RendererSettings.renderer = Renderer;
             project.RegisterExpression(new UExpressionDescriptor("gender", "gen", -100, 100, 0, "g"));
             project.RegisterExpression(new UExpressionDescriptor("growl", "grw", true, new[] { "", "Y" }));
+            project.RegisterExpression(new UExpressionDescriptor("pitch override", "pito", 2400, 10800, 6000) {
+                type = UExpressionType.MaskedCurve,
+            });
             var notes = part.notes.ToArray();
             notes[0].phonemeExpressions.Add(new UExpression(project.expressions["vol"]) { index = 0, value = 80 });
             notes[1].phonemeExpressions.Add(new UExpression(project.expressions["gen"]) { index = 0, value = 20 });
@@ -469,6 +472,54 @@ namespace OpenUtau.Core.ExpressionGraph {
                 Node(1, GraphNodeTypes.PitchInput, ("source", "nowhere")),
             }), out error));
             Assert.Contains("unknown pitch source", error);
+        }
+
+        [Fact]
+        public void MaskedCurveNodeFallsBackAndMasks() {
+            // Pitch = the override where drawn, else the notes; and the mask into the custom curve.
+            var graph = Graph(new[] {
+                Node(1, GraphNodeTypes.PitchInput, ("source", "notes")),
+                Node(2, GraphNodeTypes.MaskedCurveInput, ("abbr", "pito")),
+                Node(3, GraphNodeTypes.PitchOutput),
+                Node(4, GraphNodeTypes.CurveOutput, ("abbr", "cstm")),
+            }, Link(1, 2, "fallback"), new UGraphLink { from = 2, fromPort = "value", to = 3, toPort = "value" },
+                new UGraphLink { from = 2, fromPort = "mask", to = 4, toPort = "value" });
+            var (project, track, part) = Fixture(graph);
+            part.maskedCurves.Add(new UMaskedCurve("pito"));
+            part.maskedCurves[0].Set(0, 5000, 20, 5100);
+            var notes = part.notes.ToArray();
+            var phrase = RenderPhrase.FromPart(project, track, part)[0];
+            int start = phrase.position - part.position - phrase.leading;
+            var mask = phrase.curves.Single(c => c.Item1 == "cstm").Item2;
+            for (int i = 0; i < phrase.pitches.Length; ++i) {
+                int tick = start + i * 5;
+                bool drawn = tick >= 0 && tick <= 20;
+                Assert.Equal(drawn ? 5000 + tick * 5 : (tick < notes[0].End ? notes[0] : notes[1]).AdjustedTone * 100,
+                    phrase.pitches[i]);
+                Assert.Equal(drawn ? 1f : 0f, mask[i]);
+            }
+        }
+
+        [Fact]
+        public void LinksNameTheOutputTheyLeave() {
+            var nodes = new[] {
+                Node(1, GraphNodeTypes.MaskedCurveInput, ("abbr", "pito")),
+                Node(2, GraphNodeTypes.CurveOutput, ("abbr", "tenc")),
+            };
+            Assert.Null(ExpressionGraphProgram.Compile(Graph(nodes,
+                new UGraphLink { from = 1, fromPort = "nowhere", to = 2, toPort = "value" }), out var error));
+            Assert.Contains("no output", error);
+            // An unnamed port is the first output.
+            Assert.NotNull(ExpressionGraphProgram.Compile(Graph(nodes, Link(1, 2)), out _));
+
+            var graph = Graph(nodes);
+            Assert.True(ExpressionGraphEdits.TryLink(graph, 1, 2, "value", "mask"));
+            Assert.Equal("mask", graph.links.Single().fromPort);
+            Assert.False(ExpressionGraphEdits.TryLink(graph, 1, 2, "value", "nowhere"));
+            // A node with one output needs no name for it.
+            graph = Graph(new[] { Node(1, GraphNodeTypes.Constant), Node(2, GraphNodeTypes.CurveOutput, ("abbr", "tenc")) });
+            Assert.True(ExpressionGraphEdits.TryLink(graph, 1, 2, "value"));
+            Assert.Null(graph.links.Single().fromPort);
         }
 
         [Fact]

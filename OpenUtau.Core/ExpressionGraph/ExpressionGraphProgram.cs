@@ -12,8 +12,10 @@ namespace OpenUtau.Core.ExpressionGraph {
         public readonly int Id;
         public readonly GraphNodeType Type;
         readonly Dictionary<string, string> parameters;
-        // For each port: the index of the node feeding it in evaluation order, or -1 for a constant.
+        // For each port: the index of the node feeding it in evaluation order, or -1 for a constant;
+        // and which of that node's outputs.
         internal readonly int[] sources;
+        internal readonly int[] sourceOutputs;
         internal readonly float[] constants;
 
         internal CompiledNode(UGraphNode node, GraphNodeType type) {
@@ -21,6 +23,7 @@ namespace OpenUtau.Core.ExpressionGraph {
             Type = type;
             parameters = new Dictionary<string, string>(node.parameters);
             sources = Enumerable.Repeat(-1, type.Ports.Length).ToArray();
+            sourceOutputs = new int[type.Ports.Length];
             constants = type.Ports.Select((port, i) => GetFloat(port, type.PortDefaults[i])).ToArray();
         }
 
@@ -43,17 +46,20 @@ namespace OpenUtau.Core.ExpressionGraph {
         /// <summary>The phrase's pitch sources; null outside a phrase build.</summary>
         public readonly PhrasePitch? Pitch;
         readonly Dictionary<string, CurveSource> curves;
+        readonly IReadOnlyDictionary<string, UMaskedRun[]> maskedCurves;
         readonly Dictionary<string, int> defaults;
         readonly NoteSource[] notes;
 
         public GraphContext(TimeAxis axis, int partPosition, int resolution,
                 IEnumerable<CurveSource> curves, IReadOnlyDictionary<string, int> defaults, IEnumerable<NoteSource> notes,
-                PhonemeAnchors? phonemes = null, PhrasePitch? pitch = null) {
+                PhonemeAnchors? phonemes = null, PhrasePitch? pitch = null,
+                IReadOnlyDictionary<string, UMaskedRun[]>? maskedCurves = null) {
             Axis = axis;
             PartPosition = partPosition;
             Resolution = resolution;
             Phonemes = phonemes ?? PhonemeAnchors.Empty;
             Pitch = pitch;
+            this.maskedCurves = maskedCurves ?? new Dictionary<string, UMaskedRun[]>();
             this.curves = new Dictionary<string, CurveSource>();
             foreach (var curve in curves) {
                 this.curves.TryAdd(curve.Abbr, curve);
@@ -64,7 +70,7 @@ namespace OpenUtau.Core.ExpressionGraph {
 
         internal GraphContext(PhraseSource source, PhrasePitch? pitch = null)
             : this(source.Axis, source.PartPosition, source.Resolution, source.Curves, source.CurveDefaults, source.Notes,
-                source.PhonemeAnchors, pitch) { }
+                source.PhonemeAnchors, pitch, source.MaskedCurves) { }
 
         /// <summary>A curve's value at a part-relative tick, exactly as the renderer reads it without a graph.</summary>
         public float SampleCurve(string? abbr, int tick) {
@@ -72,6 +78,12 @@ namespace OpenUtau.Core.ExpressionGraph {
                 return curve.Sample(tick);
             }
             return abbr != null && defaults.TryGetValue(abbr, out int y) ? y : 0;
+        }
+
+        /// <summary>A masked curve's value at a part-relative tick, if it has one there.</summary>
+        public bool TrySampleMaskedCurve(string? abbr, int tick, out float value) {
+            value = 0;
+            return abbr != null && maskedCurves.TryGetValue(abbr, out var runs) && UMaskedCurve.TrySample(runs, tick, out value);
         }
 
         /// <summary>The note covering a part-relative tick, if any.</summary>
@@ -105,13 +117,14 @@ namespace OpenUtau.Core.ExpressionGraph {
             }
 
             public Dictionary<string, float[]> Evaluate(GraphContext context, int[] ticks, int[]? phonemeIndices) {
-                var values = new float[Order.Length][];
+                // Each node's outputs.
+                var values = new float[Order.Length][][];
                 for (int i = 0; i < Order.Length; ++i) {
                     var node = Order[i];
                     var inputs = new float[node.sources.Length][];
                     for (int p = 0; p < inputs.Length; ++p) {
                         if (node.sources[p] >= 0) {
-                            inputs[p] = values[node.sources[p]];
+                            inputs[p] = values[node.sources[p]][node.sourceOutputs[p]];
                         } else {
                             inputs[p] = new float[ticks.Length];
                             Array.Fill(inputs[p], node.constants[p]);
@@ -119,7 +132,7 @@ namespace OpenUtau.Core.ExpressionGraph {
                     }
                     values[i] = node.Type.Evaluate(new NodeArgs(inputs, node, context, ticks, phonemeIndices));
                 }
-                return Outputs.ToDictionary(kv => kv.Key, kv => values[kv.Value]);
+                return Outputs.ToDictionary(kv => kv.Key, kv => values[kv.Value][0]);
             }
         }
 
@@ -190,15 +203,16 @@ namespace OpenUtau.Core.ExpressionGraph {
                     return null;
                 }
             }
-            // Port links, by target node.
-            var incoming = nodes.Keys.ToDictionary(id => id, _ => new Dictionary<int, int>());
+            // Port links, by target node: the node and output feeding each input port.
+            var incoming = nodes.Keys.ToDictionary(id => id, _ => new Dictionary<int, (int from, int output)>());
             foreach (var link in graph.links) {
                 if (!nodes.ContainsKey(link.from) || !nodes.TryGetValue(link.to, out var target)) {
                     error = $"A link connects missing node {(nodes.ContainsKey(link.from) ? link.to : link.from)}.";
                     return null;
                 }
-                if (nodes[link.from].type.IsOutput || link.fromPort != null) {
-                    error = $"Node {link.from} has no such output.";
+                int output = nodes[link.from].type.OutputIndex(link.fromPort);
+                if (output < 0) {
+                    error = $"Node {link.from} has no output \"{link.fromPort}\".";
                     return null;
                 }
                 int port = Array.IndexOf(target.type.Ports, link.toPort);
@@ -206,7 +220,7 @@ namespace OpenUtau.Core.ExpressionGraph {
                     error = $"Node {link.to} has no input \"{link.toPort}\".";
                     return null;
                 }
-                if (!incoming[link.to].TryAdd(port, link.from)) {
+                if (!incoming[link.to].TryAdd(port, (link.from, output))) {
                     error = $"Input \"{link.toPort}\" of node {link.to} has two links.";
                     return null;
                 }
@@ -231,7 +245,7 @@ namespace OpenUtau.Core.ExpressionGraph {
 
         /// <summary>The outputs of one kind that have a connected value, and everything they depend on.</summary>
         static Plan? PlanFor(GraphNodeRole role, Dictionary<int, (UGraphNode node, GraphNodeType type)> nodes,
-                Dictionary<int, Dictionary<int, int>> incoming, ref string? error) {
+                Dictionary<int, Dictionary<int, (int from, int output)>> incoming, ref string? error) {
             var outputs = new Dictionary<string, int>();
             foreach (var (node, _) in nodes.Values.Where(n => n.type.Role == role)) {
                 string abbr = role == GraphNodeRole.PitchOutput ? PitchKey : node.GetString("abbr")!;
@@ -249,7 +263,7 @@ namespace OpenUtau.Core.ExpressionGraph {
                 if (!visited.Add(id)) {
                     return;
                 }
-                foreach (var from in incoming[id].OrderBy(kv => kv.Key).Select(kv => kv.Value)) {
+                foreach (var from in incoming[id].OrderBy(kv => kv.Key).Select(kv => kv.Value.from)) {
                     Visit(from);
                 }
                 ordered.Add(id);
@@ -260,14 +274,15 @@ namespace OpenUtau.Core.ExpressionGraph {
             var indexOf = ordered.Select((id, i) => (id, i)).ToDictionary(t => t.id, t => t.i);
             var compiled = ordered.Select(id => new CompiledNode(nodes[id].node, nodes[id].type)).ToArray();
             for (int i = 0; i < compiled.Length; ++i) {
-                foreach (var (port, from) in incoming[ordered[i]]) {
+                foreach (var (port, (from, output)) in incoming[ordered[i]]) {
                     compiled[i].sources[port] = indexOf[from];
+                    compiled[i].sourceOutputs[port] = output;
                 }
             }
             return new Plan(compiled, connected.ToDictionary(kv => kv.Key, kv => indexOf[kv.Value]));
         }
 
-        static bool HasCycle(IEnumerable<int> ids, Dictionary<int, Dictionary<int, int>> incoming) {
+        static bool HasCycle(IEnumerable<int> ids, Dictionary<int, Dictionary<int, (int from, int output)>> incoming) {
             var state = new Dictionary<int, int>(); // 1: visiting, 2: done
             bool Visit(int id) {
                 state.TryGetValue(id, out int s);
@@ -278,7 +293,7 @@ namespace OpenUtau.Core.ExpressionGraph {
                     return false;
                 }
                 state[id] = 1;
-                foreach (var from in incoming[id].Values) {
+                foreach (var (from, _) in incoming[id].Values) {
                     if (Visit(from)) {
                         return true;
                     }

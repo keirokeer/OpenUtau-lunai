@@ -421,6 +421,8 @@ namespace OpenUtau.Core.Pipeline {
         public readonly IReadOnlyDictionary<string, int> CurveDefaults;
         /// <summary>The track's expression graph; null when it has none.</summary>
         public readonly ExpressionGraph.ExpressionGraphProgram? ExpressionGraph;
+        /// <summary>The part's masked curves, by abbreviation. Only set when the track has a graph.</summary>
+        public readonly IReadOnlyDictionary<string, UMaskedRun[]>? MaskedCurves;
         /// <summary>The per-phoneme values graph inputs read. Only set when the track has a graph.</summary>
         public readonly ExpressionGraph.PhonemeAnchors? PhonemeAnchors;
         /// <summary>The track's expressions in flag order. Only set when the track has a graph.</summary>
@@ -488,6 +490,9 @@ namespace OpenUtau.Core.Pipeline {
                 graphExpressions = FlagExpressions
                     .Where(d => d.type is UExpressionType.Numerical or UExpressionType.Options)
                     .ToList();
+                MaskedCurves = part.maskedCurves
+                    .GroupBy(c => c.abbr)
+                    .ToDictionary(g => g.Key, g => g.First().runs.Select(r => r.Clone()).ToArray());
                 DrivablePhonemeExpressions = graphExpressions
                     .Where(d => OpenUtau.Core.ExpressionGraph.GraphNodeTypes.CanDrivePhonemeExpression(d, Renderer))
                     .ToDictionary(d => d.abbr);

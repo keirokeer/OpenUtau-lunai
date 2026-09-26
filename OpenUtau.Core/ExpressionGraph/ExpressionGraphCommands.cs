@@ -138,17 +138,23 @@ namespace OpenUtau.Core.ExpressionGraph {
         /// Links an output into a node's input port, replacing any link already into that port.
         /// Returns false, changing nothing, if the link would close a cycle or the port doesn't exist.
         /// </summary>
-        public static bool TryLink(UExpressionGraph graph, int from, int to, string port) {
+        public static bool TryLink(UExpressionGraph graph, int from, int to, string port, string? fromPort = null) {
             var target = graph.nodes.FirstOrDefault(n => n.id == to);
             var source = graph.nodes.FirstOrDefault(n => n.id == from);
             if (target == null || source == null
                     || !GraphNodeTypes.TryGet(target.type, out var targetType) || !targetType.Ports.Contains(port)
-                    || !GraphNodeTypes.TryGet(source.type, out var sourceType) || sourceType.IsOutput
+                    || !GraphNodeTypes.TryGet(source.type, out var sourceType) || sourceType.OutputIndex(fromPort) < 0
                     || ExpressionGraphProgram.WouldCreateCycle(graph, from, to)) {
                 return false;
             }
             graph.links.RemoveAll(l => l.to == to && l.toPort == port);
-            graph.links.Add(new UGraphLink { from = from, to = to, toPort = port });
+            // The only output of a node needs no name.
+            graph.links.Add(new UGraphLink {
+                from = from,
+                fromPort = sourceType.Outputs.Length > 1 ? fromPort ?? sourceType.Outputs[0] : null,
+                to = to,
+                toPort = port,
+            });
             return true;
         }
 

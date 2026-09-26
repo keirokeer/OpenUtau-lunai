@@ -268,6 +268,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="expressiongraph.node.divide">Divide</system:String>
   <system:String x:Key="expressiongraph.node.lfo">LFO</system:String>
   <system:String x:Key="expressiongraph.node.map_range">Map Range</system:String>
+  <system:String x:Key="expressiongraph.node.masked_curve_input">Masked Curve</system:String>
   <system:String x:Key="expressiongraph.node.max">Max</system:String>
   <system:String x:Key="expressiongraph.node.min">Min</system:String>
   <system:String x:Key="expressiongraph.node.mix">Mix</system:String>

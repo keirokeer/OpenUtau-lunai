@@ -49,33 +49,51 @@ namespace OpenUtau.Core.ExpressionGraph {
     /// A node type. An unconnected input port takes the node's parameter of the same name, else the port's default.
     /// </summary>
     public sealed class GraphNodeType {
+        /// <summary>The output of nodes with one; a link from it may leave its port unnamed.</summary>
+        public const string Out = "out";
+
         public readonly string Name;
         public readonly GraphNodeRole Role;
         public readonly string[] Ports;
         public readonly float[] PortDefaults;
-        readonly Func<NodeArgs, float[]> evaluate;
+        /// <summary>Output ports; output nodes have none.</summary>
+        public readonly string[] Outputs;
+        readonly Func<NodeArgs, float[][]> evaluate;
 
-        public GraphNodeType(string name, GraphNodeRole role, string[] ports, float[] portDefaults, Func<NodeArgs, float[]> evaluate) {
+        public GraphNodeType(string name, GraphNodeRole role, string[] ports, float[] portDefaults, Func<NodeArgs, float[]> evaluate)
+            : this(name, role, ports, portDefaults,
+                role is GraphNodeRole.CurveOutput or GraphNodeRole.PhonemeOutput or GraphNodeRole.PitchOutput
+                    ? Array.Empty<string>() : new[] { Out },
+                a => new[] { evaluate(a) }) { }
+
+        public GraphNodeType(string name, GraphNodeRole role, string[] ports, float[] portDefaults, string[] outputs,
+                Func<NodeArgs, float[][]> evaluate) {
             Name = name;
             Role = role;
             Ports = ports;
             PortDefaults = portDefaults;
+            Outputs = outputs;
             this.evaluate = evaluate;
         }
+
+        /// <summary>The index of an output port; an unnamed one is the first.</summary>
+        public int OutputIndex(string? port) => port == null ? (Outputs.Length > 0 ? 0 : -1) : Array.IndexOf(Outputs, port);
 
         public bool IsOutput => Role is GraphNodeRole.CurveOutput or GraphNodeRole.PhonemeOutput or GraphNodeRole.PitchOutput;
 
         /// <summary>Reads or drives an expression, named by the "abbr" parameter.</summary>
         public bool NeedsAbbr => Role is GraphNodeRole.CurveOutput or GraphNodeRole.PhonemeOutput
-            || Name is GraphNodeTypes.CurveInput or GraphNodeTypes.PhonemeInput;
+            || Name is GraphNodeTypes.CurveInput or GraphNodeTypes.PhonemeInput or GraphNodeTypes.MaskedCurveInput;
 
-        internal float[] Evaluate(NodeArgs args) => evaluate(args);
+        /// <summary>One array per output; output nodes return the one value they output.</summary>
+        internal float[][] Evaluate(NodeArgs args) => evaluate(args);
     }
 
     public static class GraphNodeTypes {
         public const string Constant = "constant";
         public const string CurveInput = "curve_input";
         public const string CurveOutput = "curve_output";
+        public const string MaskedCurveInput = "masked_curve_input";
         public const string PhonemeInput = "phoneme_input";
         public const string PhonemeOutput = "phoneme_output";
         public const string PitchInput = "pitch_input";
@@ -108,6 +126,23 @@ namespace OpenUtau.Core.ExpressionGraph {
                 a => Map(a, tick => a.Context.SampleCurve(a.Node.GetString("abbr"), tick))),
             new GraphNodeType(CurveOutput, GraphNodeRole.CurveOutput, value, new float[] { 0 },
                 a => (float[])a.Inputs[0].Clone()),
+            // The curve where it has a value, else the fallback; and 1 where it has a value, else 0.
+            new GraphNodeType(MaskedCurveInput, GraphNodeRole.Input, new[] { "fallback" }, new float[] { 0 },
+                new[] { Value, "mask" }, a => {
+                    var abbr = a.Node.GetString("abbr");
+                    var fallback = a.Inputs[0];
+                    var values = new float[a.Ticks.Length];
+                    var mask = new float[a.Ticks.Length];
+                    for (int i = 0; i < values.Length; ++i) {
+                        if (a.Context.TrySampleMaskedCurve(abbr, a.Ticks[i], out float y)) {
+                            values[i] = y;
+                            mask[i] = 1;
+                        } else {
+                            values[i] = fallback[i];
+                        }
+                    }
+                    return new[] { values, mask };
+                }),
             new GraphNodeType(PhonemeInput, GraphNodeRole.Input, none, new float[0], a => {
                 var anchors = a.Context.Phonemes;
                 var abbr = a.Node.GetString("abbr");
@@ -232,7 +267,7 @@ namespace OpenUtau.Core.ExpressionGraph {
 
         /// <summary>Node types by category, in the order the editor offers them.</summary>
         public static readonly (string category, string[] types)[] Categories = {
-            (InputCategory, new[] { CurveInput, PhonemeInput, PitchInput, Constant }),
+            (InputCategory, new[] { CurveInput, MaskedCurveInput, PhonemeInput, PitchInput, Constant }),
             (MathCategory, new[] { Add, Subtract, Multiply, Divide, Mix, Min, Max, Abs, MapRange, Clamp }),
             (TimeCategory, new[] { Lfo, NotePosition, NoteEnvelope }),
             (OutputCategory, new[] { CurveOutput, PhonemeOutput, PitchOutput }),
@@ -244,6 +279,7 @@ namespace OpenUtau.Core.ExpressionGraph {
         static readonly Dictionary<string, GraphNodeParameter[]> parameters = new Dictionary<string, GraphNodeParameter[]> {
             [Constant] = new[] { Number("value", "0") },
             [CurveInput] = new[] { abbr },
+            [MaskedCurveInput] = new[] { abbr },
             [CurveOutput] = new[] { abbr },
             [PhonemeInput] = new[] { abbr, new GraphNodeParameter("interpolation", GraphParameterKind.Choice, "step", "step", "linear", "cubic") },
             [PhonemeOutput] = new[] { abbr },
@@ -292,6 +328,7 @@ namespace OpenUtau.Core.ExpressionGraph {
             var all = project.expressions.Values;
             return type switch {
                 CurveInput => all.Where(d => d.type == Ustx.UExpressionType.Curve),
+                MaskedCurveInput => all.Where(d => d.type == Ustx.UExpressionType.MaskedCurve),
                 CurveOutput => all.Where(d => CanDriveCurve(d, instance)),
                 PhonemeInput => all.Where(d => d.type == Ustx.UExpressionType.Numerical),
                 PhonemeOutput => all.Where(d => CanDrivePhonemeExpression(d, instance)),

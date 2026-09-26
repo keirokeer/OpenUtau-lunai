@@ -47,7 +47,7 @@ namespace OpenUtau.App.Controls {
         UProject? project;
         UExpressionGraph? graph;
         readonly Dictionary<(int node, string port), Ellipse> inputDots = new Dictionary<(int, string), Ellipse>();
-        readonly Dictionary<int, Ellipse> outputDots = new Dictionary<int, Ellipse>();
+        readonly Dictionary<(int node, int output), Ellipse> outputDots = new Dictionary<(int, int), Ellipse>();
         readonly Dictionary<int, Border> nodeViews = new Dictionary<int, Border>();
 
         public int? SelectedNode { get; private set; }
@@ -163,9 +163,11 @@ namespace OpenUtau.App.Controls {
                     Margin = new Thickness(6, 2),
                 });
             } else {
-                // The output sits on the first row, beside the first input if there is one.
-                var output = type.IsOutput ? null : BuildOutput(node);
-                bool fieldsBesideOutput = output != null && type.Ports.Length > 0;
+                // Outputs sit on the first rows, beside the inputs if there are any.
+                var outputs = type.Outputs
+                    .Select((name, k) => BuildOutput(node, k, type.Outputs.Length > 1 ? Humanize(name) : Text("expressiongraph.output", "Out")))
+                    .ToArray();
+                bool fieldsBesideOutput = outputs.Length > 0 && type.Ports.Length > 0;
                 // One grid for every row, so labels and fields line up: input dot, label, field, output.
                 // The first column fits a half-overhanging input dot, and indents nodes without inputs the same.
                 var rows = new Grid { ColumnDefinitions = new ColumnDefinitions($"{DotSize - 1},Auto,*,Auto") };
@@ -189,12 +191,14 @@ namespace OpenUtau.App.Controls {
                     Place(field, first, last - first + 1);
                     Place(output, 3);
                 }
-                for (int i = 0; i < type.Ports.Length; ++i) {
-                    var (dot, label, field) = BuildPort(node, type.Ports[i], type.PortDefaults[i]);
-                    AddRow(dot, label, field, i == 0 ? output : null);
-                }
-                if (output != null && type.Ports.Length == 0) {
-                    AddRow(null, null, null, output);
+                for (int i = 0; i < Math.Max(type.Ports.Length, outputs.Length); ++i) {
+                    var output = i < outputs.Length ? outputs[i] : null;
+                    if (i < type.Ports.Length) {
+                        var (dot, label, field) = BuildPort(node, type.Ports[i], type.PortDefaults[i]);
+                        AddRow(dot, label, field, output);
+                    } else {
+                        AddRow(null, null, null, output);
+                    }
                 }
                 foreach (var parameter in GraphNodeTypes.ParametersOf(node.type)) {
                     var (label, field) = BuildParameter(node, parameter);
@@ -266,16 +270,16 @@ namespace OpenUtau.App.Controls {
             Margin = new Thickness(0, 0, 6, 0),
         };
 
-        Control BuildOutput(UGraphNode node) {
+        Control BuildOutput(UGraphNode node, int output, string label) {
             var dot = Dot();
             dot.Margin = new Thickness(4, 0, -DotSize / 2, 0);
-            dot.PointerPressed += (s, e) => BeginLink(node.id, e);
-            outputDots[node.id] = dot;
+            dot.PointerPressed += (s, e) => BeginLink(node.id, output, e);
+            outputDots[(node.id, output)] = dot;
             return new StackPanel {
                 Orientation = Orientation.Horizontal,
                 HorizontalAlignment = HorizontalAlignment.Right,
                 Children = {
-                    new TextBlock { Text = Text("expressiongraph.output", "Out"), VerticalAlignment = VerticalAlignment.Center },
+                    new TextBlock { Text = label, VerticalAlignment = VerticalAlignment.Center },
                     dot,
                 },
             };
@@ -403,9 +407,16 @@ namespace OpenUtau.App.Controls {
         UGraphNode? dragNode;
         Point nodeStart;
         int linkFrom;
+        int linkFromOutput;
         UGraphLink? detached;
         internal Point? PendingLinkEnd { get; private set; }
-        internal int PendingLinkFrom => linkFrom;
+        internal (int node, int output) PendingLinkFrom => (linkFrom, linkFromOutput);
+
+        /// <summary>The output a link leaves, by index.</summary>
+        int OutputIndexOf(UGraphLink link) {
+            var node = graph?.nodes.FirstOrDefault(n => n.id == link.from);
+            return node != null && GraphNodeTypes.TryGet(node.type, out var type) ? Math.Max(0, type.OutputIndex(link.fromPort)) : 0;
+        }
 
         Point CanvasPoint(PointerEventArgs e) => e.GetPosition(nodeLayer);
 
@@ -451,12 +462,13 @@ namespace OpenUtau.App.Controls {
             e.Handled = true;
         }
 
-        void BeginLink(int from, PointerPressedEventArgs e) {
+        void BeginLink(int from, int output, PointerPressedEventArgs e) {
             if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) {
                 return;
             }
             drag = DragKind.Link;
             linkFrom = from;
+            linkFromOutput = output;
             detached = null;
             PendingLinkEnd = CanvasPoint(e);
             e.Pointer.Capture(host);
@@ -474,6 +486,7 @@ namespace OpenUtau.App.Controls {
             detached = link;
             drag = DragKind.Link;
             linkFrom = link.from;
+            linkFromOutput = OutputIndexOf(link);
             PendingLinkEnd = CanvasPoint(e);
             e.Pointer.Capture(host);
             e.Handled = true;
@@ -533,6 +546,9 @@ namespace OpenUtau.App.Controls {
                         var removed = detached;
                         detached = null;
                         int from = linkFrom;
+                        var fromNode = graph!.nodes.FirstOrDefault(n => n.id == from);
+                        string? fromPort = fromNode != null && GraphNodeTypes.TryGet(fromNode.type, out var fromType)
+                            && linkFromOutput < fromType.Outputs.Length ? fromType.Outputs[linkFromOutput] : null;
                         if (target.Value != null) {
                             var (to, port) = target.Key;
                             if (removed != null && removed.to == to && removed.toPort == port) {
@@ -552,7 +568,7 @@ namespace OpenUtau.App.Controls {
                                 if (removed != null) {
                                     g.links.RemoveAll(l => l.to == removed.to && l.toPort == removed.toPort);
                                 }
-                                ExpressionGraphEdits.TryLink(g, from, to, port);
+                                ExpressionGraphEdits.TryLink(g, from, to, port, fromPort);
                             });
                         } else if (removed != null) {
                             Edit(g => g.links.RemoveAll(l => l.to == removed.to && l.toPort == removed.toPort));
@@ -609,7 +625,7 @@ namespace OpenUtau.App.Controls {
                 var brush = (IBrush?)owner.FindBrush("SystemControlForegroundBaseMediumBrush") ?? Brushes.Gray;
                 var pen = new Pen(brush, 2);
                 foreach (var link in graph.links) {
-                    if (owner.outputDots.TryGetValue(link.from, out var fromDot)
+                    if (owner.outputDots.TryGetValue((link.from, owner.OutputIndexOf(link)), out var fromDot)
                             && link.toPort != null && owner.inputDots.TryGetValue((link.to, link.toPort), out var toDot)
                             && owner.DotCenter(fromDot) is Point a && owner.DotCenter(toDot) is Point b) {
                         DrawLink(context, pen, a, b);

@@ -79,9 +79,10 @@ namespace OpenUtau.UiTest {
                     ExpressionGraphEdits.AddNode(graph, GraphNodeTypes.Lfo, 540, 240);
                     ExpressionGraphEdits.AddNode(graph, GraphNodeTypes.PitchInput, 200, 380);
                     ExpressionGraphEdits.AddNode(graph, GraphNodeTypes.PhonemeInput, 200, 460).Set("abbr", "vel");
+                    ExpressionGraphEdits.AddNode(graph, GraphNodeTypes.MaskedCurveInput, 20, 230).Set("abbr", "pito");
                 });
                 HeadlessUi.Flush();
-                Assert.Equal(8, Nodes(canvas).Length);
+                Assert.Equal(9, Nodes(canvas).Length);
                 // The track has no singer, so no renderer, and uses no graph.
                 Assert.Equal(ThemeManagerString("expressiongraph.unused"), status.Text);
 
@@ -96,6 +97,13 @@ namespace OpenUtau.UiTest {
                 Drag(window, Center(Dots(canvas, "Map Range").Last(), window), Center(Dots(canvas, "Map Range").First(), window));
                 Assert.Equal(2, project.expressionGraphs!.Single().links.Count);
 
+                // A masked curve has a fallback input and two outputs; a link leaves the one it's dragged from.
+                var masked = Dots(canvas, "Masked Curve");
+                Assert.Equal(3, masked.Length);
+                Drag(window, Center(masked.Last(), window), Center(Dots(canvas, "Subtract")[2], window));
+                Assert.Contains(project.expressionGraphs!.Single().links,
+                    l => l.from == 9 && l.fromPort == "mask" && l.to == 4 && l.toPort == "b");
+
                 // Move the map node by its header.
                 var header = Node(canvas, "Map Range").GetVisualDescendants().OfType<TextBlock>().First();
                 var start = Center(header, window);
@@ -103,7 +111,8 @@ namespace OpenUtau.UiTest {
                 Assert.Equal((290f, 160f), (project.expressionGraphs!.Single().nodes[1].x, project.expressionGraphs!.Single().nodes[1].y));
                 HeadlessUi.SaveScreenshot(window, nameof(EditsGraphsWithThePointerAndUndoes));
 
-                // Undo the move and both links; redo one.
+                // Undo the move and the three links; redo one.
+                DocManager.Inst.Undo();
                 DocManager.Inst.Undo();
                 DocManager.Inst.Undo();
                 DocManager.Inst.Undo();
