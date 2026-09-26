@@ -23,7 +23,7 @@ namespace OpenUtau.Core.ExpressionGraph {
         }
     }
 
-    public enum GraphNodeRole { Input, Process, CurveOutput, PhonemeOutput }
+    public enum GraphNodeRole { Input, Process, CurveOutput, PhonemeOutput, PitchOutput }
 
     /// <summary>
     /// A node type. An unconnected input port takes the node's parameter of the same name, else the port's default.
@@ -43,10 +43,11 @@ namespace OpenUtau.Core.ExpressionGraph {
             this.evaluate = evaluate;
         }
 
-        public bool IsOutput => Role is GraphNodeRole.CurveOutput or GraphNodeRole.PhonemeOutput;
+        public bool IsOutput => Role is GraphNodeRole.CurveOutput or GraphNodeRole.PhonemeOutput or GraphNodeRole.PitchOutput;
 
         /// <summary>Reads or drives an expression, named by the "abbr" parameter.</summary>
-        public bool NeedsAbbr => IsOutput || Name is GraphNodeTypes.CurveInput or GraphNodeTypes.PhonemeInput;
+        public bool NeedsAbbr => Role is GraphNodeRole.CurveOutput or GraphNodeRole.PhonemeOutput
+            || Name is GraphNodeTypes.CurveInput or GraphNodeTypes.PhonemeInput;
 
         internal float[] Evaluate(NodeArgs args) => evaluate(args);
     }
@@ -57,6 +58,8 @@ namespace OpenUtau.Core.ExpressionGraph {
         public const string CurveOutput = "curve_output";
         public const string PhonemeInput = "phoneme_input";
         public const string PhonemeOutput = "phoneme_output";
+        public const string PitchInput = "pitch_input";
+        public const string PitchOutput = "pitch_output";
         public const string Add = "add";
         public const string Subtract = "subtract";
         public const string Multiply = "multiply";
@@ -104,6 +107,13 @@ namespace OpenUtau.Core.ExpressionGraph {
                 return Map(a, tick => anchors.Sample(abbr, tick, mode));
             }),
             new GraphNodeType(PhonemeOutput, GraphNodeRole.PhonemeOutput, value, new float[] { 0 },
+                a => (float[])a.Inputs[0].Clone()),
+            new GraphNodeType(PitchInput, GraphNodeRole.Input, none, new float[0], a => {
+                PhrasePitch.TryParse(a.Node.GetString("source"), out var source);
+                var context = a.Context;
+                return Map(a, tick => context.Pitch?.Sample(source, tick) ?? 0);
+            }),
+            new GraphNodeType(PitchOutput, GraphNodeRole.PitchOutput, value, new float[] { 0 },
                 a => (float[])a.Inputs[0].Clone()),
 
             Binary(Add, 0, 0, (x, y) => x + y),

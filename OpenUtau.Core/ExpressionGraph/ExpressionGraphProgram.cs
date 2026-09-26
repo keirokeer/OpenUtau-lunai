@@ -40,17 +40,20 @@ namespace OpenUtau.Core.ExpressionGraph {
         public readonly int PartPosition;
         public readonly int Resolution;
         public readonly PhonemeAnchors Phonemes;
+        /// <summary>The phrase's pitch sources; null outside a phrase build.</summary>
+        public readonly PhrasePitch? Pitch;
         readonly Dictionary<string, CurveSource> curves;
         readonly Dictionary<string, int> defaults;
         readonly NoteSource[] notes;
 
         public GraphContext(TimeAxis axis, int partPosition, int resolution,
                 IEnumerable<CurveSource> curves, IReadOnlyDictionary<string, int> defaults, IEnumerable<NoteSource> notes,
-                PhonemeAnchors? phonemes = null) {
+                PhonemeAnchors? phonemes = null, PhrasePitch? pitch = null) {
             Axis = axis;
             PartPosition = partPosition;
             Resolution = resolution;
             Phonemes = phonemes ?? PhonemeAnchors.Empty;
+            Pitch = pitch;
             this.curves = new Dictionary<string, CurveSource>();
             foreach (var curve in curves) {
                 this.curves.TryAdd(curve.Abbr, curve);
@@ -59,9 +62,9 @@ namespace OpenUtau.Core.ExpressionGraph {
             this.notes = notes.OrderBy(n => n.Position).ToArray();
         }
 
-        internal GraphContext(PhraseSource source)
+        internal GraphContext(PhraseSource source, PhrasePitch? pitch = null)
             : this(source.Axis, source.PartPosition, source.Resolution, source.Curves, source.CurveDefaults, source.Notes,
-                source.PhonemeAnchors) { }
+                source.PhonemeAnchors, pitch) { }
 
         /// <summary>A curve's value at a part-relative tick, exactly as the renderer reads it without a graph.</summary>
         public float SampleCurve(string? abbr, int tick) {
@@ -120,13 +123,25 @@ namespace OpenUtau.Core.ExpressionGraph {
             }
         }
 
+        const string PitchKey = "pitch";
+
         readonly Plan curves;
         readonly Plan phonemes;
+        readonly Plan pitch;
 
-        ExpressionGraphProgram(Plan curves, Plan phonemes) {
+        ExpressionGraphProgram(Plan curves, Plan phonemes, Plan pitch) {
             this.curves = curves;
             this.phonemes = phonemes;
+            this.pitch = pitch;
         }
+
+        /// <summary>Whether the graph drives the pitch.</summary>
+        public bool DrivesPitch => pitch.Outputs.Count > 0;
+
+
+        /// <summary>The driven pitch in cents at the given part-relative ticks, or null when the graph doesn't drive it.</summary>
+        public float[]? EvaluatePitch(GraphContext context, int[] ticks) =>
+            DrivesPitch ? pitch.Evaluate(context, ticks, null)[PitchKey] : null;
 
         /// <summary>The curves this graph drives. Every other curve reaches the renderer as drawn.</summary>
         public IReadOnlyCollection<string> CurveOutputs => curves.Outputs.Keys;
@@ -170,6 +185,10 @@ namespace OpenUtau.Core.ExpressionGraph {
                     error = $"Node {node.id} has no expression.";
                     return null;
                 }
+                if (type.Name == GraphNodeTypes.PitchInput && !PhrasePitch.TryParse(node.GetString("source"), out _)) {
+                    error = $"Node {node.id} has unknown pitch source \"{node.GetString("source")}\".";
+                    return null;
+                }
             }
             // Port links, by target node.
             var incoming = nodes.Keys.ToDictionary(id => id, _ => new Dictionary<int, int>());
@@ -198,10 +217,16 @@ namespace OpenUtau.Core.ExpressionGraph {
             }
             var curvePlan = PlanFor(GraphNodeRole.CurveOutput, nodes, incoming, ref error);
             var phonemePlan = PlanFor(GraphNodeRole.PhonemeOutput, nodes, incoming, ref error);
-            if (curvePlan == null || phonemePlan == null) {
+            var pitchPlan = PlanFor(GraphNodeRole.PitchOutput, nodes, incoming, ref error);
+            if (curvePlan == null || phonemePlan == null || pitchPlan == null) {
                 return null;
             }
-            return new ExpressionGraphProgram(curvePlan, phonemePlan);
+            // Pitch is computed per phrase, after the per-phoneme values are resolved for the whole part.
+            if (phonemePlan.Order.Any(n => n.Type.Name == GraphNodeTypes.PitchInput)) {
+                error = "Per-phoneme outputs can't read pitch.";
+                return null;
+            }
+            return new ExpressionGraphProgram(curvePlan, phonemePlan, pitchPlan);
         }
 
         /// <summary>The outputs of one kind that have a connected value, and everything they depend on.</summary>
@@ -209,7 +234,7 @@ namespace OpenUtau.Core.ExpressionGraph {
                 Dictionary<int, Dictionary<int, int>> incoming, ref string? error) {
             var outputs = new Dictionary<string, int>();
             foreach (var (node, _) in nodes.Values.Where(n => n.type.Role == role)) {
-                string abbr = node.GetString("abbr")!;
+                string abbr = role == GraphNodeRole.PitchOutput ? PitchKey : node.GetString("abbr")!;
                 if (outputs.ContainsKey(abbr)) {
                     error = $"Two outputs drive \"{abbr}\".";
                     return null;

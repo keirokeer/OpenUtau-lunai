@@ -292,6 +292,9 @@ namespace OpenUtau.Core.Render {
                 pitches[index] = pitches[index - 1];
                 index++;
             }
+            // The note pitch as steps, before vibrato and bends: for expression graphs to tell vibrato from pitch
+            // bends, and where rendered pitch falls back to.
+            float[]? pitchesBeforeVibrato = source.ExpressionGraph != null ? pitches.ToArray() : null;
             // Vibrato
             foreach (int noteIdx in uNotes) {
                 var note = notesOf[noteIdx];
@@ -311,6 +314,7 @@ namespace OpenUtau.Core.Render {
             // Snapshot for DiffSinger "acoustic flat pitch": notes + vibrato only
             // (before pitch points / PITD). Vocoder still uses full pitches.
             pitchesBeforeBend = pitches.ToArray();
+            float[]? vibratoPitches = source.ExpressionGraph != null ? pitches.ToArray() : null;
             // Pitch points
             foreach (int noteIdx in uNotes) {
                 var note = notesOf[noteIdx];
@@ -372,6 +376,8 @@ namespace OpenUtau.Core.Render {
                     }
                 }
             }
+            // Notes, pitch bends and vibrato, for expression graphs.
+            float[]? parametricPitches = source.ExpressionGraph != null ? pitches.ToArray() : null;
             // Mod plus
             if (source.ModpSupported && source.ClassicSinger != null) {
                 var cSinger = source.ClassicSinger;
@@ -456,17 +462,30 @@ namespace OpenUtau.Core.Render {
                 }
             }
 
-            var curves = new List<Tuple<string, float[]>>();
-
-            // Curves driven by the track's expression graph, on the same tick grid as the drawn curves.
+            // The track's expression graph, on the same tick grid as the drawn curves: first the pitch, then the curves.
             Dictionary<string, float[]>? graphCurves = null;
             if (source.ExpressionGraph != null) {
                 var ticks = new int[pitches.Length];
+                var modPlus = new float[pitches.Length];
+                var vibrato = new float[pitches.Length];
+                var pitchBend = new float[pitches.Length];
                 for (int i = 0; i < ticks.Length; ++i) {
                     ticks[i] = pitchStart + i * pitchInterval;
+                    modPlus[i] = pitchesBeforeDeviation[i] - parametricPitches![i];
+                    vibrato[i] = vibratoPitches![i] - pitchesBeforeVibrato![i];
+                    pitchBend[i] = parametricPitches[i] - vibrato[i];
                 }
-                graphCurves = source.ExpressionGraph.Evaluate(new ExpressionGraph.GraphContext(source), ticks);
+                var phrasePitch = new ExpressionGraph.PhrasePitch(pitchStart, pitchInterval,
+                    pitchBend, vibrato, modPlus, pitchesBeforeVibrato);
+                var context = new ExpressionGraph.GraphContext(source, phrasePitch);
+                var drivenPitch = source.ExpressionGraph.EvaluatePitch(context, ticks);
+                if (drivenPitch != null) {
+                    Array.Copy(drivenPitch, pitches, pitches.Length);
+                }
+                graphCurves = source.ExpressionGraph.Evaluate(context, ticks);
             }
+
+            var curves = new List<Tuple<string, float[]>>();
 
             for (int d = 0; d < source.CurveDescriptors.Length; ++d) {
                 var descriptor = source.CurveDescriptors[d];

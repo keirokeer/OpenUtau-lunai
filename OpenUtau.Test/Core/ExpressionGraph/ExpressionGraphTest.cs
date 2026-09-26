@@ -405,5 +405,66 @@ namespace OpenUtau.Core.ExpressionGraph {
             Assert.All(cubic.Zip(cubic.Skip(1)), p => Assert.True(p.Second >= p.First - 1e-4f, $"{p.First} > {p.Second}"));
             Assert.Equal(0f, anchors.Sample("y", 50, AnchorInterpolation.Linear));
         }
+
+        static float[] PitchWith(string source) {
+            var graph = Graph(new[] {
+                Node(1, GraphNodeTypes.PitchInput, ("source", source)),
+                Node(2, GraphNodeTypes.PitchOutput),
+            }, Link(1, 2));
+            var (project, track, part) = Fixture(graph);
+            return RenderPhrase.FromPart(project, track, part)[0].pitches;
+        }
+
+        [Fact]
+        public void PitchSources() {
+            var (project, track, part) = Fixture(null);
+            var phrase = RenderPhrase.FromPart(project, track, part)[0];
+            int start = phrase.position - part.position - phrase.leading;
+
+            // The fixture has no MOD+, so pitch bend + vibrato is the pitch before the deviation curve.
+            var bend = PitchWith("pitch_bend");
+            var vibrato = PitchWith("vibrato");
+            Assert.Equal(phrase.pitchesBeforeDeviation, bend.Zip(vibrato, (b, v) => b + v), new ToleranceComparer(1e-3f));
+            // Only the first note has vibrato, over its last 60%: ticks 192 to 480.
+            for (int i = 0; i < vibrato.Length; ++i) {
+                int tick = start + i * 5;
+                if (tick < 190 || tick >= 480) {
+                    Assert.Equal(0f, vibrato[i]);
+                }
+            }
+            Assert.Contains(vibrato, v => Math.Abs(v) > 10);
+            Assert.All(PitchWith("mod_plus"), v => Assert.Equal(0f, v));
+            // Each note's tone and tuning as a step: 60 + 10 cents until 480, then 62.
+            var notes = part.notes.ToArray();
+            Assert.Equal(Enumerable.Range(0, phrase.pitches.Length)
+                    .Select(i => (start + i * 5 < notes[0].End ? notes[0] : notes[1]).AdjustedTone * 100),
+                PitchWith("notes"));
+        }
+
+        [Fact]
+        public void PitchCanDriveCurves() {
+            // tenc = pitch above C4, in semitones.
+            var graph = Graph(new[] {
+                Node(1, GraphNodeTypes.PitchInput, ("source", "pitch_bend")),
+                Node(2, GraphNodeTypes.MapRange, ("in_min", "6000"), ("in_max", "6100"), ("out_min", "0"), ("out_max", "1")),
+                Node(3, GraphNodeTypes.CurveOutput, ("abbr", "tenc")),
+            }, Link(1, 2), Link(2, 3));
+            var (project, track, part) = Fixture(graph);
+            var phrase = RenderPhrase.FromPart(project, track, part)[0];
+            Assert.Equal(PitchWith("pitch_bend").Select(p => Math.Clamp((p - 6000) / 100, 0, 100)), phrase.tension);
+        }
+
+        [Fact]
+        public void PerPhonemeOutputsCannotReadPitch() {
+            Assert.Null(ExpressionGraphProgram.Compile(Graph(new[] {
+                Node(1, GraphNodeTypes.PitchInput),
+                Node(2, GraphNodeTypes.PhonemeOutput, ("abbr", "vol")),
+            }, Link(1, 2)), out var error));
+            Assert.Contains("can't read pitch", error);
+            Assert.Null(ExpressionGraphProgram.Compile(Graph(new[] {
+                Node(1, GraphNodeTypes.PitchInput, ("source", "nowhere")),
+            }), out error));
+            Assert.Contains("unknown pitch source", error);
+        }
     }
 }
