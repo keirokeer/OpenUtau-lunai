@@ -878,9 +878,14 @@ OpenUtau стремится стать средой редактирования
   <system:String x:Key="tracks.mute.unmuteall">Включить все треки</system:String>
   <system:String x:Key="tracks.nosinger">Вокалист отсутствует</system:String>
   <system:String x:Key="tracks.openaddsingers">Открыть дополнительный путь к вокалистам</system:String>
+  <system:String x:Key="tracks.openlocation">Открыть расположение</system:String>
   <system:String x:Key="tracks.opensingers">Открыть путь к вокалистам</system:String>
   <system:String x:Key="tracks.remove">Удалить</system:String>
+  <system:String x:Key="tracks.removefromrecent">Убрать из недавних</system:String>
   <system:String x:Key="tracks.rename">Переименовать трек</system:String>
+  <system:String x:Key="tracks.searchterms">Поисковые слова</system:String>
+  <system:String x:Key="tracks.searchterms.edit">Изменить поисковые слова...</system:String>
+  <system:String x:Key="tracks.searchterms.prompt">Дополнительные слова для поиска этого вокалиста через запятую.</system:String>
   <system:String x:Key="tracks.selectrenderer">Выбрать тип рендера</system:String>
   <system:String x:Key="tracks.selectsinger">Выберите вокалиста</system:String>
   <system:String x:Key="tracks.singerdefault">(По умолчанию для вокалиста) </system:String>

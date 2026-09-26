@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Windows.Input;
@@ -35,14 +36,8 @@ namespace OpenUtau.App.ViewModels {
         public USinger Singer { get; }
         public string Name => Singer.LocalizedName;
         public string? Location => Singer.Location;
-        public string Tip {
-            get {
-                var apply = ThemeManager.GetString("tracks.singer.applytoalltracks.tooltip");
-                var mod = OS.IsMacOS() ? "⌘" : "Ctrl";
-                var hint = $"{mod}+Click: {apply}";
-                return string.IsNullOrEmpty(Location) ? hint : $"{Location}\n{hint}";
-            }
-        }
+        public IReadOnlyList<string> SearchTerms { get; }
+        public string Tip { get; }
         public bool IsCurrent { get; }
         public bool IsMissing => !Singer.Found;
         public bool IsFavourite {
@@ -59,7 +54,58 @@ namespace OpenUtau.App.ViewModels {
         public SingerTileViewModel(USinger singer, bool isCurrent) {
             Singer = singer;
             IsCurrent = isCurrent;
+            SearchTerms = BuildSearchTerms(singer);
+            var apply = ThemeManager.GetString("tracks.singer.applytoalltracks.tooltip");
+            var mod = OS.IsMacOS() ? "⌘" : "Ctrl";
+            var hint = $"{mod}+Click: {apply}";
+            // Leave out what the tile and the path already show.
+            var extra = SearchTerms
+                .Where(term => term != Name &&
+                    (Location == null || !Location.Contains(term, StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+            var locationBlock = string.IsNullOrEmpty(Location)
+                ? string.Empty
+                : extra.Count == 0
+                    ? Location
+                    : $"{Location}\n{ThemeManager.GetString("tracks.searchterms")}: {string.Join(", ", extra)}";
+            Tip = string.IsNullOrEmpty(locationBlock) ? hint : $"{locationBlock}\n{hint}";
             Avatar = SingerAvatarCache.Get(singer, bitmap => Avatar = bitmap);
+        }
+
+        /// <summary>
+        /// The displayed and original names, all localized names, the id and folder name, which are often
+        /// romanized, then the extra terms in the voicebank config.
+        /// </summary>
+        public static IReadOnlyList<string> BuildSearchTerms(USinger singer) {
+            var terms = new List<string> { singer.LocalizedName, singer.Name };
+            if (singer.LocalizedNames != null) {
+                terms.AddRange(singer.LocalizedNames.Values);
+            }
+            terms.Add(singer.Id);
+            if (!string.IsNullOrEmpty(singer.Location)) {
+                terms.Add(Path.GetFileName(singer.Location));
+            }
+            terms.AddRange(singer.SearchTerms ?? Array.Empty<string>());
+            return terms
+                .Where(term => !string.IsNullOrWhiteSpace(term))
+                .Select(term => term.Trim())
+                .Distinct()
+                .ToArray();
+        }
+
+        const CompareOptions SearchOptions =
+            CompareOptions.IgnoreCase | CompareOptions.IgnoreKanaType | CompareOptions.IgnoreWidth;
+
+        /// <summary>
+        /// Whether any search term contains the query, ignoring case, width and hiragana/katakana.
+        /// An empty query matches everything.
+        /// </summary>
+        public bool Matches(string query) => Matches(SearchTerms, query);
+
+        public static bool Matches(IEnumerable<string> terms, string query) {
+            return string.IsNullOrEmpty(query) || terms.Any(term =>
+                !string.IsNullOrEmpty(term) &&
+                CultureInfo.InvariantCulture.CompareInfo.IndexOf(term, query, SearchOptions) >= 0);
         }
     }
 
@@ -168,9 +214,8 @@ namespace OpenUtau.App.ViewModels {
                     result = result.Where(s => s.SingerType == selectedType);
                 }
                 if (nameFiltering) {
-                    result = result.Where(s =>
-                        (s.LocalizedName?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                        (s.Name?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false));
+                    result = result.Where(s => SingerTileViewModel.Matches(
+                        SingerTileViewModel.BuildSearchTerms(s), query));
                 }
                 return result;
             }
@@ -246,6 +291,32 @@ namespace OpenUtau.App.ViewModels {
             } else {
                 selectSingerCommand.Execute(tile.Singer);
             }
+        }
+
+        public bool IsRecent(SingerTileViewModel tile) {
+            return Preferences.Default.RecentSingers.Contains(tile.Singer.Id);
+        }
+
+        public void RemoveFromRecent(SingerTileViewModel tile) {
+            Preferences.Default.RecentSingers.Remove(tile.Singer.Id);
+            Preferences.Save();
+            Rebuild();
+        }
+
+        public void OpenLocation(SingerTileViewModel tile) {
+            CloseRequested?.Invoke();
+            SingersViewModel.OpenSingerLocation(tile.Singer);
+        }
+
+        public void EditSearchTerms(SingerTileViewModel tile) {
+            CloseRequested?.Invoke();
+            var mainWindow = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)
+                ?.MainWindow;
+            if (mainWindow == null) {
+                return;
+            }
+            var singer = tile.Singer;
+            SingersDialog.ShowSearchTermsDialog(mainWindow, singer, text => SingersViewModel.SetSearchTerms(singer, text));
         }
 
         public async void InstallSinger() {

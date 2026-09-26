@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -126,6 +127,28 @@ namespace OpenUtau.App.Controls {
                 tile.IsFavourite = !tile.IsFavourite;
                 e.Handled = true;
             }
+        }
+
+        void TileContextRequested(object? sender, ContextRequestedEventArgs e) {
+            e.Handled = true;
+            if (sender is not Control { DataContext: SingerTileViewModel tile } control ||
+                DataContext is not SingerFlyoutViewModel viewModel || tile.IsMissing) {
+                return;
+            }
+            MenuItem Item(string header, Action onClick) {
+                var item = new MenuItem() { Header = this.FindResource(header) };
+                item.Click += (_, _) => onClick();
+                return item;
+            }
+            var items = new List<MenuItem> {
+                Item("tracks.openlocation", () => viewModel.OpenLocation(tile)),
+                Item("tracks.searchterms.edit", () => viewModel.EditSearchTerms(tile)),
+            };
+            if (viewModel.IsRecent(tile)) {
+                items.Add(Item("tracks.removefromrecent", () => viewModel.RemoveFromRecent(tile)));
+            }
+            var menu = new ContextMenu() { ItemsSource = items };
+            menu.Open(control);
         }
     }
 }

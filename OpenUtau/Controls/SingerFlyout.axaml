@@ -229,7 +229,8 @@
                       Classes.current="{Binding IsCurrent}"
                       Classes.missing="{Binding IsMissing}"
                       ToolTip.Tip="{Binding Tip}"
-                      PointerPressed="TilePressed" PointerReleased="TileReleased">
+                      PointerPressed="TilePressed" PointerReleased="TileReleased"
+                      ContextRequested="TileContextRequested">
                 <DockPanel>
                   <Panel DockPanel.Dock="Left" Width="32" Height="32">
                     <Border Classes="avatar" Width="32" Height="32"
