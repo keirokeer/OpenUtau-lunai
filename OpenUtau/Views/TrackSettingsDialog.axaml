@@ -38,6 +38,12 @@
         <Button Grid.Column="2" Content="{DynamicResource dialogs.tracksettings.setasdefault}"
                 HorizontalAlignment="Stretch" Command="{Binding SetDefaultWavtool}"/>
       </Grid>
+      <TextBlock Text="{DynamicResource tracks.expressiongraph}" Margin="0,6,0,0"
+                 IsVisible="{Binding HasRenderer}"/>
+      <c:WorkspacePanelComboBox Classes="workspacePanelCombo" HorizontalAlignment="Stretch"
+                                IsVisible="{Binding HasRenderer}"
+                                ItemsSource="{Binding Graphs}"
+                                SelectedItem="{Binding Graph}"/>
       <Button Margin="0,8,0,0" Content="{DynamicResource button.ok}"
               HorizontalAlignment="Stretch" Classes="dialogPrimary" Click="OnOkClicked"/>
     </StackPanel>

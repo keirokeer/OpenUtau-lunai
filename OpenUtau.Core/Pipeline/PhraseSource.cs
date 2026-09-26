@@ -245,6 +245,8 @@ namespace OpenUtau.Core.Pipeline {
         // MOD+ inputs (raw values; the builder applies them).
         public readonly float VelRaw;
         public float ModpRaw { get; private set; }
+        /// <summary>The per-phoneme values the expression graph drove, for display; null when it drove none.</summary>
+        public IReadOnlyDictionary<string, float>? Driven { get; private set; }
 
         /// <summary>
         /// The value of each of the track's per-phoneme expressions, as <see cref="UPhoneme.GetExpression"/>
@@ -351,6 +353,7 @@ namespace OpenUtau.Core.Pipeline {
         internal PhonemeSource WithDriven(IReadOnlyDictionary<string, float> driven, PhraseSource source) {
             float Value(string abbr) => driven.TryGetValue(abbr, out var v) ? v : Values != null && Values.TryGetValue(abbr, out v) ? v : 0;
             var copy = (PhonemeSource)MemberwiseClone();
+            copy.Driven = driven;
             if (driven.ContainsKey(Format.Ustx.VOL)) {
                 copy.Volume = Value(Format.Ustx.VOL) * 0.01f;
             }
@@ -426,13 +429,7 @@ namespace OpenUtau.Core.Pipeline {
         public readonly IReadOnlyDictionary<string, UExpressionDescriptor> DrivablePhonemeExpressions =
             new Dictionary<string, UExpressionDescriptor>();
 
-        /// <summary>
-        /// Expressions that change phonemizing or phoneme timing, which happen before the graph runs.
-        /// A graph can read them but not drive them.
-        /// </summary>
-        static readonly HashSet<string> timingExpressions = new HashSet<string> {
-            Format.Ustx.ALT, Format.Ustx.SHFT, Format.Ustx.VEL,
-        };
+
         public readonly PhonemeSource[] Phonemes;
         /// <summary>Half-open [start, end) index ranges into <see cref="Phonemes"/>.</summary>
         public readonly (int Start, int End)[] PhraseGroups;
@@ -492,8 +489,7 @@ namespace OpenUtau.Core.Pipeline {
                     .Where(d => d.type is UExpressionType.Numerical or UExpressionType.Options)
                     .ToList();
                 DrivablePhonemeExpressions = graphExpressions
-                    .Where(d => d.type == UExpressionType.Numerical && !timingExpressions.Contains(d.abbr)
-                        && (Renderer.SupportsExpression(d) || !string.IsNullOrEmpty(d.flag)))
+                    .Where(d => OpenUtau.Core.ExpressionGraph.GraphNodeTypes.CanDrivePhonemeExpression(d, Renderer))
                     .ToDictionary(d => d.abbr);
             }
 

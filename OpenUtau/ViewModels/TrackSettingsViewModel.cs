@@ -33,11 +33,28 @@ namespace OpenUtau.App.ViewModels {
         public ObservableCollectionExtended<IWavtool> Wavtools => wavtools;
         [Reactive] public partial IWavtool? Wavtool { get; set; }
         [Reactive] public partial bool NeedsWavtool { get; set; }
+        [Reactive] public partial bool HasRenderer { get; set; }
+        /// <summary>The graphs the track can use: its renderer's default, or any graph made for its renderer.</summary>
+        public ObservableCollectionExtended<GraphChoice> Graphs => graphs;
+        [Reactive] public partial GraphChoice? Graph { get; set; }
+
+        public sealed class GraphChoice {
+            /// <summary>The graph's id; null for the renderer's default.</summary>
+            public readonly string? Id;
+            readonly string label;
+            public GraphChoice(string? id, string label) {
+                Id = id;
+                this.label = label;
+            }
+            public override string ToString() => label;
+        }
 
         readonly ObservableCollectionExtended<IResampler> resamplers =
             new ObservableCollectionExtended<IResampler>();
         readonly ObservableCollectionExtended<IWavtool> wavtools =
             new ObservableCollectionExtended<IWavtool>();
+        readonly ObservableCollectionExtended<GraphChoice> graphs =
+            new ObservableCollectionExtended<GraphChoice>();
 
         public TrackSettingsViewModel(UTrack track) {
             ToolsManager.Inst.Initialize();
@@ -69,6 +86,22 @@ namespace OpenUtau.App.ViewModels {
                 }
             }
             Wavtool = ToolsManager.Inst.GetWavtool(wavtoolName);
+
+            string renderer = Track.RendererSettings.renderer;
+            if (!string.IsNullOrEmpty(renderer)) {
+                HasRenderer = true;
+                var project = DocManager.Inst.Project;
+                var library = project.expressionGraphs ?? new List<Core.ExpressionGraph.UExpressionGraph>();
+                string? defaultId = null;
+                project.defaultExpressionGraphs?.TryGetValue(renderer, out defaultId);
+                var defaultGraph = library.FirstOrDefault(g => g.id == defaultId && g.renderer == renderer);
+                string defaultName = defaultGraph != null
+                    ? defaultGraph.name ?? defaultGraph.id
+                    : ThemeManager.GetString("tracks.expressiongraph.none");
+                graphs.Add(new GraphChoice(null, $"{ThemeManager.GetString("tracks.expressiongraph.default")} ({defaultName})"));
+                graphs.AddRange(library.Where(g => g.renderer == renderer).Select(g => new GraphChoice(g.id, g.name ?? g.id)));
+                Graph = graphs.FirstOrDefault(c => c.Id != null && c.Id == Track.ExpressionGraph) ?? graphs[0];
+            }
 
             this.WhenAnyValue(x => x.SelectedRenderer)
                 .Subscribe(option => UpdateClassicToolsVisibility(option?.Id));
@@ -129,6 +162,12 @@ namespace OpenUtau.App.ViewModels {
         }
 
         public void Finish() {
+            var project = DocManager.Inst.Project;
+            int index = project.tracks.IndexOf(Track);
+            if (Graph != null && index >= 0 && Graph.Id != Track.ExpressionGraph) {
+                string? id = Graph.Id;
+                Core.ExpressionGraph.ExpressionGraphEdits.Apply(project, draft => draft.TrackOverrides[index] = id);
+            }
             if (Track.Singer?.SingerType != USingerType.Classic) {
                 return;
             }

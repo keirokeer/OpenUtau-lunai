@@ -25,6 +25,26 @@ namespace OpenUtau.Core.ExpressionGraph {
 
     public enum GraphNodeRole { Input, Process, CurveOutput, PhonemeOutput, PitchOutput }
 
+    public enum GraphParameterKind { Number, Bool, Choice, Text, Expression }
+
+    /// <summary>A node parameter the editor shows. Input ports' fallback values are not listed here.</summary>
+    public sealed class GraphNodeParameter {
+        public readonly string Name;
+        public readonly GraphParameterKind Kind;
+        /// <summary>The value a new node gets; null leaves it unset.</summary>
+        public readonly string? Default;
+        public readonly string[] Options;
+        /// <summary>Whether the editor labels it. Unlabeled ones are named by their node's title.</summary>
+        public bool Labeled { get; init; } = true;
+
+        public GraphNodeParameter(string name, GraphParameterKind kind, string? @default = null, params string[] options) {
+            Name = name;
+            Kind = kind;
+            Default = @default;
+            Options = options;
+        }
+    }
+
     /// <summary>
     /// A node type. An unconnected input port takes the node's parameter of the same name, else the port's default.
     /// </summary>
@@ -204,6 +224,84 @@ namespace OpenUtau.Core.ExpressionGraph {
         }.ToDictionary(t => t.Name);
 
         public static IReadOnlyDictionary<string, GraphNodeType> All => types;
+
+        public const string InputCategory = "input";
+        public const string MathCategory = "math";
+        public const string TimeCategory = "time";
+        public const string OutputCategory = "output";
+
+        /// <summary>Node types by category, in the order the editor offers them.</summary>
+        public static readonly (string category, string[] types)[] Categories = {
+            (InputCategory, new[] { CurveInput, PhonemeInput, PitchInput, Constant }),
+            (MathCategory, new[] { Add, Subtract, Multiply, Divide, Mix, Min, Max, Abs, MapRange, Clamp }),
+            (TimeCategory, new[] { Lfo, NotePosition, NoteEnvelope }),
+            (OutputCategory, new[] { CurveOutput, PhonemeOutput, PitchOutput }),
+        };
+
+        static GraphNodeParameter Number(string name, string? @default) => new GraphNodeParameter(name, GraphParameterKind.Number, @default);
+        static readonly GraphNodeParameter abbr = new GraphNodeParameter("abbr", GraphParameterKind.Expression) { Labeled = false };
+
+        static readonly Dictionary<string, GraphNodeParameter[]> parameters = new Dictionary<string, GraphNodeParameter[]> {
+            [Constant] = new[] { Number("value", "0") },
+            [CurveInput] = new[] { abbr },
+            [CurveOutput] = new[] { abbr },
+            [PhonemeInput] = new[] { abbr, new GraphNodeParameter("interpolation", GraphParameterKind.Choice, "step", "step", "linear", "cubic") },
+            [PhonemeOutput] = new[] { abbr },
+            [PitchInput] = new[] { new GraphNodeParameter("source", GraphParameterKind.Choice, "pitch_bend",
+                "pitch_bend", "vibrato", "mod_plus", "notes") { Labeled = false } },
+            [MapRange] = new[] {
+                Number("in_min", "0"), Number("in_max", "1"), Number("out_min", "0"), Number("out_max", "1"),
+                new GraphNodeParameter("clamp", GraphParameterKind.Bool, "false"),
+            },
+            [Clamp] = new[] { Number("min", null), Number("max", null) },
+            [Lfo] = new[] {
+                Number("rate", "5"), new GraphNodeParameter("unit", GraphParameterKind.Choice, "hz", "hz", "beat"),
+                Number("phase", "0"), Number("amplitude", "1"), Number("offset", "0"),
+            },
+            [NoteEnvelope] = new[] { Number("attack_ms", "0"), Number("release_ms", "0") },
+        };
+
+        /// <summary>
+        /// Expressions that change phonemizing or phoneme timing, which happen before the graph runs.
+        /// A graph can read them but not drive them.
+        /// </summary>
+        public static readonly IReadOnlyCollection<string> TimingExpressions = new HashSet<string> {
+            Format.Ustx.ALT, Format.Ustx.SHFT, Format.Ustx.VEL,
+        };
+
+        /// <summary>Whether a graph can drive a per-phoneme expression on a renderer.</summary>
+        public static bool CanDrivePhonemeExpression(Ustx.UExpressionDescriptor descriptor, Render.IRenderer? renderer) =>
+            descriptor.type == Ustx.UExpressionType.Numerical && !TimingExpressions.Contains(descriptor.abbr)
+                && (!string.IsNullOrEmpty(descriptor.flag) || renderer == null || renderer.SupportsExpression(descriptor));
+
+        /// <summary>Whether a graph can drive a curve on a renderer. PITD is driven through the pitch output.</summary>
+        public static bool CanDriveCurve(Ustx.UExpressionDescriptor descriptor, Render.IRenderer? renderer) =>
+            descriptor.type == Ustx.UExpressionType.Curve && descriptor.abbr != Format.Ustx.PITD
+                && (renderer == null || renderer.SupportsExpression(descriptor));
+
+        /// <summary>The expressions a node's "abbr" parameter can name, for a graph targeting a renderer.</summary>
+        public static IEnumerable<Ustx.UExpressionDescriptor> ExpressionChoices(Ustx.UProject project, string? type, string? renderer) {
+            Render.IRenderer? instance = null;
+            if (!string.IsNullOrEmpty(renderer)) {
+                try {
+                    instance = Render.Renderers.GetOrCreate(renderer);
+                } catch {
+                    instance = null;
+                }
+            }
+            var all = project.expressions.Values;
+            return type switch {
+                CurveInput => all.Where(d => d.type == Ustx.UExpressionType.Curve),
+                CurveOutput => all.Where(d => CanDriveCurve(d, instance)),
+                PhonemeInput => all.Where(d => d.type == Ustx.UExpressionType.Numerical),
+                PhonemeOutput => all.Where(d => CanDrivePhonemeExpression(d, instance)),
+                _ => Enumerable.Empty<Ustx.UExpressionDescriptor>(),
+            };
+        }
+
+        /// <summary>The parameters the editor shows for a node type, besides its input ports.</summary>
+        public static IReadOnlyList<GraphNodeParameter> ParametersOf(string? type) =>
+            type != null && parameters.TryGetValue(type, out var result) ? result : Array.Empty<GraphNodeParameter>();
 
         public static bool TryGet(string? name, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out GraphNodeType? type) {
             type = null;

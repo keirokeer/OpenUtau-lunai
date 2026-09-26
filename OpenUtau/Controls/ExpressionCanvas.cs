@@ -239,8 +239,10 @@ namespace OpenUtau.App.Controls {
                     DrawRealCurveGeometry(context, viewModel, curve, lTick, rTick);
                 }
                 DrawPhonemeRemapCurveGeometry(context, viewModel, descriptor, curve, baseline, lTick, rTick);
+                DrawDrivenCurve(context, viewModel, descriptor, lTick, rTick);
                 return;
             }
+            var drivenValues = DrivenPhonemeValues();
             foreach (var phoneme in Part.phonemes) {
                 if (phoneme.Error || phoneme.Parent == null) {
                     continue;
@@ -258,6 +260,10 @@ namespace OpenUtau.App.Controls {
                 double x1 = Math.Round(viewModel.TickToneToPoint(phoneme.position, 0).X);
                 double x2 = Math.Round(viewModel.TickToneToPoint(phoneme.End, 0).X);
                 if (descriptor.type == UExpressionType.Numerical) {
+                    if (drivenValues.TryGetValue(phoneme.position, out float drivenValue)) {
+                        double drivenHeight = Bounds.Height - Bounds.Height * (drivenValue - descriptor.min) / (descriptor.max - descriptor.min);
+                        context.DrawLine(DrivenPen, new Point(x1, drivenHeight), new Point(Math.Max(x1, x2), drivenHeight));
+                    }
                     double valueHeight = Math.Round(Bounds.Height - Bounds.Height * (value - descriptor.min) / (descriptor.max - descriptor.min));
                     double zeroHeight = Math.Round(Bounds.Height - Bounds.Height * (0f - descriptor.min) / (descriptor.max - descriptor.min));
                     context.DrawLine(vPen, new Point(x1 + 0.5, zeroHeight + 0.5), new Point(x1 + 0.5, valueHeight + 3));
@@ -304,6 +310,8 @@ namespace OpenUtau.App.Controls {
             }
         }
 
+        static IPen DrivenPen => new Pen(ThemeManager.FinalPitchBrush, 1.5, new DashStyle(new double[] { 3, 2 }, 0));
+
         /// <summary>A masked curve's runs; nothing is drawn where it has no value.</summary>
         private void DrawMaskedCurve(DrawingContext context, NotesViewModel viewModel, UExpressionDescriptor descriptor,
                 double leftTick, double rightTick) {
@@ -311,7 +319,7 @@ namespace OpenUtau.App.Controls {
             if (curve == null) {
                 return;
             }
-            var pen = DisplayMode == ExpDisMode.Shadow ? new Pen(ThemeManager.NeutralAccentBrush, 3) : ThemeManager.AccentPen1Thickness3;
+            var pen = ThemeManager.AccentPen1Thickness3;
             foreach (var run in curve.runs) {
                 if (run.End < leftTick || run.x > rightTick) {
                     continue;
@@ -331,6 +339,46 @@ namespace OpenUtau.App.Controls {
                 }
                 context.DrawGeometry(null, pen, new PolylineGeometry(points, false));
             }
+        }
+
+        /// <summary>What the track's expression graph drives this lane's curve to, from the built phrases.</summary>
+        private void DrawDrivenCurve(DrawingContext context, NotesViewModel viewModel, UExpressionDescriptor descriptor,
+                double leftTick, double rightTick) {
+            var part = Part!;
+            lock (part) {
+                foreach (var phrase in part.renderPhrases) {
+                    if (phrase.drivenCurves == null || !phrase.drivenCurves.TryGetValue(key, out var values)
+                            || phrase.position - part.position > rightTick || phrase.end - part.position < leftTick) {
+                        continue;
+                    }
+                    int start = phrase.position - phrase.leading - part.position;
+                    int startIdx = (int)Math.Max(0, (leftTick - start) / 5);
+                    int endIdx = (int)Math.Min(values.Length, (rightTick - start) / 5 + 1);
+                    var points = new Points();
+                    for (int i = startIdx; i < endIdx; ++i) {
+                        double x = viewModel.TickToneToPoint(start + i * 5, 0).X;
+                        double y = Bounds.Height - Bounds.Height * (values[i] - descriptor.min) / (descriptor.max - descriptor.min);
+                        points.Add(new Point(x, y));
+                    }
+                    context.DrawGeometry(null, DrivenPen, new PolylineGeometry(points, false));
+                }
+            }
+        }
+
+        /// <summary>This lane's per-phoneme values the expression graph drives, by phoneme position in the part.</summary>
+        private Dictionary<int, float> DrivenPhonemeValues() {
+            var result = new Dictionary<int, float>();
+            var part = Part!;
+            lock (part) {
+                foreach (var phrase in part.renderPhrases) {
+                    foreach (var phone in phrase.phones) {
+                        if (phone.drivenExpressions != null && phone.drivenExpressions.TryGetValue(key, out float value)) {
+                            result[phrase.position - part.position + phone.position] = value;
+                        }
+                    }
+                }
+            }
+            return result;
         }
 
         private void DrawBackgroundForHitTest(DrawingContext context) {

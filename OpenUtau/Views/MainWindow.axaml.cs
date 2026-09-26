@@ -696,13 +696,7 @@ namespace OpenUtau.App.Views {
         void OnMenuRedo(object sender, RoutedEventArgs args) => viewModel.Redo();
 
         void OnMenuExpressionss(object sender, RoutedEventArgs args) {
-            var dialog = new ExpressionsDialog() {
-                DataContext = new ExpressionsViewModel(),
-            };
-            dialog.ShowDialog(this);
-            if (dialog.Position.Y < 0) {
-                dialog.Position = dialog.Position.WithY(0);
-            }
+            ExpressionsDialog.Open(this);
         }
 
         async void OnMenuSingers(object sender, RoutedEventArgs args) {

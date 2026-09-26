@@ -313,6 +313,9 @@ namespace OpenUtau.Core.ExpressionGraph {
 
             Assert.Contains(31f, after[0].tension);
             Assert.All(after[1].tension, v => Assert.Equal(10f, v));
+            // Kept for the piano roll to show, in the curve's own units.
+            Assert.Null(before[0].drivenCurves);
+            Assert.Equal(after[1].tension, after[1].drivenCurves!["tenc"]);
             Assert.NotEqual(before[0].hash, after[0].hash);
             // Curves the graph doesn't drive are untouched.
             Assert.Equal(before[0].dynamics, after[0].dynamics);
@@ -343,6 +346,7 @@ namespace OpenUtau.Core.ExpressionGraph {
 
             // The fixture's dyn at the phonemes (0, 480, 1200, 1680): -6, -3, -3 and -9.
             Assert.Equal(new[] { 94f, 97f, 97f, 91f }.Select(v => v * 0.01f), phones.Select(p => p.volume));
+            Assert.Equal(new[] { 94f, 97f, 97f, 91f }, phones.Select(p => p.drivenExpressions!["vol"]));
             // The envelope's levels follow: the fixture's attack and decay are both 100.
             Assert.Equal(new[] { 94f, 94f, 0f }, phones[0].envelope.Skip(1).Take(3).Select(p => p.Y));
             // Flags keep their order and the (int) conversion; the options flag is untouched (its first option is empty).
@@ -465,6 +469,33 @@ namespace OpenUtau.Core.ExpressionGraph {
                 Node(1, GraphNodeTypes.PitchInput, ("source", "nowhere")),
             }), out error));
             Assert.Contains("unknown pitch source", error);
+        }
+
+        [Fact]
+        public void LibraryEditsAreUndoable() {
+            var (project, track, _) = Fixture(Graph(new[] { Node(1, GraphNodeTypes.Constant) }));
+            track.ExpressionGraph = "g";
+            var draft = new ExpressionGraphEdits.Draft(project);
+            draft.Find("g")!.nodes[0].x = 50;
+            // Moving nodes changes no render.
+            Assert.Equal(Pipeline.ImpactKind.None, new SetExpressionGraphsCommand(project, draft.ToState()).Impact.Kind);
+
+            draft.Remove("g");
+            var remove = new SetExpressionGraphsCommand(project, draft.ToState());
+            Assert.Equal(Pipeline.ImpactKind.Project, remove.Impact.Kind);
+            remove.Execute();
+            Assert.Null(project.expressionGraphs);
+            Assert.Null(project.defaultExpressionGraphs);
+            Assert.Null(track.ExpressionGraph);
+            remove.Unexecute();
+            Assert.Equal("g", project.expressionGraphs!.Single().id);
+            Assert.Equal("g", project.defaultExpressionGraphs![Renderer]);
+            Assert.Equal("g", track.ExpressionGraph);
+            Assert.Equal(0f, project.expressionGraphs!.Single().nodes[0].x);
+
+            var ids = new ExpressionGraphEdits.Draft(project);
+            ids.Graphs.Add(new UExpressionGraph { id = "my_graph" });
+            Assert.Equal("my_graph_2", ids.NewId("My graph!"));
         }
     }
 }

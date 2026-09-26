@@ -76,6 +76,8 @@ namespace OpenUtau.Core.Render {
         public readonly float modulation;
         public readonly bool direct;
         public readonly Vector2[] envelope;
+        /// <summary>The per-phoneme values the expression graph drove, for display. Not part of the hash.</summary>
+        public readonly IReadOnlyDictionary<string, float>? drivenExpressions;
 
         // voicevox & enunu args
         public readonly int toneShift;
@@ -131,6 +133,7 @@ namespace OpenUtau.Core.Render {
             envelope = phoneme.Envelope;
             direct = phoneme.Direct;
             toneShift = phoneme.ToneShift;
+            drivenExpressions = phoneme.Driven;
 
             oto = phoneme.Oto;
             oto2 = phoneme.Oto2;
@@ -203,6 +206,11 @@ namespace OpenUtau.Core.Render {
         public readonly float[] voicing;
         public readonly float[] xsy;
         public readonly Tuple<string, float[]>[] curves;//custom curves defined by renderer
+        /// <summary>
+        /// The curves the expression graph drove, in the curves' own units on the pitch grid, for display.
+        /// Not part of the hash.
+        /// </summary>
+        public readonly IReadOnlyDictionary<string, float[]>? drivenCurves;
         public readonly ulong preEffectHash;
         public ulong hash { get; private set; }
 
@@ -464,6 +472,7 @@ namespace OpenUtau.Core.Render {
 
             // The track's expression graph, on the same tick grid as the drawn curves: first the pitch, then the curves.
             Dictionary<string, float[]>? graphCurves = null;
+            Dictionary<string, float[]>? drivenCurveValues = null;
             if (source.ExpressionGraph != null) {
                 var ticks = new int[pitches.Length];
                 var modPlus = new float[pitches.Length];
@@ -501,9 +510,13 @@ namespace OpenUtau.Core.Render {
                         && graphCurves.TryGetValue(curve.Abbr, out var driven)) {
                     // Kept within the range the curve could be drawn in.
                     curveSampled = new float[driven.Length];
+                    var shown = new float[driven.Length];
                     for (int i = 0; i < driven.Length; ++i) {
-                        curveSampled[i] = convert(Math.Clamp(driven[i], descriptor.min, descriptor.max), curve);
+                        shown[i] = Math.Clamp(driven[i], descriptor.min, descriptor.max);
+                        curveSampled[i] = convert(shown[i], curve);
                     }
+                    drivenCurveValues ??= new Dictionary<string, float[]>();
+                    drivenCurveValues[curve.Abbr] = shown;
                 } else {
                     curveSampled = SampleCurve(curve, pitchStart, pitches.Length, convert);
                 }
@@ -553,6 +566,7 @@ namespace OpenUtau.Core.Render {
                 }
             }
             this.curves = curves.ToArray();
+            drivenCurves = drivenCurveValues;
             preEffectHash = Hash(false);
             hash = Hash(true);
 
