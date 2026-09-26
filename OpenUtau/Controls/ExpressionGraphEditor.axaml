@@ -12,6 +12,11 @@
         <TextBlock Text="{DynamicResource expressiongraph.name}"/>
         <TextBox Name="NameBox" LostFocus="OnNameCommitted" KeyDown="OnNameKeyDown"/>
         <TextBlock Name="RendererText"/>
+        <TextBlock Text="{DynamicResource expressiongraph.pitchcurve}"/>
+        <ComboBox Name="PitchCurveBox" HorizontalAlignment="Stretch" SelectionChanged="OnPitchCurveChanged">
+          <ComboBoxItem Content="{DynamicResource expressiongraph.pitchcurve.pitd}"/>
+          <ComboBoxItem Content="{DynamicResource expressiongraph.pitchcurve.pito}"/>
+        </ComboBox>
         <StackPanel Orientation="Horizontal" Spacing="6">
           <CheckBox Name="DefaultBox" IsCheckedChanged="OnDefaultChanged"/>
           <TextBlock Text="{DynamicResource expressiongraph.default}" VerticalAlignment="Center"/>

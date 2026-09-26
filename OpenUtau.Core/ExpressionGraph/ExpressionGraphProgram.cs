@@ -345,6 +345,15 @@ namespace OpenUtau.Core.ExpressionGraph {
             return graph?.renderer == renderer ? graph : null;
         }
 
+        /// <summary>
+        /// Whether the track draws and loads pitch into the pitch override (PITO) instead of PITD: its graph,
+        /// one that runs, prefers PITO. PITD otherwise, as without a graph.
+        /// </summary>
+        public static bool PrefersPitchOverride(UProject project, UTrack track) {
+            var graph = GetEffectiveGraph(project, track);
+            return graph?.preferredPitchCurve == Format.Ustx.PITO && Compile(graph, out _) != null;
+        }
+
         /// <summary>Compiles the track's effective graph, or null when it has none or it can't run.</summary>
         public static ExpressionGraphProgram? ForTrack(UProject project, UTrack track) {
             var graph = GetEffectiveGraph(project, track);

@@ -282,6 +282,9 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="expressiongraph.node.subtract">Subtract</system:String>
   <system:String x:Key="expressiongraph.noexpression">Choose an expression.</system:String>
   <system:String x:Key="expressiongraph.output">Out</system:String>
+  <system:String x:Key="expressiongraph.pitchcurve">Draw and load pitch into</system:String>
+  <system:String x:Key="expressiongraph.pitchcurve.pitd">Pitch deviation (PITD)</system:String>
+  <system:String x:Key="expressiongraph.pitchcurve.pito">Pitch override (PITO)</system:String>
   <system:String x:Key="expressiongraph.renderer">Renderer</system:String>
   <system:String x:Key="expressiongraph.tab">Graphs</system:String>
   <system:String x:Key="expressiongraph.unavailable">Not available for this graph's renderer.</system:String>

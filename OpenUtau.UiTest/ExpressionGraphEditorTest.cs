@@ -130,6 +130,40 @@ namespace OpenUtau.UiTest {
         });
 
         [Fact]
+        public void NewGraphsComeWithTheirPitch() => HeadlessUi.Run(() => {
+            MainWindowTest.InitCore();
+            HeadlessUi.Errors.Clear();
+            var original = DocManager.Inst.Project;
+            var project = Core.Format.Ustx.Create();
+            DocManager.Inst.ExecuteCmd(new LoadProjectNotification(project));
+            var window = new ExpressionsDialog { Width = 1100, Height = 640 };
+            try {
+                window.Show();
+                window.FindControl<TabControl>("Tabs")!.SelectedItem = window.FindControl<TabItem>("GraphsTab");
+                HeadlessUi.Flush();
+                var editor = window.FindControl<ExpressionGraphEditor>("GraphEditor")!;
+                var canvas = editor.FindControl<ExpressionGraphCanvas>("Canvas")!;
+                var status = editor.FindControl<TextBlock>("Status")!;
+                // Without pitch rendering, then with it.
+                foreach (var (renderer, nodes) in new[] { (Renderers.WORLDLINE_R2, 9), (Renderers.DIFFSINGER, 6) }) {
+                    ExpressionGraphEdits.Apply(project, draft => {
+                        draft.Graphs.Clear();
+                        draft.Graphs.Add(ExpressionGraphEdits.CreateDefault("g", renderer, renderer));
+                    });
+                    HeadlessUi.Flush();
+                    Assert.Equal(nodes, Nodes(canvas).Length);
+                    Assert.Equal(ThemeManagerString("expressiongraph.unused"), status.Text);
+                    Assert.Equal(1, editor.FindControl<ComboBox>("PitchCurveBox")!.SelectedIndex);
+                    HeadlessUi.SaveScreenshot(window, $"DefaultGraph{renderer}");
+                }
+                Assert.Empty(HeadlessUi.Errors.Snapshot());
+            } finally {
+                window.Close();
+                DocManager.Inst.ExecuteCmd(new LoadProjectNotification(original));
+            }
+        });
+
+        [Fact]
         public void TrackSettingsPickTheTracksGraph() => HeadlessUi.Run(() => {
             MainWindowTest.InitCore();
             HeadlessUi.Errors.Clear();

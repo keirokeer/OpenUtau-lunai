@@ -164,6 +164,63 @@ namespace OpenUtau.Core.ExpressionGraph {
             graph.links.RemoveAll(l => l.from == id || l.to == id);
         }
 
+        /// <summary>
+        /// A new graph for a renderer, drawing and loading pitch into the pitch override (PITO), which replaces the
+        /// pitch wherever it has a value. Underneath it: for a renderer that renders pitch, the rendered pitch
+        /// (RPIT) where stored, else the notes, plus PITD; for any other, today's pitch: pitch bends, vibrato,
+        /// MOD+ and PITD added up.
+        /// </summary>
+        public static UExpressionGraph CreateDefault(string id, string name, string renderer) {
+            Render.IRenderer? instance = null;
+            try {
+                instance = Render.Renderers.GetOrCreate(renderer);
+            } catch {
+                instance = null;
+            }
+            return CreateDefault(id, name, renderer, instance?.SupportsRenderPitch == true);
+        }
+
+        internal static UExpressionGraph CreateDefault(string id, string name, string renderer, bool rendersPitch) {
+            var graph = new UExpressionGraph {
+                id = id,
+                name = name,
+                renderer = renderer,
+                preferredPitchCurve = Format.Ustx.PITO,
+            };
+            UGraphNode Pitch(string source, float x, float y) {
+                var node = AddNode(graph, GraphNodeTypes.PitchInput, x, y);
+                node.Set("source", source);
+                return node;
+            }
+            UGraphNode Curve(string type, string abbr, float x, float y) {
+                var node = AddNode(graph, type, x, y);
+                node.Set("abbr", abbr);
+                return node;
+            }
+            UGraphNode Add(UGraphNode a, UGraphNode b, float x, float y) {
+                var node = AddNode(graph, GraphNodeTypes.Add, x, y);
+                TryLink(graph, a.id, node.id, "a");
+                TryLink(graph, b.id, node.id, "b");
+                return node;
+            }
+            UGraphNode underneath;
+            if (rendersPitch) {
+                var notes = Pitch("notes", 20, 40);
+                var rendered = Curve(GraphNodeTypes.MaskedCurveInput, Format.Ustx.RPIT, 160, 40);
+                TryLink(graph, notes.id, rendered.id, "fallback");
+                underneath = Add(rendered, Curve(GraphNodeTypes.CurveInput, Format.Ustx.PITD, 160, 160), 390, 100);
+            } else {
+                var sum = Add(Pitch("pitch_bend", 20, 20), Pitch("vibrato", 20, 110), 160, 60);
+                sum = Add(sum, Pitch("mod_plus", 20, 200), 270, 130);
+                underneath = Add(sum, Curve(GraphNodeTypes.CurveInput, Format.Ustx.PITD, 20, 290), 380, 200);
+            }
+            var overrides = Curve(GraphNodeTypes.MaskedCurveInput, Format.Ustx.PITO, 500, 100);
+            TryLink(graph, underneath.id, overrides.id, "fallback");
+            var output = AddNode(graph, GraphNodeTypes.PitchOutput, 740, 100);
+            TryLink(graph, overrides.id, output.id, GraphNodeTypes.Value, GraphNodeTypes.Value);
+            return graph;
+        }
+
         /// <summary>Adds a node of a type with its parameters' defaults, returning it.</summary>
         public static UGraphNode AddNode(UExpressionGraph graph, string type, float x, float y) {
             var node = new UGraphNode {

@@ -16,6 +16,11 @@ namespace OpenUtau.Core.ExpressionGraph {
         public string? name;
         /// <summary>The renderer this graph targets, as in <see cref="Ustx.URenderSettings.renderer"/>.</summary>
         public string? renderer;
+        /// <summary>
+        /// Where pitch is drawn in the piano roll and where Load rendered pitch writes: PITD (the default) or the
+        /// pitch override, PITO.
+        /// </summary>
+        public string? preferredPitchCurve;
         public List<UGraphNode> nodes = new List<UGraphNode>();
         public List<UGraphLink> links = new List<UGraphLink>();
 
@@ -24,6 +29,7 @@ namespace OpenUtau.Core.ExpressionGraph {
                 id = id,
                 name = name,
                 renderer = renderer,
+                preferredPitchCurve = preferredPitchCurve,
                 nodes = nodes.Select(n => n.Clone()).ToList(),
                 links = links.Select(l => l.Clone()).ToList(),
             };

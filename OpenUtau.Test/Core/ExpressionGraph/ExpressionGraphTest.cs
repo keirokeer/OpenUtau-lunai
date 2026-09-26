@@ -56,6 +56,9 @@ namespace OpenUtau.Core.ExpressionGraph {
             project.RegisterExpression(new UExpressionDescriptor("pitch override", "pito", 2400, 10800, 6000) {
                 type = UExpressionType.MaskedCurve,
             });
+            project.RegisterExpression(new UExpressionDescriptor("rendered pitch", "rpit", 2400, 10800, 6000) {
+                type = UExpressionType.MaskedCurve,
+            });
             var notes = part.notes.ToArray();
             notes[0].phonemeExpressions.Add(new UExpression(project.expressions["vol"]) { index = 0, value = 80 });
             notes[1].phonemeExpressions.Add(new UExpression(project.expressions["gen"]) { index = 0, value = 20 });
@@ -520,6 +523,77 @@ namespace OpenUtau.Core.ExpressionGraph {
             graph = Graph(new[] { Node(1, GraphNodeTypes.Constant), Node(2, GraphNodeTypes.CurveOutput, ("abbr", "tenc")) });
             Assert.True(ExpressionGraphEdits.TryLink(graph, 1, 2, "value"));
             Assert.Null(graph.links.Single().fromPort);
+        }
+
+        [Fact]
+        public void RenderedPitchIsResampledOntoTheGrid() {
+            // Frames every 11 ticks from phrase tick 0; the third is unvoiced and the sixth is padding past the end.
+            var result = new RenderPitchResult {
+                ticks = new float[] { 0, 11, 22, 33, 44, 55 },
+                tones = new[] { 60f, 61.1f, 62f, 63f, 64f, 65f },
+                voiced = new[] { true, true, false, true, true, true },
+            };
+            var cleared = new List<(int, int)>();
+            var values = new List<(int x, float y)>();
+            OpenUtau.Core.Editing.LoadRenderedPitch.CollectRenderedPitch(result, 100, 50, cleared, values);
+            Assert.Equal(new[] { (100, 155) }, cleared);
+            // Grid ticks between the first two frames, and between the fourth and fifth; nothing across the gap.
+            Assert.Equal(new[] { 100, 105, 110, 135, 140 }, values.Select(v => v.x));
+            Assert.Equal(new[] { 6000f, 6050f, 6100f, 6318.18f, 6363.64f }, values.Select(v => v.y), new ToleranceComparer(0.01f));
+        }
+
+        [Fact]
+        public void GraphsCanPreferThePitchOverride() {
+            var graph = Graph(new[] { Node(1, GraphNodeTypes.Constant) });
+            var (project, track, _) = Fixture(graph);
+            Assert.False(ExpressionGraphProgram.PrefersPitchOverride(project, track));
+            graph.preferredPitchCurve = "pito";
+            Assert.True(ExpressionGraphProgram.PrefersPitchOverride(project, track));
+            Assert.Contains("preferred_pitch_curve: pito", Yaml.DefaultSerializer.Serialize(graph));
+            // A graph that doesn't run prefers nothing.
+            graph.nodes.Add(Node(1, GraphNodeTypes.Abs));
+            Assert.False(ExpressionGraphProgram.PrefersPitchOverride(project, track));
+        }
+
+        [Fact]
+        public void DefaultGraphsKeepTodaysPitchUntilOverridden() {
+            var (project, track, part) = Fixture(null);
+            var before = RenderPhrase.FromPart(project, track, part)[0].pitches;
+
+            // Without pitch rendering: pitch bends, vibrato, MOD+ and PITD added up, as without a graph, to within
+            // float rounding.
+            var graph = ExpressionGraphEdits.CreateDefault("g", "G", Renderer, rendersPitch: false);
+            Assert.Equal("pito", graph.preferredPitchCurve);
+            (project, track, part) = Fixture(graph);
+            Assert.Equal(before, RenderPhrase.FromPart(project, track, part)[0].pitches, new ToleranceComparer(0.01f));
+
+            // Drawn override values replace it.
+            part.maskedCurves.Add(new UMaskedCurve("pito"));
+            part.maskedCurves[0].Set(0, 5000, 20, 5000);
+            var phrase = RenderPhrase.FromPart(project, track, part)[0];
+            int start = phrase.position - part.position - phrase.leading;
+            Assert.Equal(5000f, phrase.pitches[(0 - start) / 5]);
+        }
+
+        [Fact]
+        public void DefaultGraphsForPitchRenderersUseTheRenderedPitch() {
+            var graph = ExpressionGraphEdits.CreateDefault("g", "G", Renderer, rendersPitch: true);
+            var (project, track, part) = Fixture(graph);
+            var notes = part.notes.ToArray();
+            var pitd = part.curves.Single(c => c.abbr == "pitd");
+            var phrase = RenderPhrase.FromPart(project, track, part)[0];
+            int start = phrase.position - part.position - phrase.leading;
+            // Nothing rendered yet: the notes as steps, plus PITD.
+            for (int i = 0; i < phrase.pitches.Length; ++i) {
+                int tick = start + i * 5;
+                Assert.Equal((tick < notes[0].End ? notes[0] : notes[1]).AdjustedTone * 100 + pitd.Sample(tick),
+                    phrase.pitches[i], 3);
+            }
+            // Rendered pitch, where stored, replaces the notes; PITD still adds to it.
+            part.maskedCurves.Add(new UMaskedCurve("rpit"));
+            part.maskedCurves[0].Set(0, 6500, 20, 6500);
+            phrase = RenderPhrase.FromPart(project, track, part)[0];
+            Assert.Equal(6500 + pitd.Sample(0), phrase.pitches[(0 - start) / 5], 3);
         }
 
         [Fact]

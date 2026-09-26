@@ -68,6 +68,7 @@ namespace OpenUtau.App.Controls {
                 NameBox.Text = graph?.name ?? string.Empty;
                 RendererText.Text = graph == null ? string.Empty
                     : $"{ThemeManager.GetString("expressiongraph.renderer")}: {graph.renderer}";
+                PitchCurveBox.SelectedIndex = graph?.preferredPitchCurve == Core.Format.Ustx.PITO ? 1 : 0;
                 DefaultBox.IsChecked = graph?.renderer != null
                     && Project.defaultExpressionGraphs?.TryGetValue(graph.renderer, out var id) == true && id == graph.id;
                 Canvas.Show(Project, graph);
@@ -125,7 +126,7 @@ namespace OpenUtau.App.Controls {
             ExpressionGraphEdits.Apply(Project, draft => {
                 string name = $"{renderer} {ThemeManager.GetString("expressiongraph.graph")}";
                 id = draft.NewId(name);
-                draft.Graphs.Add(new UExpressionGraph { id = id, name = name, renderer = renderer });
+                draft.Graphs.Add(ExpressionGraphEdits.CreateDefault(id, name, renderer));
                 // The first graph for a renderer becomes its default.
                 draft.Defaults.TryAdd(renderer, id);
             });
@@ -174,6 +175,24 @@ namespace OpenUtau.App.Controls {
                 OnNameCommitted(sender, e);
                 e.Handled = true;
             }
+        }
+
+        /// <summary>Where the piano roll draws pitch and Load rendered pitch writes, for tracks using this graph.</summary>
+        void OnPitchCurveChanged(object? sender, SelectionChangedEventArgs e) {
+            var graph = SelectedGraph;
+            if (refreshing || graph == null) {
+                return;
+            }
+            string? preferred = PitchCurveBox.SelectedIndex == 1 ? Core.Format.Ustx.PITO : null;
+            if (preferred == graph.preferredPitchCurve) {
+                return;
+            }
+            ExpressionGraphEdits.Apply(Project, draft => {
+                var target = draft.Find(graph.id);
+                if (target != null) {
+                    target.preferredPitchCurve = preferred;
+                }
+            });
         }
 
         void OnDefaultChanged(object? sender, RoutedEventArgs e) {
