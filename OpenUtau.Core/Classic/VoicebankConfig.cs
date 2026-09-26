@@ -33,7 +33,7 @@ namespace OpenUtau.Classic {
         public string Suffix { get; set; } = string.Empty;
         [Description("Pitches this subbank is used for. Each range is written as \"C1-C4\" or \"C4\".")]
         public string[] ToneRanges { get; set; }
-        /// <summary>Optional tip text for this voice color (Lunai).</summary>
+        [Description("Optional tip text for this voice color, shown in the UI.")]
         public string Description { get; set; }
     }
 

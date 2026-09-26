@@ -154,7 +154,7 @@ subbanks:
             // In a list item, after its first key, and in a new list item.
             suggestions = SuggestAt<VoicebankConfig>("subbanks:\n- color: a\n  suf|\n")!;
             Assert.Equal(3, suggestions.StartColumn);
-            Assert.Equal(new[] { "prefix", "suffix", "tone_ranges" }, suggestions.Keys.Select(k => k.Key));
+            Assert.Equal(new[] { "prefix", "suffix", "tone_ranges", "description" }, suggestions.Keys.Select(k => k.Key));
             suggestions = SuggestAt<VoicebankConfig>("subbanks:\n- color: a\n- co|\n")!;
             Assert.Equal(3, suggestions.StartColumn);
             Assert.Contains("color", suggestions.Keys.Select(k => k.Key));
