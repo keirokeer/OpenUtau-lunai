@@ -10,8 +10,14 @@ namespace OpenUtau.App.Controls {
         /// <summary>Gap between content right edge and scrollbar lane.</summary>
         public const double GapBeforeScrollbar = 10;
 
+        /// <summary>Tighter gap for compact overlays (e.g. singer flyout).</summary>
+        public const double TightGapBeforeScrollbar = 4;
+
         /// <summary>Right margin on scroll content in overlay mode (gap before scrollbar lane).</summary>
         public const double OverlayContentRightMargin = GapBeforeScrollbar;
+
+        /// <summary>Compact overlay right inset (matches typical flyout padding).</summary>
+        public const double TightOverlayContentRightMargin = TightGapBeforeScrollbar;
 
         public static double ClampWidth(double width) =>
             System.Math.Clamp(width, MinWidth, MaxWidth);

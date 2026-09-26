@@ -8,18 +8,20 @@ namespace OpenUtau.Test.App {
     public class SingerFlyoutOrderTest {
         class TestSinger : USinger {
             private readonly string id;
+            private readonly string name;
             private readonly USingerType type;
-            public TestSinger(string id, USingerType type) {
+            public TestSinger(string id, USingerType type, string? name = null) {
                 this.id = id;
+                this.name = name ?? id;
                 this.type = type;
                 found = true;
             }
             public override string Id => id;
-            public override string Name => id;
+            public override string Name => name;
             public override USingerType SingerType => type;
         }
 
-        static List<string> Order(IEnumerable<string> recents, IEnumerable<string> favorites) {
+        static List<string> Order(IEnumerable<string> recents) {
             var singers = new USinger[] {
                 new TestSinger("c-classic", USingerType.Classic),
                 new TestSinger("a-classic", USingerType.Classic),
@@ -31,44 +33,59 @@ namespace OpenUtau.Test.App {
             var groups = singers
                 .GroupBy(s => s.SingerType)
                 .ToDictionary(g => g.Key, g => g.OrderBy(s => s.Name).ToList());
-            return SingerFlyoutViewModel.OrderSingers(byId, groups, recents, favorites)
+            return SingerFlyoutViewModel.OrderSingersFlat(byId, groups, recents, System.Array.Empty<string>())
                 .Select(s => s.Id)
                 .ToList();
         }
 
         [Fact]
-        public void FavoritesThenRecentsThenGroups() {
-            var order = Order(
-                new[] { "b-classic", "missing", "y-diffsinger" },
-                new[] { "z-enunu", "c-classic", "y-diffsinger" });
+        public void RecentThenAlphabeticalRest() {
+            var order = Order(new[] { "b-classic", "missing", "y-diffsinger" });
             Assert.Equal(new[] {
-                // Recent favorites in recent order.
-                "y-diffsinger",
-                // Remaining favorites alphabetically.
-                "c-classic", "z-enunu",
-                // Recent non-favorites, unknown ids skipped.
                 "b-classic",
-                // Everything else by group name, then singer name.
+                "y-diffsinger",
                 "a-classic",
+                "c-classic",
+                "z-enunu",
             }, order);
         }
 
         [Fact]
-        public void NoNonFavoriteBeforeFavorite() {
-            var favorites = new[] { "y-diffsinger", "a-classic" };
-            // Recent non-favorites must still come after every favorite.
-            var order = Order(new[] { "z-enunu", "b-classic", "a-classic" }, favorites);
-            int lastFavorite = order.FindLastIndex(favorites.Contains);
-            int firstOther = order.FindIndex(id => !favorites.Contains(id));
-            Assert.True(lastFavorite < firstOther);
-            Assert.Equal(new[] { "a-classic", "y-diffsinger", "z-enunu", "b-classic", "c-classic" }, order);
+        public void EmptyRecentIsAlphabetical() {
+            var order = Order(System.Array.Empty<string>());
+            Assert.Equal(new[] {
+                "a-classic",
+                "b-classic",
+                "c-classic",
+                "y-diffsinger",
+                "z-enunu",
+            }, order);
         }
 
         [Fact]
-        public void GroupsFollowGroupNameOrder() {
-            var order = Order(new string[0], new string[0]);
-            // Classic, DiffSinger, Enunu: by name, not by USingerType value.
-            Assert.Equal(new[] { "a-classic", "b-classic", "c-classic", "y-diffsinger", "z-enunu" }, order);
+        public void DiffSingerVersionsAreNotMerged() {
+            var singers = new USinger[] {
+                new TestSinger("llane-170", USingerType.DiffSinger, "Llane Crow v170"),
+                new TestSinger("llane-268", USingerType.DiffSinger, "Llane Crow v268"),
+                new TestSinger("other", USingerType.Classic, "Other"),
+            };
+            var (recent, others) = SingerFlyoutViewModel.OrderSingers(
+                singers, new[] { "llane-170" });
+            Assert.Equal(new[] { "llane-170" }, recent.Select(s => s.Id));
+            Assert.Equal(2, others.Count);
+            Assert.Contains(others, s => s.Id == "llane-268");
+            Assert.Contains(others, s => s.Id == "other");
+        }
+
+        [Fact]
+        public void RecentSectionIsCapped() {
+            var singers = Enumerable.Range(0, 12)
+                .Select(i => (USinger)new TestSinger($"s{i}", USingerType.Classic, $"Singer {i:00}"))
+                .ToArray();
+            var recentIds = singers.Select(s => s.Id).Reverse();
+            var (recent, others) = SingerFlyoutViewModel.OrderSingers(singers, recentIds);
+            Assert.Equal(SingerFlyoutViewModel.MaxRecentDisplayed, recent.Count);
+            Assert.Equal(12 - SingerFlyoutViewModel.MaxRecentDisplayed, others.Count);
         }
     }
 }

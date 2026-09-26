@@ -17,8 +17,10 @@
     <Setter Property="Icon" Value="/Assets/open-utau.ico"/>
   </Style>
   <!-- String ToolTip.Tip can inherit placement-target foreground; force tooltip text from theme. -->
+  <!-- IsHitTestVisible=False: hovering the tip itself must not steal the pointer / block clicks. -->
   <Style Selector="ToolTip">
     <Setter Property="Foreground" Value="{DynamicResource ToolTipForegroundBrush}"/>
+    <Setter Property="IsHitTestVisible" Value="False"/>
   </Style>
   <Style Selector="ToolTip TextBlock">
     <Setter Property="Foreground" Value="{DynamicResource ToolTipForegroundBrush}"/>

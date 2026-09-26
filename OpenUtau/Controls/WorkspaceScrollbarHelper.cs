@@ -135,9 +135,12 @@ namespace OpenUtau.App.Controls {
                 return;
             }
             bool needsVerticalScroll = scrollViewer.Extent.Height > scrollViewer.Viewport.Height + 0.5;
-            double right = !classic && needsVerticalScroll
-                ? WorkspaceDockPanelMetrics.OverlayContentRightMargin
-                : 0;
+            double right = 0;
+            if (!classic && needsVerticalScroll) {
+                right = scrollViewer.Classes.Contains("tightOverlayInset")
+                    ? WorkspaceDockPanelMetrics.TightOverlayContentRightMargin
+                    : WorkspaceDockPanelMetrics.OverlayContentRightMargin;
+            }
             var margin = content.Margin;
             if (Math.Abs(margin.Right - right) > 0.01) {
                 content.Margin = new Thickness(margin.Left, margin.Top, right, margin.Bottom);

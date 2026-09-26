@@ -17,6 +17,20 @@ using ReactiveUI.SourceGenerators;
 using Serilog;
 
 namespace OpenUtau.App.ViewModels {
+    public sealed class SingerFlyoutSeparatorViewModel { }
+
+    public partial class SingerTypeFilterViewModel : ViewModelBase {
+        public USingerType? Type { get; }
+        public string Label { get; }
+        [Reactive] public partial bool IsSelected { get; set; }
+
+        public SingerTypeFilterViewModel(USingerType? type, string label, bool isSelected) {
+            Type = type;
+            Label = label;
+            IsSelected = isSelected;
+        }
+    }
+
     public partial class SingerTileViewModel : ViewModelBase {
         public USinger Singer { get; }
         public string Name => Singer.LocalizedName;
@@ -50,8 +64,22 @@ namespace OpenUtau.App.ViewModels {
     }
 
     public partial class SingerFlyoutViewModel : ViewModelBase, ICmdSubscriber {
-        [Reactive] public partial IReadOnlyList<SingerTileViewModel> Tiles { get; set; } = Array.Empty<SingerTileViewModel>();
+        /// <summary>How many recent singers to show above the separator.</summary>
+        public const int MaxRecentDisplayed = 5;
+
+        static readonly USingerType[] TypeFilterOrder = {
+            USingerType.Classic,
+            USingerType.DiffSinger,
+            USingerType.Enunu,
+            USingerType.Vogen,
+            USingerType.Voicevox,
+        };
+
+        [Reactive] public partial IReadOnlyList<object> Items { get; set; } = Array.Empty<object>();
+        [Reactive] public partial IReadOnlyList<SingerTypeFilterViewModel> TypeFilters { get; set; }
+            = Array.Empty<SingerTypeFilterViewModel>();
         [Reactive] public partial bool IsEmpty { get; set; }
+        [Reactive] public partial string SearchText { get; set; } = string.Empty;
         public bool HasAdditionalSingersFolder =>
             !string.IsNullOrWhiteSpace(PathManager.Inst.AdditionalSingersPath) &&
             Directory.Exists(PathManager.Inst.AdditionalSingersPath);
@@ -62,6 +90,10 @@ namespace OpenUtau.App.ViewModels {
         private readonly Func<USinger?> getCurrentSinger;
         private readonly ICommand selectSingerCommand;
         private readonly ICommand? allSetSingerCommand;
+        private List<USinger> allSingers = new();
+        private List<USinger> recentSingers = new();
+        private List<USinger> restSingers = new();
+        private USingerType? selectedType;
 
         public SingerFlyoutViewModel(
                 Func<USinger?> getCurrentSinger,
@@ -70,70 +102,141 @@ namespace OpenUtau.App.ViewModels {
             this.getCurrentSinger = getCurrentSinger;
             this.selectSingerCommand = selectSingerCommand;
             this.allSetSingerCommand = allSetSingerCommand;
+            this.WhenAnyValue(x => x.SearchText)
+                .Subscribe(_ => PublishItems());
             Rebuild();
         }
 
         public void Rebuild() {
             var current = getCurrentSinger();
-            var singers = OrderSingers(
-                SingerManager.Inst.Singers,
-                SingerManager.Inst.SingerGroups,
-                Preferences.Default.RecentSingers,
-                Preferences.Default.FavoriteSingers);
-            // A missing singer isn't in SingerManager but should still be shown when it is the track's singer.
-            if (current != null && !current.Found && !string.IsNullOrEmpty(current.Name)) {
-                singers.Insert(0, current);
+            allSingers = SingerManager.Inst.Singers.Values
+                .Where(s => s != null)
+                .ToList();
+            if (current != null && !current.Found && !string.IsNullOrEmpty(current.Name) &&
+                allSingers.All(s => !s.Equals(current))) {
+                allSingers.Insert(0, current);
             }
-            Tiles = singers
-                .Select(singer => new SingerTileViewModel(singer, current != null && singer.Equals(current)))
-                .ToArray();
-            IsEmpty = Tiles.Count == 0;
+            (recentSingers, restSingers) = OrderSingers(allSingers, Preferences.Default.RecentSingers);
+            RebuildTypeFilters();
+            PublishItems();
             this.RaisePropertyChanged(nameof(HasAdditionalSingersFolder));
         }
 
+        void RebuildTypeFilters() {
+            var present = allSingers.Select(s => s.SingerType).ToHashSet();
+            if (selectedType != null && !present.Contains(selectedType.Value)) {
+                selectedType = null;
+            }
+            var filters = new List<SingerTypeFilterViewModel> {
+                new(null, ThemeManager.GetString("lunai.tab.all"), selectedType == null),
+            };
+            foreach (var type in TypeFilterOrder) {
+                if (!present.Contains(type)) {
+                    continue;
+                }
+                filters.Add(new SingerTypeFilterViewModel(type, DisplayName(type), selectedType == type));
+            }
+            TypeFilters = filters;
+        }
+
+        public static string DisplayName(USingerType type) => type switch {
+            USingerType.Classic => "Classic",
+            USingerType.DiffSinger => "DiffSinger",
+            USingerType.Enunu => "ENUNU",
+            USingerType.Vogen => "Vogen",
+            USingerType.Voicevox => "VOICEVOX",
+            _ => type.ToString(),
+        };
+
+        public void SelectTypeFilter(SingerTypeFilterViewModel filter) {
+            selectedType = filter.Type;
+            foreach (var f in TypeFilters) {
+                f.IsSelected = ReferenceEquals(f, filter);
+            }
+            PublishItems();
+        }
+
+        void PublishItems() {
+            var current = getCurrentSinger();
+            var query = SearchText?.Trim() ?? string.Empty;
+            bool nameFiltering = query.Length > 0;
+            bool typeFiltering = selectedType != null;
+
+            IEnumerable<USinger> Match(IEnumerable<USinger> source) {
+                IEnumerable<USinger> result = source;
+                if (typeFiltering) {
+                    result = result.Where(s => s.SingerType == selectedType);
+                }
+                if (nameFiltering) {
+                    result = result.Where(s =>
+                        (s.LocalizedName?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                        (s.Name?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false));
+                }
+                return result;
+            }
+
+            var list = new List<object>();
+            if (nameFiltering || typeFiltering) {
+                foreach (var singer in Match(allSingers).LocalizedOrderBy(s => s.LocalizedName)) {
+                    list.Add(new SingerTileViewModel(singer, current != null && singer.Equals(current)));
+                }
+            } else {
+                var recent = Match(recentSingers).ToList();
+                var rest = Match(restSingers).ToList();
+                foreach (var singer in recent) {
+                    list.Add(new SingerTileViewModel(singer, current != null && singer.Equals(current)));
+                }
+                if (recent.Count > 0 && rest.Count > 0) {
+                    list.Add(new SingerFlyoutSeparatorViewModel());
+                }
+                foreach (var singer in rest) {
+                    list.Add(new SingerTileViewModel(singer, current != null && singer.Equals(current)));
+                }
+            }
+            Items = list;
+            IsEmpty = !Items.OfType<SingerTileViewModel>().Any();
+        }
+
         /// <summary>
-        /// Favorites always come before non-favorites. Within each, recent singers come first:
-        /// recent favorites (most recent first), remaining favorites alphabetically,
-        /// recent non-favorites, then everything else by group name and singer name.
-        /// Each singer appears once.
+        /// Recent singers first (most recent first, capped), then the rest A–Z by localized name.
         /// </summary>
-        public static List<USinger> OrderSingers(
+        public static (List<USinger> Recent, List<USinger> Others) OrderSingers(
+                IEnumerable<USinger> singers,
+                IEnumerable<string> recentIds) {
+            var byId = singers
+                .Where(s => s != null && !string.IsNullOrEmpty(s.Id))
+                .GroupBy(s => s.Id)
+                .ToDictionary(g => g.Key, g => g.First(), StringComparer.Ordinal);
+            var recent = new List<USinger>();
+            var added = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var id in recentIds) {
+                if (recent.Count >= MaxRecentDisplayed) {
+                    break;
+                }
+                if (string.IsNullOrWhiteSpace(id) || !byId.TryGetValue(id, out var singer)) {
+                    continue;
+                }
+                if (added.Add(singer.Id)) {
+                    recent.Add(singer);
+                }
+            }
+            var others = byId.Values
+                .Where(s => !added.Contains(s.Id))
+                .LocalizedOrderBy(s => s.LocalizedName)
+                .ToList();
+            return (recent, others);
+        }
+
+        // Flat order for unit tests.
+        public static List<USinger> OrderSingersFlat(
                 IReadOnlyDictionary<string, USinger> singers,
                 IReadOnlyDictionary<USingerType, List<USinger>> groups,
                 IEnumerable<string> recentIds,
                 IEnumerable<string> favoriteIds) {
-            var result = new List<USinger>();
-            var added = new HashSet<string>();
-            void Add(USinger singer) {
-                if (added.Add(singer.Id)) {
-                    result.Add(singer);
-                }
-            }
-            IEnumerable<USinger> Lookup(IEnumerable<string> ids) {
-                foreach (var id in ids) {
-                    if (!string.IsNullOrWhiteSpace(id) && singers.TryGetValue(id, out var singer) && singer != null) {
-                        yield return singer;
-                    }
-                }
-            }
-            var favorites = Lookup(favoriteIds).ToList();
-            var favoriteSet = favorites.Select(singer => singer.Id).ToHashSet();
-            var recents = Lookup(recentIds).ToList();
-            foreach (var singer in recents.Where(singer => favoriteSet.Contains(singer.Id))) {
-                Add(singer);
-            }
-            foreach (var singer in favorites.LocalizedOrderBy(singer => singer.LocalizedName)) {
-                Add(singer);
-            }
-            foreach (var singer in recents) {
-                Add(singer);
-            }
-            foreach (var pair in groups.OrderBy(pair => pair.Key.ToString(), StringComparer.Ordinal)) {
-                foreach (var singer in pair.Value) {
-                    Add(singer);
-                }
-            }
-            return result;
+            _ = favoriteIds;
+            _ = groups;
+            var (recent, others) = OrderSingers(singers.Values, recentIds);
+            return recent.Concat(others).ToList();
         }
 
         public void Select(SingerTileViewModel tile, bool applyToAll = false) {
@@ -206,7 +309,6 @@ namespace OpenUtau.App.ViewModels {
             DocManager.Inst.ExecuteCmd(new LoadingNotification(typeof(MainWindow), false, "singer"));
         }
 
-        // Subscribed only while the flyout is open, so the grid follows singer rescans and installs.
         public void OnNext(UCommand cmd, bool isUndo) {
             if (cmd is SingersChangedNotification ||
                 cmd is SingersRefreshedNotification { singer: null }) {

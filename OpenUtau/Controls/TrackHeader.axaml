@@ -40,8 +40,12 @@
     <Style Selector="FlyoutPresenter.singerFlyout">
       <Setter Property="MaxWidth" Value="10000"/>
       <Setter Property="MaxHeight" Value="10000"/>
-      <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}"/>
+      <Setter Property="Padding" Value="4"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="ClipToBounds" Value="True"/>
+      <Setter Property="Background" Value="{DynamicResource MenuFlyoutPresenterBackground}"/>
       <Setter Property="BorderBrush" Value="{DynamicResource MenuFlyoutPresenterBorderBrush}"/>
+      <Setter Property="BorderThickness" Value="1"/>
     </Style>
     <Style Selector="Border.trackNoStripe">
       <Setter Property="Cursor" Value="SizeAll"/>
