@@ -238,7 +238,7 @@ namespace OpenUtau.App.ViewModels {
                 this.Part = voicePart;
                 var track = DocManager.Inst.Project.tracks[voicePart.trackNo];
                 foreach (var descriptor in track.GetSupportedExps(DocManager.Inst.Project)) {
-                    if (descriptor.type != UExpressionType.Curve) {
+                    if (descriptor.type is UExpressionType.Numerical or UExpressionType.Options) {
                         var viewModel = new NotePropertyExpViewModel(
                             descriptor,
                             this,

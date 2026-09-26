@@ -730,7 +730,9 @@ namespace OpenUtau.App.Views {
             if (descriptor == null) {
                 return;
             }
-            if (descriptor.type != UExpressionType.Curve) {
+            if (descriptor.type == UExpressionType.MaskedCurve) {
+                UpdateCurveExp(pointer, point, masked: true);
+            } else if (descriptor.type != UExpressionType.Curve) {
                 UpdatePhonemeExp(pointer, point);
             } else {
                 UpdateCurveExp(pointer, point);
@@ -823,31 +825,40 @@ namespace OpenUtau.App.Views {
                 }
             }
         }
-        private void UpdateCurveExp(IPointer pointer, Point point) {
+        private void UpdateCurveExp(IPointer pointer, Point point, bool masked = false) {
             var notesVm = vm.NotesViewModel;
             if (descriptor == null || notesVm.Part == null) {
                 return;
             }
+            // Masked curves keep fractional values; curves round to integers.
+            double Value(Point p) {
+                double value = descriptor.min + (descriptor.max - descriptor.min) * (1 - p.Y / control.Bounds.Height);
+                return masked ? value : Math.Round(value);
+            }
             int lastX = notesVm.PointToTick(lastPoint);
             int x = notesVm.PointToTick(point);
-            int lastY = (int)Math.Round(descriptor.min + (descriptor.max - descriptor.min) * (1 - lastPoint.Y / control.Bounds.Height));
-            int y = (int)Math.Round(descriptor.min + (descriptor.max - descriptor.min) * (1 - point.Y / control.Bounds.Height));
+            double lastY = Value(lastPoint);
+            double y = Value(point);
             if (shiftHeld != shiftWasHeld) {
                 firstPoint = point;
             }
             if (ctrlShiftHeld) {
                 lastX = notesVm.PointToTick(firstPoint);
                 x = notesVm.PointToTick(lastPoint);
-                lastY = (int)Math.Round(descriptor.min + (descriptor.max - descriptor.min) * (1 - lastPoint.Y / control.Bounds.Height));
-                y = (int)Math.Round(descriptor.min + (descriptor.max - descriptor.min) * (1 - lastPoint.Y / control.Bounds.Height));
+                lastY = Value(lastPoint);
+                y = Value(lastPoint);
             } else if (shiftHeld) {
                 lastX = notesVm.PointToTick(lastPoint);
                 x = notesVm.PointToTick(point);
-                lastY = (int)Math.Round(descriptor.min + (descriptor.max - descriptor.min) * (1 - firstPoint.Y / control.Bounds.Height));
-                y = (int)Math.Round(descriptor.min + (descriptor.max - descriptor.min) * (1 - firstPoint.Y / control.Bounds.Height));
+                lastY = Value(firstPoint);
+                y = Value(firstPoint);
                 startValue = y;
             }
-            DocManager.Inst.ExecuteCmd(new SetCurveCommand(notesVm.Project, notesVm.Part, notesVm.PrimaryKey, x, y, lastX, lastY));
+            if (masked) {
+                DocManager.Inst.ExecuteCmd(new SetMaskedCurveCommand(notesVm.Part, notesVm.PrimaryKey, lastX, (float)lastY, x, (float)y));
+            } else {
+                DocManager.Inst.ExecuteCmd(new SetCurveCommand(notesVm.Project, notesVm.Part, notesVm.PrimaryKey, x, (int)y, lastX, (int)lastY));
+            }
         }
     }
 
@@ -878,6 +889,16 @@ namespace OpenUtau.App.Views {
         }
         public override void Update(IPointer pointer, Point point) {
             if (descriptor == null) {
+                return;
+            }
+            if (descriptor.type == UExpressionType.MaskedCurve) {
+                // Erasing removes the values: a masked curve has no default to reset to.
+                var notesVm = vm.NotesViewModel;
+                if (notesVm.Part != null) {
+                    DocManager.Inst.ExecuteCmd(new ClearMaskedCurveCommand(
+                        notesVm.Part, notesVm.PrimaryKey, notesVm.PointToTick(lastPoint), notesVm.PointToTick(point)));
+                }
+                lastPoint = point;
                 return;
             }
             if (descriptor.type != UExpressionType.Curve) {

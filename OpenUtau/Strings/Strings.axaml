@@ -259,6 +259,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="exps.trackdefault">Track Default</system:String>
   <system:String x:Key="exps.type">Type</system:String>
   <system:String x:Key="exps.type.curve">Curve</system:String>
+  <system:String x:Key="exps.type.maskedcurve">Masked Curve</system:String>
   <system:String x:Key="exps.type.numerical">Numerical</system:String>
   <system:String x:Key="exps.type.options">Options</system:String>
 

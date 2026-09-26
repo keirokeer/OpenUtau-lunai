@@ -65,12 +65,16 @@ namespace OpenUtau.Core {
         public override void Emit(MappingStartEventInfo eventInfo, IEmitter emitter) {
             if (eventInfo.Source.Type == typeof(PitchPoint) ||
                 eventInfo.Source.Type == typeof(UVibrato) ||
-                eventInfo.Source.Type == typeof(UExpression)) {
+                eventInfo.Source.Type == typeof(UExpression) ||
+                eventInfo.Source.Type == typeof(UMaskedRun)) {
                 eventInfo.Style = MappingStyle.Flow;
             }
             base.Emit(eventInfo, emitter);
         }
         public override void Emit(SequenceStartEventInfo eventInfo, IEmitter emitter) {
+            if (eventInfo.Source.Type == typeof(float[])) {
+                eventInfo.Style = SequenceStyle.Flow;
+            }
             base.Emit(eventInfo, emitter);
         }
     }

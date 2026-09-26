@@ -153,6 +153,10 @@ namespace OpenUtau.App.Controls {
             double optionHeight = descriptor.type == UExpressionType.Options
                 ? Bounds.Height / descriptor.options.Length
                 : 0;
+            if (descriptor.type == UExpressionType.MaskedCurve) {
+                DrawMaskedCurve(context, viewModel, descriptor, leftTick, rightTick);
+                return;
+            }
             if (descriptor.type == UExpressionType.Curve) {
                 var curve = Part.curves.FirstOrDefault(c => c.descriptor == descriptor)
                     ?? Part.curves.FirstOrDefault(c => c.abbr == descriptor.abbr);
@@ -297,6 +301,35 @@ namespace OpenUtau.App.Controls {
                         textLayout.Draw(context, new Point());
                     }
                 }
+            }
+        }
+
+        /// <summary>A masked curve's runs; nothing is drawn where it has no value.</summary>
+        private void DrawMaskedCurve(DrawingContext context, NotesViewModel viewModel, UExpressionDescriptor descriptor,
+                double leftTick, double rightTick) {
+            var curve = Part!.maskedCurves.FirstOrDefault(c => c.abbr == descriptor.abbr);
+            if (curve == null) {
+                return;
+            }
+            var pen = DisplayMode == ExpDisMode.Shadow ? new Pen(ThemeManager.NeutralAccentBrush, 3) : ThemeManager.AccentPen1Thickness3;
+            foreach (var run in curve.runs) {
+                if (run.End < leftTick || run.x > rightTick) {
+                    continue;
+                }
+                var points = new Points();
+                for (int i = 0; i < run.ys.Length; ++i) {
+                    int tick = run.x + i * UMaskedCurve.interval;
+                    if (tick < leftTick - UMaskedCurve.interval || tick > rightTick + UMaskedCurve.interval) {
+                        continue;
+                    }
+                    double x = viewModel.TickToneToPoint(tick, 0).X;
+                    double y = Bounds.Height - Bounds.Height * (run.ys[i] - descriptor.min) / (descriptor.max - descriptor.min);
+                    points.Add(new Point(x, y));
+                }
+                if (points.Count == 1) {
+                    points.Add(points[0] + new Vector(1, 0));
+                }
+                context.DrawGeometry(null, pen, new PolylineGeometry(points, false));
             }
         }
 
