@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using OpenUtau.Core;
 using OpenUtau.Core.Ustx;
 
 namespace OpenUtau.Api {
@@ -209,5 +210,11 @@ namespace OpenUtau.Api {
                 _ => all.Where(IsUtauPhonemizer),
             };
         }
+    }
+
+    /// <summary>The installed phonemizers, by the type name a default_phonemizer key takes.</summary>
+    public class PhonemizerTypeValues : IYamlValueSource {
+        public IEnumerable<YamlValue> GetValues() => (PhonemizerFactory.GetAll() ?? Array.Empty<PhonemizerFactory>())
+            .Select(factory => new YamlValue(factory.type.FullName ?? factory.type.Name, factory.ToString()));
     }
 }

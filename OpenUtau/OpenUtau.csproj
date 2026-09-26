@@ -75,6 +75,8 @@
     <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.1.2" />
     <PackageReference Include="Avalonia.Controls.ColorPicker" Version="12.1.2" />
     <PackageReference Include="Avalonia.Desktop" Version="12.1.2" />
+    <PackageReference Include="Avalonia.AvaloniaEdit" Version="12.0.0" />
+    <PackageReference Include="AvaloniaEdit.TextMate" Version="12.0.0" />
     <PackageReference Include="Serilog" Version="4.1.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
     <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
