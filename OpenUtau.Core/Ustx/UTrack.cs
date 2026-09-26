@@ -106,6 +106,8 @@ namespace OpenUtau.Core.Ustx {
         /// Independent of TrackExpressions (full descriptor overrides).
         /// </summary>
         public Dictionary<string, float> ExpressionDefaultOverrides { get; set; } = new Dictionary<string, float>();
+        /// <summary>The id of an expression graph overriding the project's default for this track's renderer.</summary>
+        public string? ExpressionGraph { get; set; }
         [YamlIgnore] public UExpressionDescriptor VoiceColorExp { set; get; }
         [YamlIgnore] public UExpressionDescriptor VoiceColor2Exp { set; get; }
         public string[] VoiceColorNames { get; set; } = new string[] { "" };

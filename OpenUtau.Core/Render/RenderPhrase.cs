@@ -458,6 +458,16 @@ namespace OpenUtau.Core.Render {
 
             var curves = new List<Tuple<string, float[]>>();
 
+            // Curves driven by the track's expression graph, on the same tick grid as the drawn curves.
+            Dictionary<string, float[]>? graphCurves = null;
+            if (source.ExpressionGraph != null) {
+                var ticks = new int[pitches.Length];
+                for (int i = 0; i < ticks.Length; ++i) {
+                    ticks[i] = pitchStart + i * pitchInterval;
+                }
+                graphCurves = source.ExpressionGraph.Evaluate(new ExpressionGraph.GraphContext(source), ticks);
+            }
+
             for (int d = 0; d < source.CurveDescriptors.Length; ++d) {
                 var descriptor = source.CurveDescriptors[d];
                 var curve = source.Curves.FirstOrDefault(c => c.Abbr == descriptor.abbr)
@@ -467,7 +477,17 @@ namespace OpenUtau.Core.Render {
                 if (curve.Abbr == Format.Ustx.DYN) {
                     convert = ((x, c) => x == c.Min ? 0 : (float)MusicMath.DecibelToLinear(x * 0.1));
                 }
-                var curveSampled = SampleCurve(curve, pitchStart, pitches.Length, convert);
+                float[] curveSampled;
+                if (graphCurves != null && curve.Abbr != Format.Ustx.PITD
+                        && graphCurves.TryGetValue(curve.Abbr, out var driven)) {
+                    // Kept within the range the curve could be drawn in.
+                    curveSampled = new float[driven.Length];
+                    for (int i = 0; i < driven.Length; ++i) {
+                        curveSampled[i] = convert(Math.Clamp(driven[i], descriptor.min, descriptor.max), curve);
+                    }
+                } else {
+                    curveSampled = SampleCurve(curve, pitchStart, pitches.Length, convert);
+                }
                 switch (curve.Abbr) {
                     case Format.Ustx.PITD: break;
                     case Format.Ustx.DYN : dynamics = curveSampled; break;
