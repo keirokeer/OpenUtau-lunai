@@ -93,17 +93,13 @@ namespace OpenUtau.Core.DiffSinger {
             return (DiffSingerUtils.GetHeadMs(frameMs), DiffSingerUtils.GetTailMs(frameMs));
         }
 
+        /// <summary>
+        /// Merging is opt-in (prefs / DiffSinger dock): it changes how the model
+        /// sees a passage, so it stays off unless the user enables it.
+        /// </summary>
         public bool ShouldMergePhrases(UProject project, UTrack track, UPhoneme prev, UPhoneme next) {
-            if (!Preferences.Default.DiffSingerMergeOverlappingPhrases) {
-                return false;
-            }
-            if (prev == null || next == null) {
-                return false;
-            }
-            double gapMs = next.PositionMs - prev.EndMs;
-            var (_, tailMs) = PhrasePadding(track.Singer, new[] { prev });
-            var (headMs, _) = PhrasePadding(track.Singer, new[] { next });
-            return gapMs < headMs + tailMs;
+            return Preferences.Default.DiffSingerMergeOverlappingPhrases
+                && IRenderer.GapOverlapsPadding(this, track, prev, next);
         }
 
         public Task<RenderResult> Render(RenderPhrase phrase, Progress progress, int trackNo, CancellationTokenSource cancellation, bool isPreRender, RenderPhraseEvents? renderEvents = null) {
