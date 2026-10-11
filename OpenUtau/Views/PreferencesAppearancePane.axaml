@@ -150,6 +150,10 @@
       <ToggleSwitch Grid.Column="1" IsChecked="{Binding UseOverlayScrollbars}"/>
     </Grid>
     -->
+    <Grid ColumnDefinitions="*,Auto">
+      <TextBlock Text="{DynamicResource prefs.appearance.reduceanimations}" HorizontalAlignment="Left"/>
+      <ToggleSwitch Grid.Column="1" IsChecked="{Binding ReduceAnimations}"/>
+    </Grid>
     <TextBlock Classes="restart"/>
   </StackPanel>
 </UserControl>

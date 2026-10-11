@@ -158,6 +158,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool ShowIcon { get; set; }
         [Reactive] public partial bool ShowGhostNotes { get; set; }
         [Reactive] public partial bool NoteHoverGlow { get; set; }
+        [Reactive] public partial bool ReduceAnimations { get; set; }
         [Reactive] public partial bool ShowPlaybackNoteHighlight { get; set; }
         [Reactive] public partial bool ShowPlaybackNoteBounce { get; set; }
         [Reactive] public partial bool DetachPianoRoll { get; set; }
@@ -634,6 +635,7 @@ namespace OpenUtau.App.ViewModels {
             ShowIcon = Preferences.Default.ShowIcon;
             ShowGhostNotes = Preferences.Default.ShowGhostNotes;
             NoteHoverGlow = Preferences.Default.NoteHoverGlow;
+            ReduceAnimations = Preferences.Default.ReduceAnimations;
             ShowPlaybackNoteHighlight = Preferences.Default.ShowPlaybackNoteHighlight;
             ShowPlaybackNoteBounce = Preferences.Default.ShowPlaybackNoteBounce;
             DetachPianoRoll = Preferences.Default.DetachPianoRoll;
@@ -936,6 +938,12 @@ namespace OpenUtau.App.ViewModels {
                     Preferences.Default.NoteHoverGlow = noteHoverGlow;
                     Preferences.Save();
                     MessageBus.Current.SendMessage(new NotesRefreshEvent());
+                });
+            this.WhenAnyValue(vm => vm.ReduceAnimations)
+                .Skip(1)
+                .Subscribe(reduceAnimations => {
+                    Preferences.Default.ReduceAnimations = reduceAnimations;
+                    Preferences.Save();
                 });
             this.WhenAnyValue(vm => vm.ShowPlaybackNoteHighlight)
                 .Skip(1)

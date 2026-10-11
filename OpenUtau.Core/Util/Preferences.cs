@@ -412,6 +412,7 @@ namespace OpenUtau.Core.Util {
             public bool ShowIcon = true;
             public bool ShowGhostNotes = true;
             public bool NoteHoverGlow = true;
+            public bool ReduceAnimations = false;
             public bool ShowPlaybackNoteHighlight = true;
             public bool ShowPlaybackNoteBounce = false;
             /// <summary>When true, piano-roll notes (including rests/triggers) are drawn with a border stroke.</summary>
