@@ -813,6 +813,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.playback.test">Test</system:String>
   <system:String x:Key="prefs.rendering">Rendering</system:String>
   <system:String x:Key="prefs.rendering.gamebackend">GAME Inference Backend</system:String>
+  <system:String x:Key="prefs.rendering.mergephrases">Phrase merge time (seconds)</system:String>
   <system:String x:Key="prefs.rendering.defaultrenderer">Default renderer (for classic voicebanks)</system:String>
   <system:String x:Key="prefs.rendering.diffsingerdepth">DiffSinger Render Depth</system:String>
   <system:String x:Key="prefs.rendering.diffsingersteps">DiffSinger Render Steps for Acoustic</system:String>
@@ -834,6 +835,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.rendering.threads.numthreads">Maximum Render Threads</system:String>
   <system:String x:Key="prefs.rendering.wavtool">Wavtool</system:String>
   <system:String x:Key="prefs.utau">UTAU</system:String>
+  <system:String x:Key="prefs.placeholdertext.none">(None)</system:String>
 
   <system:String x:Key="progress.cachecleared">Cache cleared.</system:String>
   <system:String x:Key="progress.clearingcache">Clearing cache...</system:String>

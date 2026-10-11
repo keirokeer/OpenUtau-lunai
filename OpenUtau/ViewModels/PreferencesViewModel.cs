@@ -108,7 +108,7 @@ namespace OpenUtau.App.ViewModels {
 
         // Paths
         public string SingerPath => PathManager.Inst.SingersPath;
-        public string AdditionalSingersPath => !string.IsNullOrWhiteSpace(PathManager.Inst.AdditionalSingersPath) ? PathManager.Inst.AdditionalSingersPath : "(None)";
+        public string AdditionalSingersPath => PathManager.Inst.AdditionalSingersPath;
         [Reactive] public partial bool InstallToAdditionalSingersPath { get; set; }
         [Reactive] public partial bool LoadDeepFolders { get; set; }
 
@@ -206,6 +206,8 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial bool DiffSingerPhonemePanelAuto { get; set; }
         [Reactive] public partial bool DiffSingerShowRenderPhraseBoundaries { get; set; }
         [Reactive] public partial bool DiffSingerMergeOverlappingPhrases { get; set; }
+        public List<string> MergePhrasesSecs { get; } = new List<string> { "Auto", "2.5", "5", "7.5", "10" };
+        [Reactive] public partial int MergePhrasesSecIndex { get; set; }
         [Reactive] public partial bool DiffSingerShowPhonemeVarianceRemapPreview { get; set; }
 
         // Advanced
@@ -606,6 +608,10 @@ namespace OpenUtau.App.ViewModels {
             DiffSingerPhonemePanelAuto = Preferences.Default.DiffSingerPhonemePanelAuto;
             DiffSingerShowRenderPhraseBoundaries = Preferences.Default.DiffSingerShowRenderPhraseBoundaries;
             DiffSingerMergeOverlappingPhrases = Preferences.Default.DiffSingerMergeOverlappingPhrases;
+            MergePhrasesSecIndex = Math.Max(0, MergePhrasesSecs.IndexOf(
+                Preferences.Default.MergePhrasesSec == 0
+                    ? "Auto"
+                    : Preferences.Default.MergePhrasesSec.ToString()));
             DiffSingerShowPhonemeVarianceRemapPreview = Preferences.Default.DiffSingerShowPhonemeVarianceRemapPreview;
             SkipRenderingMutedTracks = Preferences.Default.SkipRenderingMutedTracks;
             ThemeName = Preferences.Default.ThemeName;
@@ -1216,6 +1222,18 @@ namespace OpenUtau.App.ViewModels {
                     Preferences.Save();
                     DocManager.Inst.ExecuteCmd(new ValidateProjectNotification());
                     MessageBus.Current.SendMessage(new NotesRefreshEvent());
+                });
+            this.WhenAnyValue(vm => vm.MergePhrasesSecIndex)
+                .Skip(1)
+                .Subscribe(index => {
+                    if (index < 0 || index >= MergePhrasesSecs.Count) {
+                        return;
+                    }
+                    string item = MergePhrasesSecs[index];
+                    Preferences.Default.MergePhrasesSec = item == "Auto" ? 0 : float.Parse(item);
+                    Preferences.Save();
+                    DocManager.Inst.ExecuteCmd(new ValidateProjectNotification());
+                    DocManager.Inst.ExecuteCmd(new PreRenderNotification());
                 });
             this.WhenAnyValue(vm => vm.DiffSingerShowPhonemeVarianceRemapPreview)
                 .Skip(1)

@@ -195,6 +195,14 @@
               <ToggleSwitch IsChecked="{Binding DiffSingerMergeOverlappingPhrases}"/>
             </Grid>
             <Grid Classes="prefRow" ColumnDefinitions="*,Auto"
+                  IsEnabled="{Binding DiffSingerMergeOverlappingPhrases}"
+                  ToolTip.Tip="{DynamicResource prefs.rendering.mergephrases}">
+              <TextBlock Text="{DynamicResource prefs.rendering.mergephrases}"/>
+              <c:WorkspacePanelComboBox Classes="workspacePanelCombo" Width="120"
+                                        ItemsSource="{Binding MergePhrasesSecs}"
+                                        SelectedIndex="{Binding MergePhrasesSecIndex}"/>
+            </Grid>
+            <Grid Classes="prefRow" ColumnDefinitions="*,Auto"
                   IsEnabled="{Binding DiffSingerPhonemeVarianceRemap}">
               <TextBlock Text="{DynamicResource prefs.diffsinger.showphonemevarianceremappreview}"/>
               <ToggleSwitch IsChecked="{Binding DiffSingerShowPhonemeVarianceRemapPreview}"/>

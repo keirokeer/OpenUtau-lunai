@@ -61,12 +61,7 @@ public sealed class Hnsep {
         string? dir = PackageManager.Inst.GetInstalledPath(PackageId);
         string? configPath = dir == null ? null : Path.Combine(dir, "hnsep.yaml");
         if (configPath == null || !File.Exists(configPath)) {
-            throw new MessageCustomizableException(
-                $"Error loading package \"{PackageId}\"",
-                "<translate:packages.errors.missing>",
-                new Exception($"Error loading package \"{PackageId}\""),
-                true,
-                new string[] { PackageId });
+            throw new MissingPackageException(PackageId);
         }
         var config = Yaml.DefaultDeserializer.Deserialize<HnsepConfig>(File.ReadAllText(configPath));
         return new Hnsep(Path.Combine(dir!, config.model), config);

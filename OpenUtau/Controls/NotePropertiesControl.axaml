@@ -12,7 +12,7 @@
     <Style Selector="StackPanel.notePropsSectionContent">
       <Setter Property="Spacing" Value="6"/>
     </Style>
-    <Style Selector="Button,CheckBox,ToggleSwitch">
+    <Style Selector="Button,CheckBox,ToggleSwitch,ComboBox,c|WorkspacePanelComboBox">
       <Setter Property="Focusable" Value="False"/>
       <Setter Property="IsTabStop" Value="False"/>
     </Style>

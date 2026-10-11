@@ -1,6 +1,7 @@
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Shapes;
 using Avalonia.Headless;
 using Avalonia.Input;
@@ -53,7 +54,7 @@ namespace OpenUtau.UiTest {
                 HeadlessUi.Flush();
                 HeadlessUi.SaveScreenshot(window, "ExpressionsTab");
                 // The graphs share the expressions window, on their own tab.
-                window.FindControl<TabControl>("Tabs")!.SelectedItem = window.FindControl<TabItem>("GraphsTab");
+                window.FindControl<TabStrip>("Tabs")!.SelectedIndex = 2;
                 HeadlessUi.Flush();
                 var editor = window.FindControl<ExpressionGraphEditor>("GraphEditor")!;
                 var canvas = editor.FindControl<ExpressionGraphCanvas>("Canvas")!;
@@ -139,7 +140,7 @@ namespace OpenUtau.UiTest {
             var window = new ExpressionsDialog { Width = 1100, Height = 640 };
             try {
                 window.Show();
-                window.FindControl<TabControl>("Tabs")!.SelectedItem = window.FindControl<TabItem>("GraphsTab");
+                window.FindControl<TabStrip>("Tabs")!.SelectedIndex = 2;
                 HeadlessUi.Flush();
                 var editor = window.FindControl<ExpressionGraphEditor>("GraphEditor")!;
                 var canvas = editor.FindControl<ExpressionGraphCanvas>("Canvas")!;

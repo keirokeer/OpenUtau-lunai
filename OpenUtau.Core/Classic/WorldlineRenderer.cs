@@ -161,12 +161,7 @@ namespace OpenUtau.Classic {
                         if (vocoderBytes == null) {
                             var configPath = Path.Combine(vocoderPath, "vocoder.yaml");
                             if (!File.Exists(configPath)) {
-                                throw new MessageCustomizableException(
-                                    $"Error loading package \"{vocoderPkg}\"",
-                                    $"<translate:packages.errors.missing>",
-                                    new Exception($"Error loading package \"{vocoderPkg}\""),
-                                true,
-                                    new string[] { vocoderPkg });
+                                throw new MissingPackageException(vocoderPkg);
                             }
                             var config = Yaml.DefaultDeserializer.Deserialize<Core.DiffSinger.DsVocoderConfig>(
                                 File.ReadAllText(configPath, System.Text.Encoding.UTF8));

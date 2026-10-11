@@ -370,6 +370,11 @@ namespace OpenUtau.Core.Util {
             /// nearby notes keep separate phrase boundaries unless the user opts in.
             /// </summary>
             public bool DiffSingerMergeOverlappingPhrases = false;
+            /// <summary>
+            /// Cap on merged phrase length in seconds when phrase merging is active.
+            /// 0 means Auto (no cap). Used with DiffSingerMergeOverlappingPhrases / ShouldMergePhrases.
+            /// </summary>
+            public float MergePhrasesSec = 0;
             public bool DiffSingerShowPhonemeVarianceRemapPreview = false;
             public bool SkipRenderingMutedTracks = false;
             public string Language = string.Empty;

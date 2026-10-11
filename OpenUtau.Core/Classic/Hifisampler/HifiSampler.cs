@@ -394,12 +394,7 @@ namespace OpenUtau.Classic.Hifisampler {
             string? dir = PackageManager.Inst.GetInstalledPath(PackageId);
             string? configPath = dir == null ? null : Path.Combine(dir, "vocoder.yaml");
             if (configPath == null || !File.Exists(configPath)) {
-                throw new MessageCustomizableException(
-                    $"Error loading package \"{PackageId}\"",
-                    "<translate:packages.errors.missing>",
-                    new Exception($"Error loading package \"{PackageId}\""),
-                    true,
-                    new string[] { PackageId });
+                throw new MissingPackageException(PackageId);
             }
             var config = Yaml.DefaultDeserializer.Deserialize<DsVocoderConfig>(
                 File.ReadAllText(configPath, System.Text.Encoding.UTF8));
