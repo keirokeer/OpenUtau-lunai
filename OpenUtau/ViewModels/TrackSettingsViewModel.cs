@@ -92,14 +92,18 @@ namespace OpenUtau.App.ViewModels {
                 HasRenderer = true;
                 var project = DocManager.Inst.Project;
                 var library = project.expressionGraphs ?? new List<Core.ExpressionGraph.UExpressionGraph>();
+                // The Worldline-R variants share Worldline-R's graphs.
+                string slot = Renderers.GetExpressionGraphSlot(renderer);
+                bool InSlot(Core.ExpressionGraph.UExpressionGraph g) =>
+                    g.renderer != null && Renderers.GetExpressionGraphSlot(g.renderer) == slot;
                 string? defaultId = null;
-                project.defaultExpressionGraphs?.TryGetValue(renderer, out defaultId);
-                var defaultGraph = library.FirstOrDefault(g => g.id == defaultId && g.renderer == renderer);
+                project.defaultExpressionGraphs?.TryGetValue(slot, out defaultId);
+                var defaultGraph = library.FirstOrDefault(g => g.id == defaultId && InSlot(g));
                 string defaultName = defaultGraph != null
                     ? defaultGraph.name ?? defaultGraph.id
                     : ThemeManager.GetString("tracks.expressiongraph.none");
                 graphs.Add(new GraphChoice(null, $"{ThemeManager.GetString("tracks.expressiongraph.default")} ({defaultName})"));
-                graphs.AddRange(library.Where(g => g.renderer == renderer).Select(g => new GraphChoice(g.id, g.name ?? g.id)));
+                graphs.AddRange(library.Where(InSlot).Select(g => new GraphChoice(g.id, g.name ?? g.id)));
                 Graph = graphs.FirstOrDefault(c => c.Id != null && c.Id == Track.ExpressionGraph) ?? graphs[0];
             }
 
@@ -129,6 +133,8 @@ namespace OpenUtau.App.ViewModels {
             return id switch {
                 Renderers.CLASSIC => "Classic",
                 Renderers.WORLDLINE_R => "WORLDLINE-R",
+                Renderers.WORLDLINE_R11 => "WORLDLINE-R1.1",
+                Renderers.WORLDLINE_R2 => "WORLDLINE-R2",
                 _ => id,
             };
         }

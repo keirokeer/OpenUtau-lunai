@@ -37,6 +37,7 @@ namespace OpenUtau.Core.Format {
         public const string OPEC = "opec";
         public const string CLRY = "clry";
         public const string XSY = "xsy";
+        public const string GRWC = "grwc";
         public const string RPIT = "rpit";
         public const string PITO = "pito";
 
@@ -68,6 +69,7 @@ namespace OpenUtau.Core.Format {
             project.RegisterExpression(new UExpressionDescriptor("mouth opening (curve)", OPEC, 0, 100, 50) { type = UExpressionType.Curve });
             project.RegisterExpression(new UExpressionDescriptor("voice color y", CLRY, false, new string[0]));
             project.RegisterExpression(new UExpressionDescriptor("cross synthesis (curve)", XSY, 0, 100, 0) { type = UExpressionType.Curve });
+            project.RegisterExpression(new UExpressionDescriptor("growl (curve)", GRWC, 0, 100, 0) { type = UExpressionType.Curve });
             // DiffSinger curve defaults (always present; voice-color cl## synced per singer)
             project.RegisterExpression(new UExpressionDescriptor("velocity (curve)", DiffSinger.DiffSingerUtils.VELC, 0, 200, 100) { type = UExpressionType.Curve });
             project.RegisterExpression(new UExpressionDescriptor("energy (curve)", DiffSinger.DiffSingerUtils.ENE, -100, 100, 0) { type = UExpressionType.Curve });

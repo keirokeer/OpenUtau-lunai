@@ -337,12 +337,13 @@ namespace OpenUtau.Core.ExpressionGraph {
             if (project.expressionGraphs == null || project.expressionGraphs.Count == 0 || string.IsNullOrEmpty(renderer)) {
                 return null;
             }
+            string slot = Render.Renderers.GetExpressionGraphSlot(renderer);
             string? id = track.ExpressionGraph;
-            if (id == null && project.defaultExpressionGraphs != null) {
-                project.defaultExpressionGraphs.TryGetValue(renderer, out id);
+            if (id == null) {
+                project.defaultExpressionGraphs?.TryGetValue(slot, out id);
             }
             var graph = id == null ? null : project.expressionGraphs.FirstOrDefault(g => g.id == id);
-            return graph?.renderer == renderer ? graph : null;
+            return graph?.renderer != null && Render.Renderers.GetExpressionGraphSlot(graph.renderer) == slot ? graph : null;
         }
 
         /// <summary>

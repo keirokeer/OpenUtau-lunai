@@ -220,6 +220,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="errors.failed.save">Failed to save</system:String>
   <system:String x:Key="errors.failed.savesingerconfig">Failed to save singer config file</system:String>
   <system:String x:Key="errors.failed.searchsinger">Failed to search singers</system:String>
+  <system:String x:Key="errors.failed.synth.consonantexceedscutoff">Oto error: consonant exceeds cutoff</system:String>
   <system:String x:Key="errors.failed.synth.cutoffbeforeoffset">Oto error: cutoff before offset</system:String>
   <system:String x:Key="errors.failed.synth.cutoffexceedduration">Oto error: cutoff exceeds audio duration</system:String>
   <system:String x:Key="errors.failed.transcribe.rmvpe">Error loading RMVPE ONNX model. Install it from the Package Manager, or put rmvpe.onnx in {0}</system:String>

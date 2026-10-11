@@ -213,6 +213,7 @@ namespace OpenUtau.Core.Util {
                     ClampVoiceColorCurveMax();
                     Default.ThemeEditorPanelWidth = Math.Clamp(Default.ThemeEditorPanelWidth, 300, 450);
                     Default.NotePropertiesPanelWidth = Math.Clamp(Default.NotePropertiesPanelWidth, 350, 450);
+                    if (Default.DefaultRenderer == "Classic") Default.DefaultRenderer = Renderers.CLASSIC;
                     if (!Renderers.getRendererOptions().Contains(Default.DefaultRenderer)) Default.DefaultRenderer = string.Empty;
                     if (!Onnx.getRunnerOptions().Contains(Default.OnnxRunner)) Default.OnnxRunner = string.Empty;
                     // Stale GPU index (e.g. copied prefs / removed second GPU) must not crash DirectML render.

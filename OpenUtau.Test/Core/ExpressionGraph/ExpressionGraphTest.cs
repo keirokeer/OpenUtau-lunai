@@ -252,6 +252,20 @@ namespace OpenUtau.Core.ExpressionGraph {
             Assert.Null(ExpressionGraphProgram.GetEffectiveGraph(project, track));
         }
 
+        [Fact]
+        public void WorldlineVariantsUseWorldlineRGraphs() {
+            var graph = Graph(new[] { Node(1, GraphNodeTypes.Constant) });
+            var (project, track, _) = Fixture(graph);
+            graph.renderer = Renderers.WORLDLINE_R;
+            project.defaultExpressionGraphs = new Dictionary<string, string> { [Renderers.WORLDLINE_R] = graph.id };
+            foreach (var renderer in new[] { Renderers.WORLDLINE_R, Renderers.WORLDLINE_R11, Renderers.WORLDLINE_R2 }) {
+                track.RendererSettings.renderer = renderer;
+                Assert.Equal(graph.id, ExpressionGraphProgram.GetEffectiveGraph(project, track)?.id);
+            }
+            track.RendererSettings.renderer = Renderers.CLASSIC;
+            Assert.Null(ExpressionGraphProgram.GetEffectiveGraph(project, track));
+        }
+
         static string Snapshot(IEnumerable<RenderPhrase> phrases) {
             var lines = new List<string>();
             foreach (var phrase in phrases) {

@@ -15,7 +15,8 @@ namespace OpenUtau.App.Controls {
     /// <summary>The project's expression graph library, with a node editor for the selected graph.</summary>
     public partial class ExpressionGraphEditor : UserControl, ICmdSubscriber {
         static readonly string[] renderers = {
-            Renderers.CLASSIC, Renderers.WORLDLINE_R, Renderers.WORLDLINE_R2, Renderers.ENUNU,
+            // One slot per graph family: the Worldline-R variants use Worldline-R's.
+            Renderers.CLASSIC, Renderers.WORLDLINE_R, Renderers.ENUNU,
             Renderers.VOGEN, Renderers.DIFFSINGER, Renderers.VOICEVOX,
         };
 
@@ -112,7 +113,8 @@ namespace OpenUtau.App.Controls {
         void OnNew(object? sender, RoutedEventArgs e) {
             var menu = new ContextMenu();
             // The renderers the project's tracks use first.
-            var used = Project.tracks.Select(t => t.RendererSettings?.renderer).Where(r => r != null).Distinct().ToList();
+            var used = Project.tracks.Select(t => t.RendererSettings?.renderer).Where(r => r != null)
+                .Select(r => Renderers.GetExpressionGraphSlot(r!)).Distinct().ToList();
             foreach (var renderer in used.Concat(renderers.Where(r => !used.Contains(r)))) {
                 var item = new MenuItem { Header = renderer };
                 item.Click += (s, args) => Create(renderer!);
