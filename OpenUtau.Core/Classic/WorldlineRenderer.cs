@@ -165,6 +165,7 @@ namespace OpenUtau.Classic {
                             NamedOnnxValue.CreateFromTensor("mel", melOutput),
                             NamedOnnxValue.CreateFromTensor("f0", f0Tensor),
                         };
+                        using var dmlScope = Onnx.EnterDmlScope();
                         using var vocoderResults = vocoderSession.Run(vocoderInputs);
                         var audioOutput = vocoderResults.First().AsTensor<float>();
                         result.samples = audioOutput.ToArray();
