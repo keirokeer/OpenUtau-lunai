@@ -435,6 +435,8 @@ namespace OpenUtau.Core.Pipeline {
         public readonly PhonemeSource[] Phonemes;
         /// <summary>Half-open [start, end) index ranges into <see cref="Phonemes"/>.</summary>
         public readonly (int Start, int End)[] PhraseGroups;
+        // Shared by graph contexts for this immutable snapshot; unused graphs pay no indexing cost.
+        internal readonly Lazy<int[][]> PhraseNoteIndex;
 
         internal PhraseSource(
                 PartId partId, DocRevision revision, long generation,
@@ -506,6 +508,8 @@ namespace OpenUtau.Core.Pipeline {
                     Axis, part.position, track, project, Resampler, XsyAvailable, graphExpressions);
             }
             PhraseGroups = groups;
+            PhraseNoteIndex = new Lazy<int[][]>(() => PhraseGroups
+                .Select(g => PhraseNotes(g.Start, g.End).ToArray()).ToArray());
             if (ExpressionGraph != null) {
                 // Options expressions are indices, not values; the graph neither reads nor drives them.
                 var numerical = graphExpressions!.Where(d => d.type == UExpressionType.Numerical).Select(d => d.abbr);
@@ -547,6 +551,25 @@ namespace OpenUtau.Core.Pipeline {
                 DocManager.Inst.Revision,
                 generation, project, track, part, phonemes,
                 groups.Select(g => (g.Item1, g.Item2)).ToArray());
+        }
+
+        // The musical notes of a phrase, including extension notes but not pitch-context neighbors.
+        internal List<int> PhraseNotes(int start, int end) {
+            var result = new List<int> { Phonemes[start].NoteIndex };
+            int last = Phonemes[end - 1].NoteIndex;
+            while (Notes[last].Next != -1 && Notes[Notes[last].Next].Extends != -1) {
+                last = Notes[last].Next;
+            }
+            while (result.Last() != last) {
+                result.Add(Notes[result.Last()].Next);
+            }
+            int tail = result.Last();
+            int next = Notes[tail].Next;
+            while (next != -1 && Notes[next].Extends == tail) {
+                result.Add(next);
+                next = Notes[next].Next;
+            }
+            return result;
         }
 
         public RenderPhrase[] BuildPhrases() {
