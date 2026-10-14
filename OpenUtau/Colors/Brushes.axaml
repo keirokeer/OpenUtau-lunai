@@ -156,6 +156,10 @@
   <!--text box disabled text-->
   <SolidColorBrush x:Key="TextControlForegroundDisabled"
                    Color="{DynamicResource ForegroundColorDisabled}" />
+  <SolidColorBrush x:Key="TextControlBorderBrush"
+                   Color="{DynamicResource BorderColor}" />
+  <SolidColorBrush x:Key="TextControlBorderBrushPointerOver"
+                   Color="{DynamicResource BorderColorPointerOver}" />
   <SolidColorBrush x:Key="TextControlBorderBrushDisabled"
                    Color="{DynamicResource TextControlBorderColorDisabled}" />
   <SolidColorBrush x:Key="SystemControlDisabledChromeDisabledLowBrush"
