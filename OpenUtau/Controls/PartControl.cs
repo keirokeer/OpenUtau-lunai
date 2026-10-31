@@ -181,9 +181,14 @@ namespace OpenUtau.App.Controls {
                 change.Property == TickWidthProperty) {
                 SetPosition();
             }
-            // The piano roll viewport only redraws the open part, which PartsCanvas
-            // invalidates itself; redrawing every part here made scrolling the piano
-            // roll redraw all parts, waveforms included, on every frame.
+            // Waveforms sample TickOffset/ViewWidth; keep them redrawing on track
+            // scroll/resize. Piano-roll viewport props stay out: PartsCanvas already
+            // invalidates the open part, and redrawing every part on those changes
+            // made piano-roll scroll janky.
+            if (change.Property == TickOffsetProperty ||
+                change.Property == ViewWidthProperty) {
+                InvalidateVisual();
+            }
             if (change.Property == SelectedProperty ||
                 change.Property == TextProperty || 
                 change.Property == FadeInProperty ||

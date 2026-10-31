@@ -612,7 +612,7 @@ namespace OpenUtau.App.ViewModels {
             MergePhrasesSecIndex = Math.Max(0, MergePhrasesSecs.IndexOf(
                 Preferences.Default.MergePhrasesSec == 0
                     ? "Auto"
-                    : Preferences.Default.MergePhrasesSec.ToString()));
+                    : Preferences.Default.MergePhrasesSec.ToString(CultureInfo.InvariantCulture)));
             DiffSingerShowPhonemeVarianceRemapPreview = Preferences.Default.DiffSingerShowPhonemeVarianceRemapPreview;
             SkipRenderingMutedTracks = Preferences.Default.SkipRenderingMutedTracks;
             ThemeName = Preferences.Default.ThemeName;
@@ -1238,7 +1238,9 @@ namespace OpenUtau.App.ViewModels {
                         return;
                     }
                     string item = MergePhrasesSecs[index];
-                    Preferences.Default.MergePhrasesSec = item == "Auto" ? 0 : float.Parse(item);
+                    Preferences.Default.MergePhrasesSec = item == "Auto"
+                        ? 0
+                        : float.Parse(item, CultureInfo.InvariantCulture);
                     Preferences.Save();
                     DocManager.Inst.ExecuteCmd(new ValidateProjectNotification());
                     DocManager.Inst.ExecuteCmd(new PreRenderNotification());

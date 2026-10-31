@@ -77,6 +77,11 @@ namespace OpenUtau.App.ViewModels {
 
         private readonly UTrack track;
         private bool suspendBindings;
+        // Core MixFxSource honors per-module switches; Lunai dialog has no toggles yet,
+        // so keep whatever was already on the track/ustx across Apply.
+        private bool eqEnabled = true;
+        private bool compEnabled = true;
+        private bool reverbEnabled = true;
 
         public MixFxViewModel() : this(null) { }
 
@@ -108,6 +113,9 @@ namespace OpenUtau.App.ViewModels {
             suspendBindings = true;
             try {
                 Enabled = track?.MixFx?.Enabled ?? false;
+                eqEnabled = fx.EqEnabled;
+                compEnabled = fx.CompEnabled;
+                reverbEnabled = fx.ReverbEnabled;
                 SelectedEq = FindOrFirst(EqPresets, fx.EqPreset);
                 SelectedComp = FindOrFirst(CompPresets, fx.CompPreset);
                 SelectedReverb = FindOrFirst(ReverbPresets, fx.ReverbPreset);
@@ -216,6 +224,9 @@ namespace OpenUtau.App.ViewModels {
             suspendBindings = true;
             try {
                 Enabled = fx.Enabled || Enabled;
+                eqEnabled = fx.EqEnabled;
+                compEnabled = fx.CompEnabled;
+                reverbEnabled = fx.ReverbEnabled;
                 SelectedEq = FindOrFirst(EqPresets, fx.EqPreset);
                 SelectedComp = FindOrFirst(CompPresets, fx.CompPreset);
                 SelectedReverb = FindOrFirst(ReverbPresets, fx.ReverbPreset);
@@ -278,6 +289,9 @@ namespace OpenUtau.App.ViewModels {
         public UMixFx BuildUMixFx() {
             return new UMixFx {
                 Enabled = Enabled,
+                EqEnabled = eqEnabled,
+                CompEnabled = compEnabled,
+                ReverbEnabled = reverbEnabled,
                 EqPreset = SelectedEq?.Key ?? FxPresets.Off,
                 CompPreset = SelectedComp?.Key ?? FxPresets.Off,
                 ReverbPreset = SelectedReverb?.Key ?? FxPresets.Off,

@@ -399,6 +399,14 @@
 
             -->
 
+            <Grid Classes="prefRow" ColumnDefinitions="*,Auto">
+
+              <TextBlock Text="{DynamicResource prefs.appearance.reduceanimations}"/>
+
+              <ToggleSwitch IsChecked="{Binding ReduceAnimations}"/>
+
+            </Grid>
+
           </StackPanel>
 
         </Expander>
