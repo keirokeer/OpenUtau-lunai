@@ -354,6 +354,10 @@ namespace OpenUtau.Core {
                 } else if (cmd is SingersChangedNotification) {
                     SingerManager.Inst.SearchAllSingers();
                     SingerManager.Inst.ReleaseSingersNotInUse(Project);
+                } else if (cmd is PackagesChangedNotification) {
+                    // JS phonemizer reload lands with the JS port; for now themes/oudep
+                    // reload via App.ReloadPackages on the UI subscriber.
+                    ValidateAndRefresh();
                 } else if (cmd is ValidateProjectNotification) {
                     ValidateAndRefresh();
                 } else if (cmd is SingersRefreshedNotification || cmd is OtoChangedNotification) {

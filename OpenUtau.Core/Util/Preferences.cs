@@ -311,6 +311,9 @@ namespace OpenUtau.Core.Util {
             public int MetronomeHighFrequency = 2200;
             public int MetronomeLowFrequency = 1320;
             public string ThemeName = "Dark";
+            public string UiFontPath = string.Empty;
+            public string UiFontFamily = string.Empty;
+            public bool UseUiFontForNotes = false;
             /// <summary>Color temperature cast: -100 cold … 0 neutral … +100 warm.</summary>
             public int ThemeTemperature = 0;
             /// <summary>Blend toward <see cref="ThemeTintColor"/>: 0 off … 100 strong.</summary>

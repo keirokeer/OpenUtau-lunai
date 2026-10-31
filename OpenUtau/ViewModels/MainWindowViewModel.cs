@@ -532,6 +532,8 @@ namespace OpenUtau.App.ViewModels {
                 }, DispatcherPriority.Background);
             } else if (cmd is WarningNotification || cmd is ClearWarningsNotification) {
                 RefreshWarnings();
+            } else if (cmd is PackagesChangedNotification) {
+                App.ReloadPackages();
             } else if (cmd is LoadProjectNotification loadProject) {
                 Preferences.AddRecentFileIfEnabled(loadProject.project.FilePath);
             } else if (cmd is SaveProjectNotification saveProject) {

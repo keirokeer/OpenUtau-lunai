@@ -67,5 +67,19 @@ namespace OpenUtau.App.Views {
                 pianoRoll.ViewModel.ShowAppearancePanel = false;
             }
         }
+
+        async void SelectUiFont(object? sender, RoutedEventArgs e) {
+            var path = await FilePicker.OpenFile(
+                TopLevel.GetTopLevel(this) as Window ?? throw new InvalidOperationException(),
+                "prefs.appearance.customfont.select",
+                FilePicker.FontFiles);
+            if (!string.IsNullOrEmpty(path) && UiFontManager.IsSupportedFontPath(path)) {
+                ViewModel.SetUiFontPath(path);
+            }
+        }
+
+        void ResetUiFont(object? sender, RoutedEventArgs e) {
+            ViewModel.ResetUiFont();
+        }
     }
 }

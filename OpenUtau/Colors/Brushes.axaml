@@ -113,6 +113,8 @@
                    Color="{DynamicResource BackgroundColorPointerOver}"/>
   <SolidColorBrush x:Key="SystemControlForegroundBaseHighBrush"
                    Color="{DynamicResource ForegroundColor}" />
+  <SolidColorBrush x:Key="ForegroundBrushSecondary"
+                   Color="{DynamicResource ForegroundColor}" Opacity="0.65" />
   <SolidColorBrush x:Key="SystemControlForegroundBaseHighBrushPointerOver"
                    Color="{DynamicResource ForegroundColorPointerOver}" />
   <SolidColorBrush x:Key="SystemControlForegroundBaseHighBrushDisabled"

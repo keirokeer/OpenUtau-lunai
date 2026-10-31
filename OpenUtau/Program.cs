@@ -116,8 +116,8 @@ namespace OpenUtau.App {
                     .MinimumLevel.Information()
                     .WriteTo.File(PathManager.Inst.LogFilePath, rollingInterval: RollingInterval.Day, encoding: Encoding.UTF8))
                 .WriteTo.Logger(lc => lc
-                    .MinimumLevel.ControlledBy(DebugViewModel.Sink.Inst.LevelSwitch)
-                    .WriteTo.Sink(DebugViewModel.Sink.Inst))
+                    .MinimumLevel.ControlledBy(DeveloperViewModel.Sink.Inst.LevelSwitch)
+                    .WriteTo.Sink(DeveloperViewModel.Sink.Inst))
                 .CreateLogger();
             Log.Information("Logging initialized.");
         }

@@ -146,6 +146,48 @@
 
             <views:ThemePickerControl DataContext="{Binding}"/>
 
+            <TextBlock Classes="prefSubgroupTitle"
+
+                       Text="{DynamicResource prefs.appearance.customfont}"/>
+
+            <Grid Classes="prefRow" ColumnDefinitions="*,Auto,Auto">
+
+              <TextBlock Text="{Binding UiFontPath}" TextWrapping="Wrap" VerticalAlignment="Center"
+
+                         IsVisible="{Binding UiFontPath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+
+              <TextBlock Text="{DynamicResource prefs.appearance.customfont.none}" VerticalAlignment="Center"
+
+                         IsVisible="{Binding UiFontPath, Converter={x:Static StringConverters.IsNullOrEmpty}}"/>
+
+              <Button Grid.Column="1" Classes="workspacePanelButton" Content="{DynamicResource button.select}"
+
+                      Click="SelectUiFont" Margin="8,0,4,0"/>
+
+              <Button Grid.Column="2" Classes="workspacePanelButton" Content="{DynamicResource button.reset}"
+
+                      Click="ResetUiFont"/>
+
+            </Grid>
+
+            <TextBlock Classes="prefSubgroupTitle"
+
+                       Text="{DynamicResource prefs.appearance.customfont.family}"/>
+
+            <c:WorkspacePanelComboBox Classes="workspacePanelCombo" HorizontalAlignment="Stretch"
+
+                                      ItemsSource="{Binding UiFontFamilies}"
+
+                                      SelectedItem="{Binding UiFontFamily}"/>
+
+            <Grid Classes="prefRow" ColumnDefinitions="*,Auto">
+
+              <TextBlock Text="{DynamicResource prefs.appearance.customfont.notes}"/>
+
+              <ToggleSwitch IsChecked="{Binding UseUiFontForNotes}"/>
+
+            </Grid>
+
           </StackPanel>
 
         </Expander>
