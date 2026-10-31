@@ -275,6 +275,12 @@ namespace OpenUtau.Core {
         UVoicePart preRenderFocusPart;
         int preRenderFocusTick = -1;
 
+        // Interactive ONNX edits share the render lane's session (and DirectML) lock, so a
+        // pre-render pass in flight makes them wait one audio phrase render per phrase.
+        readonly object preRenderGate = new object();
+        int preRenderHolders;
+        bool preRenderDeferred;
+
         // Loop playback state
         private int loopStartTick = 0;
         private int loopEndTick = -1;
@@ -397,6 +403,8 @@ namespace OpenUtau.Core {
                 AudioOutput.Stop();
                 AudioOutput.Init(masterMix);
                 AudioOutput.Play();
+                // No pre-render here: the pass deferred during the pause must not replace the
+                // session this resume is reading from. It runs when playback stops.
                 return;
             }
             if (!forceFreshRender && AudioOutput.PlaybackState == PlaybackState.Paused) {
@@ -431,6 +439,8 @@ namespace OpenUtau.Core {
             metronomeEngine.Stop();
             loopEndTick = -1;
             playheadHoldMs = null;
+            // A pass deferred while playback was paused has nothing to protect any more.
+            RunDeferredPreRender();
         }
 
         public void PausePlayback() {
@@ -703,15 +713,97 @@ namespace OpenUtau.Core {
             }
         }
 
+        /// <summary>
+        /// Keeps the background pre-render off the ONNX locks until the token is disposed:
+        /// the pass in flight is cancelled and a fresh one is scheduled on release.
+        /// </summary>
+        public IDisposable HoldPreRender() {
+            lock (preRenderGate) {
+                preRenderHolders++;
+                // A pass this gate cancels is owed a replacement. A paused warm mix
+                // keeps its own render task, and with nothing in flight there is nothing to restart.
+                if (!PlayingMaster && masterMix == null && renderCancellation != null) {
+                    preRenderDeferred = true;
+                    CancelPreRender(renderCancellation);
+                }
+            }
+            return new PreRenderHold(this);
+        }
+
+        /// <summary>
+        /// Cancels cooperatively: the render lane checks the token between phrases and before
+        /// each inference, never inside a Run or a session teardown.
+        /// </summary>
+        static void CancelPreRender(CancellationTokenSource? cancellation) {
+            try {
+                cancellation?.Cancel();
+            } catch (ObjectDisposedException) {
+                // A newer pass already replaced and disposed this one.
+            }
+        }
+
+        void ReleasePreRender() {
+            lock (preRenderGate) {
+                if (preRenderHolders > 0) {
+                    preRenderHolders--;
+                }
+            }
+            RunDeferredPreRender();
+        }
+
+        /// <summary>
+        /// Starts the pass a hold or a notification left owed. Only a stopped transport has
+        /// nothing to protect: a live session asks for its own pass through
+        /// <see cref="PreRenderNotification"/>.
+        /// </summary>
+        void RunDeferredPreRender() {
+            lock (preRenderGate) {
+                // A warm paused mix still owns the render lane; wait until StopPlayback.
+                if (preRenderHolders > 0 || !preRenderDeferred || masterMix != null) {
+                    return;
+                }
+                preRenderDeferred = false;
+            }
+            if (Preferences.Default.PreRender) {
+                SchedulePreRender();
+            }
+        }
+
+        sealed class PreRenderHold : IDisposable {
+            PlaybackManager owner;
+
+            public PreRenderHold(PlaybackManager owner) {
+                this.owner = owner;
+            }
+
+            public void Dispose() {
+                Interlocked.Exchange(ref owner, null)?.ReleasePreRender();
+            }
+        }
+
         void SchedulePreRender() {
-            Log.Information("SchedulePreRender");
-            // While playing, this pass takes over from the playback pass, so it has to
-            // render from the playhead, not from the part being edited.
-            var engine = new RenderEngine(
-                DocManager.Inst.Project,
-                focusPart: PlayingMaster ? null : preRenderFocusPart,
-                focusTick: PlayingMaster ? DocManager.Inst.playPosTick : preRenderFocusTick);
-            engine.PreRenderProject(ref renderCancellation, MixPlanner);
+            lock (preRenderGate) {
+                if (preRenderHolders > 0) {
+                    preRenderDeferred = true;
+                    return;
+                }
+                // Starting a pass swaps the cancellation source, and a paused warm mix is still
+                // filling slots whose hashes a new pass would not match. Wait for stop or resume.
+                if (!PlayingMaster && masterMix != null) {
+                    preRenderDeferred = true;
+                    return;
+                }
+                Log.Information("SchedulePreRender");
+                // While playing, this pass takes over from the playback pass, so it has to
+                // render from the playhead, not from the part being edited.
+                // Install the new cancellation source under the gate too, or a holder arriving
+                // in between would cancel only the old one and leave this pass running.
+                var engine = new RenderEngine(
+                    DocManager.Inst.Project,
+                    focusPart: PlayingMaster ? null : preRenderFocusPart,
+                    focusTick: PlayingMaster ? DocManager.Inst.playPosTick : preRenderFocusTick);
+                engine.PreRenderProject(ref renderCancellation, MixPlanner);
+            }
         }
 
         #region ICmdSubscriber

@@ -354,6 +354,7 @@
   <system:String x:Key="shortcut.ResizeNotesLeft">Resize Notes Left</system:String>
   <system:String x:Key="shortcut.ResizeNotesRight">Resize Notes Right</system:String>
   <system:String x:Key="shortcut.SaveProject">Save Project</system:String>
+  <system:String x:Key="shortcut.SplitNoteUnderPointer">Split Note Under Pointer</system:String>
   <system:String x:Key="shortcut.ScrollDown">Scroll Down</system:String>
   <system:String x:Key="shortcut.ScrollLeft">Scroll Left</system:String>
   <system:String x:Key="shortcut.ScrollRight">Scroll Right</system:String>

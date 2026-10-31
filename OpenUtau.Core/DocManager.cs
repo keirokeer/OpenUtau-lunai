@@ -169,6 +169,11 @@ namespace OpenUtau.Core {
                     PhonemizerFactory.Get(type);
                 }
             }
+            try {
+                Js.JsPhonemizerFactory.RegisterInstalled();
+            } catch (Exception e) {
+                Log.Error(e, "Failed to search JavaScript phonemizers.");
+            }
             PhonemizerFactory.BuildList();
             stopWatch.Stop();
             Log.Information($"Search all plugins: {stopWatch.Elapsed}");
@@ -194,6 +199,28 @@ namespace OpenUtau.Core {
             return name.Equals("OpenUtau.Core.dll", StringComparison.OrdinalIgnoreCase)
                 || name.Equals("OpenUtau.dll", StringComparison.OrdinalIgnoreCase)
                 || name.Equals("OpenUtau-Lunai.dll", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Loads the JavaScript phonemizers of the installed packages again, and gives the tracks
+        /// using one a new instance, so edits to a script take effect without a restart.
+        /// A track whose phonemizer no longer loads keeps its old instance.
+        /// </summary>
+        private void ReloadJsPhonemizers() {
+            try {
+                Js.JsPhonemizerFactory.RegisterInstalled();
+            } catch (Exception e) {
+                Log.Error(e, "Failed to search JavaScript phonemizers.");
+            }
+            PhonemizerFactory.BuildList();
+            foreach (var track in Project.tracks) {
+                if (track.Phonemizer is Js.JsPhonemizer && PhonemizerFactory.Get(track.Phonemizer.Id) is PhonemizerFactory factory) {
+                    track.Phonemizer = factory.Create();
+                }
+            }
+            foreach (var part in Project.parts.OfType<UVoicePart>()) {
+                part.ResetOverridePhonemizers();
+            }
         }
 
         private void SearchPluginInternal(string path, List<string> result) {
@@ -355,8 +382,7 @@ namespace OpenUtau.Core {
                     SingerManager.Inst.SearchAllSingers();
                     SingerManager.Inst.ReleaseSingersNotInUse(Project);
                 } else if (cmd is PackagesChangedNotification) {
-                    // JS phonemizer reload lands with the JS port; for now themes/oudep
-                    // reload via App.ReloadPackages on the UI subscriber.
+                    ReloadJsPhonemizers();
                     ValidateAndRefresh();
                 } else if (cmd is ValidateProjectNotification) {
                     ValidateAndRefresh();

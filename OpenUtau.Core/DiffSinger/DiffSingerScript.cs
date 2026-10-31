@@ -204,8 +204,8 @@ namespace OpenUtau.Core.DiffSinger {
                 x => x).Select(x => (float)x).ToArray();
             userSampled = PhonemeVarianceRemap.ApplyIfEnabled(
                 phrase, userSampled, abbr, (float)frameMs, headFrames, tailFrames);
-            var deltaFunc = DiffSingerUtils.VarianceDeltaFunctions[abbr];
-            return resampled.Zip(userSampled, deltaFunc)
+            return resampled.Zip(userSampled,
+                    (p, u) => DiffSingerUtils.ApplyVarianceDelta(abbr, p, u))
                 .Select(x => (double)x).ToArray();
         }
 

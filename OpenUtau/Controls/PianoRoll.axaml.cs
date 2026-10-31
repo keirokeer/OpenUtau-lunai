@@ -49,6 +49,10 @@ namespace OpenUtau.App.Controls {
         private double phonemePanelResizeStartY;
         private double phonemePanelResizeStartHeight;
         private Point valueTipPointerPosition;
+        private Control? lastNotesCanvas;    // Last known pointer position over the notes canvas, used by keyboard shortcuts
+        private Point lastNotesCanvasPoint;
+        private NoteSplitEditState? keyboardSplitState;    // Non-null while split key is held and a keyboard split is in progress
+        private bool splitKeyHeld;    // True from the first split key-down until release, to ignore key auto-repeat
         private bool shouldOpenNotesContextMenu;
         private int scrollStyleApplyGeneration;
         private int detachedLayoutGeneration;
@@ -885,7 +889,10 @@ namespace OpenUtau.App.Controls {
             });
 
             AddHandler(KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel | RoutingStrategies.Bubble);
-            
+            AddHandler(KeyUpEvent, OnKeyUp, RoutingStrategies.Tunnel | RoutingStrategies.Bubble);
+            // Safety net: never leave an undo group open if focus is lost while the split key is held
+            AddHandler(LostFocusEvent, (s, e) => ReleaseSplitKey());
+
             this.WhenAnyValue(x => x.ViewModel!.PlaybackViewModel!.PlayPosTick)
                 .Subscribe(tick => {
                     var notesVm = ViewModel?.NotesViewModel;
@@ -1271,6 +1278,50 @@ namespace OpenUtau.App.Controls {
             dialog.ShowDialog(RootWindow);
         }
 
+        /// <summary>
+        /// Called when the split shortcut is pressed. Starts a split at the pointer position, unless one
+        /// is already in progress (key auto-repeat while the key is held down).
+        /// </summary>
+        private bool SplitNoteUnderPointer() {
+            if (splitKeyHeld) {
+                // Key still held: auto-repeat, swallow the key event without doing anything
+                return true;
+            }
+            splitKeyHeld = true;
+            var notesVm = ViewModel.NotesViewModel;
+            if (editState != null || notesVm.Part == null
+                || lastNotesCanvas == null || !lastNotesCanvas.IsPointerOver) {
+                return false;
+            }
+            var hit = notesVm.HitTest.HitTestNote(lastNotesCanvasPoint);
+            if (!hit.hitBody || hit.note == null) {
+                return false;
+            }
+            notesVm.DeselectNotes();
+            var state = new NoteSplitEditState(lastNotesCanvas, ViewModel, this, hit.note);
+            if (state.BeginKeyboardSplit(lastNotesCanvasPoint)) {
+                keyboardSplitState = state;       // a cut exists: follow the pointer, ignore clicks
+            } else {
+                state.EndKeyboardSplit();         // nothing was cut: close the undo group right away
+            }
+            return true;
+        }
+
+        /// <summary>Ends the ongoing keyboard split, if any (key released, focus lost...).</summary>
+        private void EndKeyboardSplit() {
+            if (keyboardSplitState == null) {
+                return;
+            }
+            keyboardSplitState.EndKeyboardSplit();
+            keyboardSplitState = null;
+        }
+
+        /// <summary>Called when the split key is released or focus is lost: re-arms the shortcut and ends any split.</summary>
+        private void ReleaseSplitKey() {
+            splitKeyHeld = false;
+            EndKeyboardSplit();
+        }
+
         private void OnPianoRollFocus(object sender, FocusChangedEventArgs e) {
             var input = e.Source as InputElement;
             if (input is TextBox or ComboBox or ComboBoxItem) {
@@ -1420,6 +1471,12 @@ namespace OpenUtau.App.Controls {
         }
 
         public void NotesCanvasPointerPressed(object sender, PointerPressedEventArgs args) {
+            // A keyboard split is in progress (key held): ignore mouse clicks so the
+            // current tool does not trigger a second action by accident
+            if (keyboardSplitState != null) {
+                args.Handled = true;
+                return;
+            }
             LyricBox?.EndEdit();
             if (ViewModel.NotesViewModel.Part == null) {
                 return;
@@ -1732,9 +1789,16 @@ namespace OpenUtau.App.Controls {
         public void NotesCanvasPointerMoved(object sender, PointerEventArgs args) {
             var control = (Control)sender;
             var point = args.GetCurrentPoint(control);
+            lastNotesCanvas = control;
+            lastNotesCanvasPoint = point.Position;
             args.Handled = true;
             if (ValueTipCanvas != null) {
                 valueTipPointerPosition = args.GetCurrentPoint(ValueTipCanvas!).Position;
+            }
+            // Keyboard split in progress (key held): the cut follows the pointer, like the Knife tool
+            if (keyboardSplitState != null) {
+                keyboardSplitState.MoveKeyboardSplit(point.Position);
+                return;
             }
             if (editState != null) {
                 editState.altShiftHeld = args.KeyModifiers == (KeyModifiers.Alt | KeyModifiers.Shift);
@@ -1957,8 +2021,8 @@ namespace OpenUtau.App.Controls {
                 valueTipPointerPosition = args.GetCurrentPoint(ValueTipCanvas!).Position;
             }
             if (editState != null) {
-                editState.ctrlShiftHeld = ViewModel.CurveViewModel.CurveTool == CurveTools.CurveLineTool;
-                editState.shiftHeld = (args.KeyModifiers == KeyModifiers.Shift && (ViewModel.CurveViewModel.CurveTool == CurveTools.CurveLineTool || ViewModel.CurveViewModel.CurveTool == CurveTools.CurvePenTool));
+                editState.ctrlShiftHeld = args.KeyModifiers != KeyModifiers.Shift && ViewModel.CurveViewModel.CurveTool == CurveTools.CurveLineTool;
+                editState.shiftHeld = args.KeyModifiers == KeyModifiers.Shift && (ViewModel.CurveViewModel.CurveTool == CurveTools.CurveLineTool || (editState is ExpSetValueState expSetValueState && !expSetValueState.IsCurve));
                 editState.Update(point.Pointer, point.Position);
             } else {
                 Cursor = null;
@@ -2293,6 +2357,16 @@ namespace OpenUtau.App.Controls {
             args.Handled = OnKeyExtendedHandler(args);
         }
 
+        void OnKeyUp(object? sender, KeyEventArgs args) {
+            var splitBinding = Preferences.Default.Shortcuts?
+                .FirstOrDefault(s => s.ActionId == "SplitNoteUnderPointer");
+            if (splitBinding != null
+                && Enum.TryParse<Key>(splitBinding.KeyName, out var splitKey)
+                && args.Key == splitKey) {
+                ReleaseSplitKey();
+            }
+        }
+
         // ==============================================================================
         // Hey cadlaxa here, the old hardcoded keyboard shortcuts are now gone
         // and instead you can add new shortcuts in a more data-driven way
@@ -2485,6 +2559,7 @@ namespace OpenUtau.App.Controls {
 
                 // Track & Project Operations
                 case "SaveProject": _ = MainWindow?.Save(); return true;
+                case "SplitNoteUnderPointer": return SplitNoteUnderPointer();
                 case "SoloTrack": MessageBus.Current.SendMessage(new TracksSoloEvent(notesVm.Part.trackNo, !project.tracks[notesVm.Part.trackNo].Solo, false)); return true;
                 case "MuteTrack": MessageBus.Current.SendMessage(new TracksMuteEvent(notesVm.Part.trackNo, false)); return true;
                 case "FocusSelection": 

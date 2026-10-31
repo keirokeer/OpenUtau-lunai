@@ -129,7 +129,7 @@ namespace OpenUtau.App {
 
         /// <summary>
         /// Runs the package loaders again and re-applies the theme after packages
-        /// were installed, removed or edited (developer live-reload).
+        /// were installed, removed or edited (developer live-reload / JS phonemizers).
         /// </summary>
         public static async void ReloadPackages() {
             try {

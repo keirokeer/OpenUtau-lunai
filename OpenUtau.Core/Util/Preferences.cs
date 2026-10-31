@@ -582,6 +582,7 @@ namespace OpenUtau.Core.Util {
 
                 // Track & Project Operations
                 new ShortcutBinding { ActionId = "SaveProject", KeyName = "S", ModifiersName = "Control" },
+                new ShortcutBinding { ActionId = "SplitNoteUnderPointer", KeyName = "S", ModifiersName = "None" },
                 new ShortcutBinding { ActionId = "SoloTrack", KeyName = "S", ModifiersName = "Shift" },
                 new ShortcutBinding { ActionId = "MuteTrack", KeyName = "M", ModifiersName = "Shift" },
                 new ShortcutBinding { ActionId = "FocusSelection", KeyName = "F", ModifiersName = "None" },

@@ -278,6 +278,7 @@
   "shortcut.ResizeNotesLeft": "Изменить длину нот слева",
   "shortcut.ResizeNotesRight": "Изменить длину нот справа",
   "shortcut.SaveProject": "Сохранить проект",
+  "shortcut.SplitNoteUnderPointer": "Разрезать ноту под курсором",
   "shortcut.ScrollDown": "Прокрутка вниз",
   "shortcut.ScrollLeft": "Прокрутка влево",
   "shortcut.ScrollRight": "Прокрутка вправо",

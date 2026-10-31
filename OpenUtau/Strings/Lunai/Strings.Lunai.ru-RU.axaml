@@ -358,6 +358,7 @@
   <system:String x:Key="shortcut.ResizeNotesLeft">Изменить длину нот слева</system:String>
   <system:String x:Key="shortcut.ResizeNotesRight">Изменить длину нот справа</system:String>
   <system:String x:Key="shortcut.SaveProject">Сохранить проект</system:String>
+  <system:String x:Key="shortcut.SplitNoteUnderPointer">Разрезать ноту под курсором</system:String>
   <system:String x:Key="shortcut.ScrollDown">Прокрутка вниз</system:String>
   <system:String x:Key="shortcut.ScrollLeft">Прокрутка влево</system:String>
   <system:String x:Key="shortcut.ScrollRight">Прокрутка вправо</system:String>
