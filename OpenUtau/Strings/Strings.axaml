@@ -70,6 +70,7 @@
   <system:String x:Key="context.note.clearcache">Clear cache of phrase</system:String>
   <system:String x:Key="context.note.copy">Copy note</system:String>
   <system:String x:Key="context.note.delete">Delete note</system:String>
+  <system:String x:Key="context.note.merge">Merge notes</system:String>
   <system:String x:Key="context.note.pasteparameters">Select and paste parameters</system:String>
   <system:String x:Key="context.part.applypitch">Apply pitch from...</system:String>
   <system:String x:Key="context.part.delete">Delete part</system:String>
@@ -407,6 +408,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="languages.en">English</system:String>
   <system:String x:Key="languages.es">Spanish</system:String>
   <system:String x:Key="languages.fil">Filipino</system:String>
+  <system:String x:Key="languages.fi">Finnish</system:String>
   <system:String x:Key="languages.fr">French</system:String>
   <system:String x:Key="languages.invariant">Not translating</system:String>
   <system:String x:Key="languages.it">Italian</system:String>
@@ -417,6 +419,7 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="languages.ru">Russian</system:String>
   <system:String x:Key="languages.th">Thai</system:String>
   <system:String x:Key="languages.tr">Turkish</system:String>
+  <system:String x:Key="languages.uk">Ukrainian</system:String>
   <system:String x:Key="languages.vi">Vietnamese</system:String>
   <system:String x:Key="languages.zh">Chinese</system:String>
   <system:String x:Key="languages.zh-yue">Cantonese</system:String>
@@ -820,6 +823,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="prefs.diffsinger">DiffSinger</system:String>
   <system:String x:Key="prefs.editing">Editing</system:String>
   <system:String x:Key="prefs.general">General</system:String>
+  <system:String x:Key="prefs.general.sinewhennosinger">Play sine tone when no singer is selected</system:String>
   <system:String x:Key="prefs.note.restart">Note: please restart OpenUtau after changing this item.</system:String>
   <system:String x:Key="prefs.otoeditor">Oto Editor</system:String>
   <system:String x:Key="prefs.otoeditor.select">Default Oto Editor</system:String>
@@ -1000,6 +1004,7 @@ Curve Type
     Ctrl + Box Select: Select more notes
     Up/Down: Transpose selected notes
     Ctrl + Up/Down: Transpose selected notes by octave
+    Ctrl + U: Merge selected notes
 Pen Tool
     Left Button Draw: Add note
     Right Click: Remove note
@@ -1016,6 +1021,7 @@ General
   <system:String x:Key="tracks.duplicate">Duplicate Track</system:String>
   <system:String x:Key="tracks.duplicatesettings">Duplicate Track Settings</system:String>
   <system:String x:Key="tracks.favorite">Favorites</system:String>
+  <system:String x:Key="tracks.clearsinger">Remove singer from this track</system:String>
   <system:String x:Key="tracks.installsinger">Install singer</system:String>
   <system:String x:Key="tracks.mixfx">Track Polish...</system:String>
   <system:String x:Key="tracks.more">More</system:String>

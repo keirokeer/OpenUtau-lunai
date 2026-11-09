@@ -71,6 +71,9 @@ namespace OpenUtau.App.Controls {
             int count = CountVisibleRows();
             int rows = Math.Clamp(count, 1, Math.Max(1, maxRows));
             TileScroller.Height = rows * TileHeight;
+            // Cap width so the flyout presenter cannot grow past the list (e.g. wide type chips).
+            TileScroller.MinWidth = ListWidth;
+            TileScroller.MaxWidth = ListWidth;
             TileScroller.Width = ListWidth;
             TileScroller.Offset = new Vector(0, 0);
         }

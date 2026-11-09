@@ -30,7 +30,7 @@ namespace OpenUtau.App.ViewModels {
         public USinger Singer => track.Singer;
         public Phonemizer Phonemizer => track.Phonemizer;
         public string PhonemizerTag => track.Phonemizer.Tag;
-        public ReactiveCommand<USinger, RxVoid> SelectSingerCommand { get; }
+        public ReactiveCommand<USinger?, RxVoid> SelectSingerCommand { get; }
         public ReactiveCommand<USinger?, RxVoid> AllSetSingerCommand { get; }
         public IReadOnlyList<MenuItemViewModel>? PhonemizerMenuItems { get; set; }
         public ReactiveCommand<PhonemizerFactory, RxVoid> SelectPhonemizerCommand { get; }
@@ -58,7 +58,7 @@ namespace OpenUtau.App.ViewModels {
         private readonly UTrack track;
         // Parameterless constructor for Avalonia preview only.
         public TrackHeaderViewModel() {
-            SelectSingerCommand = ReactiveCommand.Create<USinger>(_ => { });
+            SelectSingerCommand = ReactiveCommand.Create<USinger?>(_ => { });
             AllSetSingerCommand = ReactiveCommand.Create<USinger?>(_ => { });
             SelectPhonemizerCommand = ReactiveCommand.Create<PhonemizerFactory>(_ => { });
             AllSetPhonemizerCommand = ReactiveCommand.Create<PhonemizerFactory>(_ => { });
@@ -70,7 +70,7 @@ namespace OpenUtau.App.ViewModels {
 
         public TrackHeaderViewModel(UTrack track) {
             this.track = track;
-            SelectSingerCommand = ReactiveCommand.Create<USinger>(singer => {
+            SelectSingerCommand = ReactiveCommand.Create<USinger?>(singer => {
                 if (track.Singer != singer) {
                     DocManager.Inst.StartUndoGroup("command.track.singer");
                     ApplySingerToTrack(track, singer);
@@ -302,7 +302,7 @@ namespace OpenUtau.App.ViewModels {
                 } else if (!string.IsNullOrEmpty(selectedSinger.DefaultPhonemizer)) {
                     TryChangePhonemizer(targetTrack, selectedSinger.DefaultPhonemizer);
                 }
-                if (!selectedSinger.Found || selectedSinger.SingerType != targetTrack.RendererSettings.Renderer?.SingerType) {
+                if (!selectedSinger.Found || targetTrack.RendererSettings.Renderer is Core.Render.SineRenderer || selectedSinger.SingerType != targetTrack.RendererSettings.Renderer?.SingerType) {
                     var settings = new URenderSettings();
                     if (selectedSinger.Found) {
                         settings = new URenderSettings {

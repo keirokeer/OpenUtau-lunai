@@ -125,6 +125,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial IReadOnlyList<SingerTypeFilterViewModel> TypeFilters { get; set; }
             = Array.Empty<SingerTypeFilterViewModel>();
         [Reactive] public partial bool IsEmpty { get; set; }
+        [Reactive] public partial bool CanClearSinger { get; set; }
         [Reactive] public partial string SearchText { get; set; } = string.Empty;
         public bool HasAdditionalSingersFolder =>
             !string.IsNullOrWhiteSpace(PathManager.Inst.AdditionalSingersPath) &&
@@ -164,6 +165,7 @@ namespace OpenUtau.App.ViewModels {
             }
             (recentSingers, restSingers) = OrderSingers(allSingers, Preferences.Default.RecentSingers);
             RebuildTypeFilters();
+            CanClearSinger = current != null && (current.Found || !string.IsNullOrEmpty(current.Name));
             PublishItems();
             this.RaisePropertyChanged(nameof(HasAdditionalSingersFolder));
         }
@@ -291,6 +293,11 @@ namespace OpenUtau.App.ViewModels {
             } else {
                 selectSingerCommand.Execute(tile.Singer);
             }
+        }
+
+        public void ClearSinger() {
+            CloseRequested?.Invoke();
+            selectSingerCommand.Execute(null);
         }
 
         public bool IsRecent(SingerTileViewModel tile) {

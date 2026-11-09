@@ -434,6 +434,7 @@ namespace OpenUtau.Core.Util {
             public double NoteOpacity = 0.35;
             public EditTool EditTool = new EditTool();
             public bool PlayTone = false;
+            public bool PlaySineWhenNoSinger = true;
             /// <summary>Legacy; migrated to <see cref="RealTimePitchMode"/> on load.</summary>
             public bool RealTimePitchGeneration = false;
             public int RealTimePitchMode = (int)LivePitchMode.Off;

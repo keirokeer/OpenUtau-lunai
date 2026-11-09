@@ -77,6 +77,7 @@ namespace OpenUtau.App.ViewModels {
             set => this.RaiseAndSetIfChanged(ref sortingOrder, value);
         }
         [Reactive] public partial bool Beta { get; set; }
+        [Reactive] public partial bool PlaySineWhenNoSinger { get; set; }
 
         // DiffSinger voice color
         [Reactive] public partial string VoiceColorCurveMaxText { get; set; } = "100";
@@ -654,6 +655,7 @@ namespace OpenUtau.App.ViewModels {
             NoteOpacity = Math.Clamp(Preferences.Default.NoteOpacity, 0.05, 1);
             NoteCornerRadius = Math.Clamp(Preferences.Default.NoteCornerRadius, 0, 12);
             Beta = Preferences.Default.Beta;
+            PlaySineWhenNoSinger = Preferences.Default.PlaySineWhenNoSinger;
             VoiceColorCurveMaxText = Preferences.GetVoiceColorCurveMax().ToString();
             this.WhenAnyValue(vm => vm.VoiceColorCurveMaxText)
                 .Subscribe(text => {
@@ -1061,6 +1063,15 @@ namespace OpenUtau.App.ViewModels {
                 .Subscribe(beta => {
                     Preferences.Default.Beta = beta;
                     Preferences.Save();
+                });
+            this.WhenAnyValue(vm => vm.PlaySineWhenNoSinger)
+                .Skip(1)
+                .Subscribe(playSine => {
+                    Preferences.Default.PlaySineWhenNoSinger = playSine;
+                    Preferences.Save();
+                    DocManager.Inst.ExecuteCmd(new ValidateProjectNotification());
+                    DocManager.Inst.ExecuteCmd(new WaveformReadyNotification());
+                    MessageBus.Current.SendMessage(new TracksRefreshEvent());
                 });
             this.WhenAnyValue(vm => vm.LyricsHelper)
                 .Skip(1)

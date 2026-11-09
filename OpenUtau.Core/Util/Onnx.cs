@@ -31,8 +31,9 @@ namespace OpenUtau.Core {
             var ortDevices = env.GetEpDevices();
 
             return ortDevices
-                .Where(device => device.EpName.ToLower().Contains("dml"))
+                .Where(device => device.EpName.Contains("dml", StringComparison.OrdinalIgnoreCase))
                 .Select((device, index) => new { index, device })
+                .Where(x => !WindowsGpuDetector.IsIndirectDisplayAdapter(x.device.HardwareDevice.Metadata.Entries))
                 .ToDictionary(x => x.index, x => x.device);
         }
 
@@ -212,7 +213,7 @@ namespace OpenUtau.Core {
             }
 
             List<GpuInfo> gpuList = new List<GpuInfo>();
-            // devices already excludes non-DirectML EPs; keys are enumeration indexes.
+            // devices already excludes non-DirectML EPs and virtual/indirect adapters; keys are enumeration indexes.
             foreach (var entry in devices) {
                 gpuList.Add(new GpuInfo {
                     deviceId = entry.Key,
