@@ -371,10 +371,15 @@ namespace OpenUtau.Core.DiffSinger {
                     continue;
                 }
                 mouthOpening01[i] *= keep;
-                // Blend hard cap with attenuation strength so longer crossfades stay smooth.
-                float strength = SmoothStep(Math.Clamp(1f - keep, 0f, 1f));
-                float ceiling = 1f + (consonantCeiling - 1f) * strength;
-                mouthOpening01[i] = Math.Min(mouthOpening01[i], ceiling);
+                // Soft-cap during vowel↔consonant crossfade (keep 1→0.5); at default
+                // consonant keep (≤0.5) the hard 0.05 ceiling is fully applied.
+                float strength = SmoothStep(Math.Clamp((1f - keep) / 0.5f, 0f, 1f));
+                if (strength >= 0.999f) {
+                    mouthOpening01[i] = Math.Min(mouthOpening01[i], consonantCeiling);
+                } else {
+                    float ceiling = 1f + (consonantCeiling - 1f) * strength;
+                    mouthOpening01[i] = Math.Min(mouthOpening01[i], ceiling);
+                }
                 mouthOpening01[i] = Math.Clamp(mouthOpening01[i], 0f, 1f);
             }
         }
