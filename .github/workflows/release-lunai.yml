@@ -43,6 +43,8 @@ jobs:
     steps:
       # Setup
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Update contributors list
         run: python3 scripts/update-contributors.py
@@ -155,7 +157,33 @@ jobs:
           $outDir = "Releases/$rid"
           New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
-          dotnet tool install -g vpk --version 1.2.0
+          $notesFile = Join-Path $PWD "velopack-release-notes.md"
+          $notesLines = [System.Collections.Generic.List[string]]::new()
+          [void]$notesLines.Add("## OpenUtau Lunai $packVersion")
+          [void]$notesLines.Add("")
+          $prevTag = $null
+          try {
+            $prevTag = (git describe --tags --abbrev=0 --match '0.*' "HEAD^" 2>$null)
+          } catch { }
+          if (-not $prevTag) {
+            $prevTag = git tag --list --sort=-v:refname |
+              Where-Object { $_ -and $_ -ne $rawVersion -and $_ -ne "v$rawVersion" } |
+              Select-Object -First 1
+          }
+          if ($prevTag) {
+            Write-Host "Release notes since tag: $prevTag"
+            $log = @(git log "$prevTag..HEAD" --pretty=format:'- %s' --no-merges -n 40)
+            foreach ($line in $log) {
+              if ($line) { [void]$notesLines.Add($line) }
+            }
+          }
+          if ($notesLines.Count -le 2) {
+            [void]$notesLines.Add("- See GitHub Releases for details.")
+          }
+          $notesLines -join "`n" | Set-Content -Path $notesFile -Encoding utf8
+          Write-Host "Release notes:`n$(Get-Content $notesFile -Raw)"
+
+          dotnet tool install -g vpk --version 1.2.161
           $env:PATH = "$env:USERPROFILE\.dotnet\tools;$env:PATH"
 
           # Pull previous releases for deltas (must not fail the job on first channel release).
@@ -187,7 +215,10 @@ jobs:
             --packTitle "OpenUtau Lunai" `
             --icon "OpenUtau/Assets/open-utau.ico" `
             --channel $channel `
+            --runtime $rid `
             --framework $vcredist `
+            --delta BestSize `
+            --releaseNotes $notesFile `
             --outputDir $outDir
           if ($LASTEXITCODE -ne 0) { throw "vpk pack failed" }
 

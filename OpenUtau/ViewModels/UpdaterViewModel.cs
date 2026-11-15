@@ -23,6 +23,8 @@ namespace OpenUtau.App.ViewModels {
         public string AppVersion => $"v{Assembly.GetEntryAssembly()?.GetName().Version}";
         public bool IsDarkMode => ThemeManager.IsDarkMode;
         [Reactive] public partial string UpdaterStatus { get; set; }
+        [Reactive] public partial string ReleaseNotes { get; set; }
+        [Reactive] public partial bool HasReleaseNotes { get; set; }
         [Reactive] public partial bool UpdateAvailable { get; set; }
         [Reactive] public partial FontWeight UpdateButtonFontWeight { get; set; }
         /// <summary>When true, Update button opens GitHub instead of applying a Velopack package.</summary>
@@ -35,6 +37,8 @@ namespace OpenUtau.App.ViewModels {
 
         public UpdaterViewModel() {
             UpdaterStatus = string.Empty;
+            ReleaseNotes = string.Empty;
+            HasReleaseNotes = false;
             UpdateAvailable = false;
             UpdateButtonFontWeight = FontWeight.Normal;
             OpenGitHubOnUpdate = false;
@@ -115,6 +119,7 @@ namespace OpenUtau.App.ViewModels {
                 UpdaterStatus = string.Format(
                     ThemeManager.GetString("updater.status.available"),
                     updateInfo.TargetFullRelease.Version);
+                SetReleaseNotes(updateInfo.TargetFullRelease.NotesMarkdown);
                 UpdateAvailable = true;
                 UpdateButtonFontWeight = FontWeight.Bold;
             } catch (NotInstalledException) {
@@ -126,6 +131,12 @@ namespace OpenUtau.App.ViewModels {
                 Log.Error(e, "Failed to check for Velopack updates.");
                 UpdaterStatus = ThemeManager.GetString("updater.status.unknown");
             }
+        }
+
+        void SetReleaseNotes(string? markdown) {
+            string notes = (markdown ?? string.Empty).Trim();
+            ReleaseNotes = notes;
+            HasReleaseNotes = notes.Length > 0;
         }
 
         public void OnGithub() {
@@ -156,7 +167,7 @@ namespace OpenUtau.App.ViewModels {
                 UpdaterStatus = ThemeManager.GetString("updater.status.installing");
                 // ApplyUpdatesAndRestart exits the process; CloseApplication is best-effort cleanup.
                 CloseApplication?.Invoke();
-                updateManager.ApplyUpdatesAndRestart(updateInfo);
+                updateManager.ApplyUpdatesAndRestart(updateInfo.TargetFullRelease);
             } catch (Exception e) {
                 Log.Error(e, "Velopack update failed.");
                 UpdateAvailable = true;
