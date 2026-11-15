@@ -414,6 +414,8 @@
   <system:String x:Key="tracks.rotateselectedtracksingers">Ротация вокалистов на выбранных треках</system:String>
   <system:String x:Key="tracks.singer.applytoalltracks.tooltip">Применить ко всем выбранным трекам</system:String>
   <system:String x:Key="tracks.singer.favorite.tooltip">Добавить вокалиста в избранное</system:String>
+  <system:String x:Key="tracks.singerflyout.expand">Раскрыть список на ширину окна</system:String>
+  <system:String x:Key="tracks.singerflyout.collapse">Свернуть в один столбец</system:String>
   <system:String x:Key="tracks.standardizesettings">Унифицировать настройки трека</system:String>
 
   <system:String x:Key="updater.status.unknown">Не удалось проверить обновления. Скачайте вручную с GitHub Releases или посмотрите лог.</system:String>

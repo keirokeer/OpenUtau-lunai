@@ -1026,6 +1026,8 @@ General
   <system:String x:Key="tracks.filtertype.all">All</system:String>
   <system:String x:Key="tracks.filtertype.all.tip">Show all singer types</system:String>
   <system:String x:Key="tracks.filtertype.only">Show only {0} singers</system:String>
+  <system:String x:Key="tracks.singerflyout.expand">Expand singer list across the window</system:String>
+  <system:String x:Key="tracks.singerflyout.collapse">Collapse to a single column</system:String>
   <system:String x:Key="tracks.installsinger">Install singer</system:String>
   <system:String x:Key="tracks.mixfx">Track Polish...</system:String>
   <system:String x:Key="tracks.more">More</system:String>

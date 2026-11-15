@@ -98,8 +98,7 @@ namespace OpenUtau.App.ViewModels {
     }
 
     /// <summary>
-    /// A singer type chip of the flyout's filter row. Every chip is lit while showing all types,
-    /// then only the chosen one is.
+    /// A singer type chip of the flyout's filter row. One-hot: All alone, or exactly one type.
     /// </summary>
     public class SingerTypeChipViewModel : ViewModelBase {
         /// <summary>Null for the "All" chip.</summary>
@@ -144,6 +143,15 @@ namespace OpenUtau.App.ViewModels {
         /// </summary>
         [Reactive] public partial int ListSizeCount { get; set; } = 1;
 
+        /// <summary>
+        /// When true, the flyout uses a multi-column grid that can grow across the screen
+        /// (upstream-style). List mode stays a single vertical column.
+        /// </summary>
+        [Reactive] public partial bool ExpandedGrid { get; set; }
+
+        /// <summary>Tile count for grid layout (no separator row).</summary>
+        [Reactive] public partial int GridTileCount { get; set; } = 1;
+
         [Reactive] public partial bool IsEmpty { get; set; }
         [Reactive] public partial bool CanClearSinger { get; set; }
         [Reactive] public partial string SearchText { get; set; } = string.Empty;
@@ -173,7 +181,13 @@ namespace OpenUtau.App.ViewModels {
                 .Subscribe(_ => PublishItems());
             this.WhenAnyValue(x => x.TypeFilter)
                 .Subscribe(_ => ApplyTypeFilter());
+            this.WhenAnyValue(x => x.ExpandedGrid)
+                .Subscribe(_ => PublishItems());
             Rebuild();
+        }
+
+        public void ToggleExpandedGrid() {
+            ExpandedGrid = !ExpandedGrid;
         }
 
         public void Rebuild() {
@@ -197,8 +211,7 @@ namespace OpenUtau.App.ViewModels {
         }
 
         /// <summary>
-        /// All-hot while no type is picked, one-hot for a picked type.
-        /// Clicking the lit type, or the All chip, goes back to all-hot.
+        /// One-hot: All (null) or a single type. Clicking the active chip returns to All.
         /// </summary>
         public void ToggleTypeFilter(USingerType? type) {
             TypeFilter = type == null || TypeFilter == type ? null : type;
@@ -218,7 +231,7 @@ namespace OpenUtau.App.ViewModels {
             };
             foreach (var type in availableTypes) {
                 var label = DisplayName(type);
-                chips.Add(new SingerTypeChipViewModel(type, label, TypeFilter == null || TypeFilter == type,
+                chips.Add(new SingerTypeChipViewModel(type, label, TypeFilter == type,
                     string.Format(ThemeManager.GetString("tracks.filtertype.only"), label)));
             }
             TypeChips = chips;
@@ -253,11 +266,17 @@ namespace OpenUtau.App.ViewModels {
 
             // Size from the type filter only, so typing in search doesn't resize the flyout.
             ListSizeCount = CountListRows(Match(allSingers, applyName: false), Match(recentSingers, applyName: false),
-                Match(restSingers, applyName: false), typeFiltering);
+                Match(restSingers, applyName: false), typeFiltering, includeSeparator: !ExpandedGrid);
+            GridTileCount = CountListRows(Match(allSingers, applyName: false), Match(recentSingers, applyName: false),
+                Match(restSingers, applyName: false), typeFiltering, includeSeparator: false);
 
             var list = new List<object>();
-            if (nameFiltering || typeFiltering) {
-                foreach (var singer in Match(allSingers, applyName: true).LocalizedOrderBy(s => s.LocalizedName)) {
+            if (nameFiltering || typeFiltering || ExpandedGrid) {
+                // Flat A–Z (or filtered) list — no separator; grid WrapPanel cannot host a section break.
+                IEnumerable<USinger> source = nameFiltering || typeFiltering
+                    ? Match(allSingers, applyName: true).LocalizedOrderBy(s => s.LocalizedName)
+                    : Match(recentSingers, applyName: true).Concat(Match(restSingers, applyName: true));
+                foreach (var singer in source) {
                     list.Add(new SingerTileViewModel(singer, current != null && singer.Equals(current)));
                 }
             } else {
@@ -281,14 +300,15 @@ namespace OpenUtau.App.ViewModels {
                 IEnumerable<USinger> allMatched,
                 IEnumerable<USinger> recentMatched,
                 IEnumerable<USinger> restMatched,
-                bool typeFiltering) {
+                bool typeFiltering,
+                bool includeSeparator = true) {
             if (typeFiltering) {
                 return Math.Max(1, allMatched.Count());
             }
             var recent = recentMatched.ToList();
             var rest = restMatched.ToList();
             int n = recent.Count + rest.Count;
-            if (recent.Count > 0 && rest.Count > 0) {
+            if (includeSeparator && recent.Count > 0 && rest.Count > 0) {
                 n++; // separator
             }
             return Math.Max(1, n);
