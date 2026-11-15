@@ -73,18 +73,29 @@ namespace OpenUtau.App.Controls {
         }
 
         public static void ApplyScrollViewer(ScrollViewer scrollViewer, bool classic) {
+            // Always mark overlay up front so the first paint is not classic, even when the
+            // viewer is not in the visual tree yet (e.g. flyout content before ShowAt).
+            scrollViewer.Classes.Set("overlay", !classic);
             if (!IsInVisualTree(scrollViewer)) {
+                void onAttached(object? s, VisualTreeAttachmentEventArgs e) {
+                    scrollViewer.AttachedToVisualTree -= onAttached;
+                    ApplyScrollViewer(scrollViewer, classic);
+                }
+                scrollViewer.AttachedToVisualTree += onAttached;
                 return;
             }
-            scrollViewer.Classes.Set("overlay", !classic);
 
             void apply() {
                 ApplyDockPanelScrollLayout(scrollViewer, classic);
                 foreach (var bar in scrollViewer.GetVisualDescendants().OfType<ScrollBar>()) {
-                    ApplyVerticalScrollBar(bar, classic, scrollViewer);
+                    if (bar.Orientation == Orientation.Horizontal) {
+                        ApplyHorizontalScrollBar(bar, classic);
+                    } else {
+                        ApplyVerticalScrollBar(bar, classic, scrollViewer);
+                    }
                 }
                 Dispatcher.UIThread.Post(
-                    () => UpdateDockPanelContentRightMargin(scrollViewer, classic),
+                    () => UpdateDockPanelContentInsets(scrollViewer, classic),
                     DispatcherPriority.Loaded);
             }
 
@@ -106,7 +117,7 @@ namespace OpenUtau.App.Controls {
             }
             content.HorizontalAlignment = HorizontalAlignment.Stretch;
             WireDockPanelScrollInset(scrollViewer, classic);
-            UpdateDockPanelContentRightMargin(scrollViewer, classic);
+            UpdateDockPanelContentInsets(scrollViewer, classic);
         }
 
         static void WireDockPanelScrollInset(ScrollViewer scrollViewer, bool classic) {
@@ -115,19 +126,19 @@ namespace OpenUtau.App.Controls {
                 scrollViewer.Tag = tag;
                 scrollViewer.SizeChanged += (_, _) => {
                     if (scrollViewer.Tag is DockPanelScrollTag state) {
-                        UpdateDockPanelContentRightMargin(scrollViewer, state.Classic);
+                        UpdateDockPanelContentInsets(scrollViewer, state.Classic);
                     }
                 };
                 scrollViewer.ScrollChanged += (_, _) => {
                     if (scrollViewer.Tag is DockPanelScrollTag state) {
-                        UpdateDockPanelContentRightMargin(scrollViewer, state.Classic);
+                        UpdateDockPanelContentInsets(scrollViewer, state.Classic);
                     }
                 };
             }
             tag.Classic = classic;
         }
 
-        static void UpdateDockPanelContentRightMargin(ScrollViewer scrollViewer, bool classic) {
+        static void UpdateDockPanelContentInsets(ScrollViewer scrollViewer, bool classic) {
             if (!scrollViewer.Classes.Contains("workspaceDockPanelScroll")) {
                 return;
             }
@@ -135,16 +146,32 @@ namespace OpenUtau.App.Controls {
                 return;
             }
             bool needsVerticalScroll = scrollViewer.Extent.Height > scrollViewer.Viewport.Height + 0.5;
-            double right = 0;
-            if (!classic && needsVerticalScroll) {
-                right = scrollViewer.Classes.Contains("tightOverlayInset")
-                    ? WorkspaceDockPanelMetrics.TightOverlayContentRightMargin
-                    : WorkspaceDockPanelMetrics.OverlayContentRightMargin;
-            }
+            bool needsHorizontalScroll = scrollViewer.Extent.Width > scrollViewer.Viewport.Width + 0.5;
+            double inset = scrollViewer.Classes.Contains("tightOverlayInset")
+                ? WorkspaceDockPanelMetrics.TightOverlayContentRightMargin
+                : WorkspaceDockPanelMetrics.OverlayContentRightMargin;
+            double right = (!classic && needsVerticalScroll) ? inset : 0;
+            double bottom = (!classic && needsHorizontalScroll) ? inset : 0;
             var margin = content.Margin;
-            if (Math.Abs(margin.Right - right) > 0.01) {
-                content.Margin = new Thickness(margin.Left, margin.Top, right, margin.Bottom);
+            if (Math.Abs(margin.Right - right) > 0.01 || Math.Abs(margin.Bottom - bottom) > 0.01) {
+                content.Margin = new Thickness(margin.Left, margin.Top, right, bottom);
             }
+        }
+
+        /// <summary>Re-apply bar layout after a ScrollViewer switches H/V visibility (e.g. flyout expand).</summary>
+        public static void RefreshScrollBars(ScrollViewer scrollViewer) {
+            if (!IsInVisualTree(scrollViewer)) {
+                return;
+            }
+            bool classic = !scrollViewer.Classes.Contains("overlay");
+            foreach (var bar in scrollViewer.GetVisualDescendants().OfType<ScrollBar>()) {
+                if (bar.Orientation == Orientation.Horizontal) {
+                    ApplyHorizontalScrollBar(bar, classic);
+                } else {
+                    ApplyVerticalScrollBar(bar, classic, scrollViewer);
+                }
+            }
+            UpdateDockPanelContentInsets(scrollViewer, classic);
         }
     }
 }

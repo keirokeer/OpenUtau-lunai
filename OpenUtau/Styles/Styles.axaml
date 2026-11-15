@@ -1512,6 +1512,32 @@
     <Setter Property="MinWidth" Value="10"/>
     <Setter Property="MaxWidth" Value="10"/>
   </Style>
+  <Style Selector="ScrollViewer.workspaceDockPanelScroll.overlay /template/ ScrollBar:horizontal">
+    <Setter Property="Margin" Value="0"/>
+    <Setter Property="Height" Value="10"/>
+    <Setter Property="MinHeight" Value="10"/>
+    <Setter Property="MaxHeight" Value="10"/>
+  </Style>
+  <Style Selector="ScrollViewer.workspaceScroll.workspaceDockPanelScroll.overlay /template/ ScrollBar:horizontal /template/ Thumb">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="Margin" Value="0" />
+    <Setter Property="Template">
+      <ControlTemplate TargetType="Thumb">
+        <Border x:Name="PART_Border"
+                Height="8"
+                MinHeight="8"
+                MaxHeight="8"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Center"
+                Background="{DynamicResource ScrollBarThumbBrush}"
+                Opacity="0.85"
+                CornerRadius="4"
+                BorderThickness="0"
+                ClipToBounds="True"/>
+      </ControlTemplate>
+    </Setter>
+  </Style>
   <Style Selector="ScrollViewer.workspaceScroll:not(.workspaceDockPanelScroll).overlay /template/ ScrollBar:vertical /template/ Thumb">
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="Padding" Value="0" />
