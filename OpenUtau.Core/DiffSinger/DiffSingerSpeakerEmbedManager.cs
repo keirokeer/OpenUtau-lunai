@@ -109,8 +109,21 @@ namespace OpenUtau.Core.DiffSinger
             return spkEmbedTensor;
         }
 
+        /// <summary>
+        /// Pitch models destabilize when voice-color amounts exceed ~160%.
+        /// Acoustic/variance keep the full UI range; only pitch clamps here (no UI change).
+        /// </summary>
+        public const float PitchVoiceColorAmountMax = 1.6f;
+
         //used by variance, pitch and acoustic
-        public Tensor<float> PhraseSpeakerEmbedByFrame(RenderPhrase phrase, IList<int> durations, float frameMs, int totalFrames, int headFrames, int tailFrames){
+        public Tensor<float> PhraseSpeakerEmbedByFrame(
+                RenderPhrase phrase,
+                IList<int> durations,
+                float frameMs,
+                int totalFrames,
+                int headFrames,
+                int tailFrames,
+                float? maxSpeakerAmount = null) {
             var singer = phrase.singer;
             var hiddenSize = dsConfig.hiddenSize;
             var speakerEmbeds = getSpeakerEmbeds();
@@ -168,6 +181,9 @@ namespace OpenUtau.Core.DiffSinger
                     float amount = (float)spkCurves[frameId, spk];
                     if (Math.Abs(amount) < 1e-8f) {
                         continue;
+                    }
+                    if (maxSpeakerAmount is float cap && cap > 0) {
+                        amount = Math.Clamp(amount, -cap, cap);
                     }
                     var target = speakerEmbeds[":", spk].ToArray<float>();
                     for (int j = 0; j < dest.Length; j++) {

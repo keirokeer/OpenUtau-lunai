@@ -335,7 +335,9 @@ namespace OpenUtau.Core.DiffSinger
             //Speaker
             if(dsConfig.speakers != null) {
                 var speakerEmbedManager = getSpeakerEmbedManager();
-                var spkEmbedTensor = speakerEmbedManager.PhraseSpeakerEmbedByFrame(phrase, ph_dur, frameMs, totalFrames, headFrames, tailFrames);
+                var spkEmbedTensor = speakerEmbedManager.PhraseSpeakerEmbedByFrame(
+                    phrase, ph_dur, frameMs, totalFrames, headFrames, tailFrames,
+                    DiffSingerSpeakerEmbedManager.PitchVoiceColorAmountMax);
                 pitchInputs.Add(NamedOnnxValue.CreateFromTensor("spk_embed", spkEmbedTensor));
             }
 
