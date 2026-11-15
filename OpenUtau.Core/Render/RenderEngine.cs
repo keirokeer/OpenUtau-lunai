@@ -361,6 +361,10 @@ namespace OpenUtau.Core.Render {
             }
             var tuples = new List<(RenderPhrase phrase, double offsetMs, double estimatedLengthMs, RenderPartRequest request)>();
             foreach (var req in requests) {
+                // Account for first load, which has no RenderPhrases.
+                if (req.phrases.Length > 0) {
+                    DocManager.Inst.PostOnUIThread(() => DocManager.Inst.ExecuteCmd(new RebuildPhraseBlocksNotification(req.part)));
+                }
                 for (int i = 0; i < req.phrases.Length; ++i) {
                     tuples.Add((req.phrases[i], req.phraseOffsetMs[i], req.phraseEstimatedLengthMs[i], req));
                 }
@@ -386,6 +390,7 @@ namespace OpenUtau.Core.Render {
                 // (extra load / crackle) while the PCM is already playable.
                 if (planner.TryGetPhrasePcm(request.part, phrase.hash, out _)) {
                     progress.Complete(phrase.phones.Length, string.Empty);
+                    DocManager.Inst.ExecuteCmd(new PhraseRenderStateNotification(request.part, phrase, true));
                     if (++request.completedPhrases == request.phrases.Length) {
                         planner.MarkPartComplete(request.part, request.phrases.Select(p => p.hash));
                         request.part.SetRenderMixComplete(true);
@@ -483,6 +488,7 @@ namespace OpenUtau.Core.Render {
                 // Progressive waveform: coalesced to a ~10 Hz repaint rate.
                 WaveformRefresh.Request();
                 DocManager.Inst.ExecuteCmd(new PhraseRenderedNotification(request.part, phrase, result, request.trackNo));
+                DocManager.Inst.ExecuteCmd(new PhraseRenderStateNotification(request.part, phrase, true));
                 if (!realCurvesPublished) {
                     PublishRealCurveUpdates(request.part, phrase);
                 }

@@ -7,6 +7,7 @@ using System.Reactive.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using OpenUtau.App.ViewModels;
+using OpenUtau.Core.Render;
 using OpenUtau.Core.Ustx;
 using ReactiveUI;
 
@@ -116,6 +117,7 @@ namespace OpenUtau.App.Controls {
                 .Subscribe(_ => {
                     foreach (var (part, control) in partControls) {
                         control.SetPosition();
+                        control.InvalidateVisual();
                     }
                 });
             MessageBus.Current.Listen<PartsSelectionEvent>()
@@ -205,6 +207,67 @@ namespace OpenUtau.App.Controls {
             control.Dispose();
             partControls.Remove(part);
             Children.Remove(control);
+        }
+
+        public void HandlePhraseRenderStateEvent(UVoicePart part, int startTick, int endTick, bool rendered) {
+            foreach (var control in partControls) {
+                if (control.Key.Equals(part)) {
+                    control.Value.UpdateRenderStatus(startTick, endTick, rendered);
+                    return;
+                }
+            }
+        }
+
+        public void HandlePhraseRenderStateEvent(UVoicePart part, RenderPhrase phrase, bool rendered) {
+            foreach (var control in partControls) {
+                if (control.Key.Equals(part)) {
+                    control.Value.UpdateRenderStatus(phrase, rendered);
+                    return;
+                }
+            }
+        }
+
+        public void HandleRebuildPhraseBlocksEvent(UVoicePart part) {
+            foreach (var control in partControls) {
+                if (control.Key.Equals(part)) {
+                    if (control.Value.RebuildPhraseBlocks(part)) {
+                        control.Value.InvalidateVisual();
+                    }
+                    return;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Set the rendered status on all RenderPhrases in every part.
+        /// </summary>
+        public void SetAllRenderPhrases(bool state) {
+            foreach (var control in partControls) {
+                control.Value.SetAllBlocks(state);
+            }
+        }
+
+        /// <summary>
+        /// Set the rendered status on all RenderPhrases in UTrack.
+        /// </summary>
+        public void SetAllRenderPhrases(UTrack track, bool state) {
+            foreach (var control in partControls) {
+                if (control.Key.trackNo == track.TrackNo) {
+                    control.Value.SetAllBlocks(state);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Set the rendered status on all RenderPhrases in UVoicePart.
+        /// </summary>
+        public void SetAllRenderPhrases(UVoicePart voicePart, bool state) {
+            foreach (var control in partControls) {
+                if (control.Key.Equals(voicePart)) {
+                    control.Value.SetAllBlocks(state);
+                    return;
+                }
+            }
         }
 
         void InvalidatePartViewport() {

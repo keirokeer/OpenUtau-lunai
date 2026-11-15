@@ -1367,6 +1367,7 @@ namespace OpenUtau.App.ViewModels {
                 var phrases = Part.renderPhrases.Where(phrase => selectedNotes.Any(note => phrase.notes.Any(rnote => rnote.position == Part.position + note.position - phrase.position && rnote.duration == note.duration)));
                 foreach (var phrase in phrases) {
                     phrase.DeleteCacheFiles();
+                    DocManager.Inst.ExecuteCmd(new PhraseRenderStateNotification(Part, phrase, false));
                 }
                 // The slot registry's per-part cache and session slots go back to pending.
                 PlaybackManager.Inst.MixPlanner.EvictPart(Part);

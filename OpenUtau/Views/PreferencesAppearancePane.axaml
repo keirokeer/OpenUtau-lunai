@@ -91,6 +91,10 @@
       <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowGhostNotes}"/>
     </Grid>
     <Grid ColumnDefinitions="*,Auto">
+      <TextBlock Text="{DynamicResource prefs.appearance.renderbackground}" HorizontalAlignment="Left"/>
+      <ToggleSwitch Grid.Column="1" IsChecked="{Binding RenderStatusInTrackBar}"/>
+    </Grid>
+    <Grid ColumnDefinitions="*,Auto">
       <TextBlock Text="{DynamicResource prefs.appearance.notehoverglow}" HorizontalAlignment="Left"/>
       <ToggleSwitch Grid.Column="1" IsChecked="{Binding NoteHoverGlow}"/>
     </Grid>

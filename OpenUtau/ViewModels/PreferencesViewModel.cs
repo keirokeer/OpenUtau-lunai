@@ -121,6 +121,7 @@ namespace OpenUtau.App.ViewModels {
         [Reactive] public partial LyricsHelperOption? LyricsHelper { get; set; }
         [Reactive] public partial bool LyricsHelperBrackets { get; set; }
         [Reactive] public partial bool PenPlusDefault { get; set; }
+        [Reactive] public partial bool RenderStatusInTrackBar { get; set; }
 
         // Render
         [Reactive] public partial bool PreRender { get; set; }
@@ -669,6 +670,7 @@ namespace OpenUtau.App.ViewModels {
                 });
             LyricsHelper = LyricsHelpers.FirstOrDefault(option => option.klass.Equals(ActiveLyricsHelper.Inst.GetPreferred()));
             LyricsHelperBrackets = Preferences.Default.LyricsHelperBrackets;
+            RenderStatusInTrackBar = Preferences.Default.RenderStatusInTrackBar;
             OtoEditor = Preferences.Default.OtoEditor;
             RememberMid = Preferences.Default.RememberMid;
             RememberUst = Preferences.Default.RememberUst;
@@ -1085,6 +1087,13 @@ namespace OpenUtau.App.ViewModels {
                 .Subscribe(brackets => {
                     Preferences.Default.LyricsHelperBrackets = brackets;
                     Preferences.Save();
+                });
+            this.WhenAnyValue(vm => vm.RenderStatusInTrackBar)
+                .Skip(1)
+                .Subscribe(renderStatus => {
+                    Preferences.Default.RenderStatusInTrackBar = renderStatus;
+                    Preferences.Save();
+                    MessageBus.Current.SendMessage(new TracksRefreshEvent());
                 });
             this.WhenAnyValue(vm => vm.OtoEditor)
                 .Skip(1)

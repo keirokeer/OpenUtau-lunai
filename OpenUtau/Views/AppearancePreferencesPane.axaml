@@ -272,6 +272,14 @@
 
             <Grid Classes="prefRow" ColumnDefinitions="*,Auto">
 
+              <TextBlock Text="{DynamicResource prefs.appearance.renderbackground}"/>
+
+              <ToggleSwitch IsChecked="{Binding RenderStatusInTrackBar}"/>
+
+            </Grid>
+
+            <Grid Classes="prefRow" ColumnDefinitions="*,Auto">
+
               <TextBlock Text="{DynamicResource prefs.appearance.notehoverglow}"/>
 
               <ToggleSwitch IsChecked="{Binding NoteHoverGlow}"/>
