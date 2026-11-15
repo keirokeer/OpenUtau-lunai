@@ -90,11 +90,8 @@ namespace OpenUtau.App.ViewModels {
                 }
             }
 
-            /// <summary>
-            /// Allows you to set the reversal of the LogEvents to a specified value
-            /// </summary>
-            /// <param name="reversed">true = logevents are reversed, false = logevents are not reversed</param>
-            public void ReverseOrder(bool reversed) {
+            /// <summary>Set log order explicitly. Separate name from <see cref="ReverseOrder()"/> for Avalonia Command binding.</summary>
+            public void SetReverseOrder(bool reversed) {
                 if (reversed) {
                     if (!reverseLogOrder) {
                         ReverseOrder();
