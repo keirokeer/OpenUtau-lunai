@@ -42,7 +42,12 @@ namespace OpenUtau.Core.DiffSinger {
         private static readonly Dictionary<string, Func<float, float, float>> varianceDeltaFunctions =
             DiffSingerUtils.VarianceDeltaFunctions;
 
-        static readonly object lockObj = new object();
+        /// <summary>
+        /// Serializes DiffSinger render vs <see cref="DiffSingerSinger.FreeMemory"/> so a
+        /// session cannot be disposed while another thread still holds a Run reference.
+        /// </summary>
+        internal static readonly object LifecycleLock = new object();
+        static readonly object lockObj = LifecycleLock;
 
         public USingerType SingerType => USingerType.DiffSinger;
 

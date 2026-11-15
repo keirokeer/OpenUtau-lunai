@@ -132,17 +132,22 @@ namespace OpenUtau.App.Controls {
                             useAuthoritativeMix = true;
                             pcmList = placements;
                         }
-                        if (useAuthoritativeMix && pcmList != null) {
-                            var slots = new SampleSlot[pcmList.Count];
-                            for (int i = 0; i < pcmList.Count; ++i) {
-                                var p = pcmList[i];
-                                slots[i] = new SampleSlot(p.posMs, p.durMs, 0, p.channels, p.pcm, SlotState.Ready);
+                        try {
+                            if (useAuthoritativeMix && pcmList != null) {
+                                var slots = new SampleSlot[pcmList.Count];
+                                for (int i = 0; i < pcmList.Count; ++i) {
+                                    var p = pcmList[i];
+                                    slots[i] = new SampleSlot(p.posMs, p.durMs, 0, p.channels, p.pcm, SlotState.Ready);
+                                }
+                                var source = new SlotMixSource();
+                                source.SetSlots(slots);
+                                source.Mix(samplePos, sampleData, 0, sampleCount);
+                            } else {
+                                FillFromPhraseCache(part.trackNo, leftMs, ref needsAnotherFrame);
                             }
-                            var source = new SlotMixSource();
-                            source.SetSlots(slots);
-                            source.Mix(samplePos, sampleData, 0, sampleCount);
-                        } else {
-                            FillFromPhraseCache(part.trackNo, leftMs, ref needsAnotherFrame);
+                        } catch (Exception e) {
+                            Log.Debug(e, "Waveform mix skipped (stale planner/cache during singer change)");
+                            Array.Clear(sampleData, 0, Math.Min(sampleCount, sampleData.Length));
                         }
 
                         if (wasRendering && !isRendering) {
@@ -323,21 +328,38 @@ namespace OpenUtau.App.Controls {
         }
 
         void FillFromPhraseCache(int trackNo, double leftMs, ref bool needsAnotherFrame) {
+            if (sampleCount <= 0 || sampleData.Length < sampleCount) {
+                return;
+            }
             foreach (var cacheItem in PhraseWaveformCache.GetForTrack(trackNo)) {
-                float visualScale = PhraseWaveformCache.GetVisualScale(in cacheItem, ref needsAnotherFrame);
-                if (visualScale <= 0.001f) {
-                    continue;
-                }
-                double phraseStartMs = cacheItem.PosMs;
-                float[] phraseSamples = cacheItem.WaveformSamples;
-                int phraseStartSampleIdx = (int)((phraseStartMs - leftMs) * 44100 / 1000);
-                int startJ = Math.Max(0, -phraseStartSampleIdx);
-                int endJ = Math.Min(phraseSamples.Length, (sampleCount / 2) - phraseStartSampleIdx);
-                for (int j = startJ; j < endJ; j++) {
-                    int targetIdx = (phraseStartSampleIdx + j) * 2;
-                    float scaledSample = phraseSamples[j] * visualScale;
-                    sampleData[targetIdx] += scaledSample;
-                    sampleData[targetIdx + 1] += scaledSample;
+                try {
+                    float visualScale = PhraseWaveformCache.GetVisualScale(in cacheItem, ref needsAnotherFrame);
+                    if (visualScale <= 0.001f) {
+                        continue;
+                    }
+                    float[]? phraseSamples = cacheItem.WaveformSamples;
+                    if (phraseSamples == null || phraseSamples.Length == 0) {
+                        continue;
+                    }
+                    double phraseStartMs = cacheItem.PosMs;
+                    int phraseStartSampleIdx = (int)((phraseStartMs - leftMs) * 44100 / 1000);
+                    int startJ = Math.Max(0, -phraseStartSampleIdx);
+                    int endJ = Math.Min(phraseSamples.Length, (sampleCount / 2) - phraseStartSampleIdx);
+                    if (endJ <= startJ) {
+                        continue;
+                    }
+                    for (int j = startJ; j < endJ; j++) {
+                        int targetIdx = (phraseStartSampleIdx + j) * 2;
+                        if (targetIdx < 0 || targetIdx + 1 >= sampleCount) {
+                            continue;
+                        }
+                        float scaledSample = phraseSamples[j] * visualScale;
+                        sampleData[targetIdx] += scaledSample;
+                        sampleData[targetIdx + 1] += scaledSample;
+                    }
+                } catch (Exception e) {
+                    // Stale cache / concurrent replace must not take down the UI thread.
+                    Log.Debug(e, "Waveform FillFromPhraseCache skipped a phrase");
                 }
             }
         }

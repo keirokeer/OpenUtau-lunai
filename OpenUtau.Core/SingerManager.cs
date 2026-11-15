@@ -134,6 +134,13 @@ namespace OpenUtau.Core {
                     singersInUse.Add(singer);
                 }
             }
+            bool freeing = singersUsed.Any(singer => !singersInUse.Contains(singer));
+            if (freeing) {
+                // Stop in-flight DiffSinger work before disposing native sessions; otherwise a
+                // cancelled render can still Run on a session FreeMemory is about to Dispose
+                // (native AccessViolation / process exit, often ~seconds later).
+                PlaybackManager.Inst.CancelActiveRender();
+            }
             //Release singers that are no longer in use
             foreach (var singer in singersUsed) {
                 if (!singersInUse.Contains(singer)) {

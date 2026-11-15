@@ -401,20 +401,21 @@ namespace OpenUtau.Core.DiffSinger {
 
         public override void FreeMemory(){
             Log.Information($"Freeing memory for singer {Id}");
-            // SessionLock only covers session creation, while a render may be mid-inference on a
-            // session it already holds; the DirectML scope keeps this disposal from tearing down a
-            // session that another thread is creating, running or disposing.
-            using var dmlScope = Onnx.EnterDmlScope();
-            lock (SessionLock) {
-                acousticSession?.Dispose();
-                acousticSession = null;
-                vocoder?.Dispose();
-                vocoder = null;
-                pitchPredictor?.Dispose();
-                pitchPredictor = null;
-                variancePredictor?.Dispose();
-                variancePredictor = null;
-                DiffSingerRealCurveScheduler.CancelAll();
+            // LifecycleLock waits out any DiffSinger.Render that still holds a session reference
+            // obtained before SessionLock; DmlLock covers DirectML create/run/dispose overlap.
+            lock (DiffSingerRenderer.LifecycleLock) {
+                using var dmlScope = Onnx.EnterDmlScope();
+                lock (SessionLock) {
+                    acousticSession?.Dispose();
+                    acousticSession = null;
+                    vocoder?.Dispose();
+                    vocoder = null;
+                    pitchPredictor?.Dispose();
+                    pitchPredictor = null;
+                    variancePredictor?.Dispose();
+                    variancePredictor = null;
+                    DiffSingerRealCurveScheduler.CancelAll();
+                }
             }
         }
     }
