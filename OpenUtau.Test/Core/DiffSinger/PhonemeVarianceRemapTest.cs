@@ -97,5 +97,39 @@ namespace OpenUtau.Core {
             Assert.Equal(100f, user[31]);
             Assert.Equal(50f, user[50]);
         }
+
+        [Fact]
+        public void CombinedMouthOpeningAttenuatesConsonants() {
+            // keepFactors: 1 = leave, 0.5/−50%, 0.2/−80% (s), 0.4/−60% (sh)
+            var values = new[] { 0.8f, 0.8f, 0.8f, 0.8f };
+            var keeps = new[] { 0.5f, 1f, 0.2f, 0.4f };
+            PhonemeVarianceRemap.AttenuateCombinedMouthOpening(values, keeps);
+            Assert.Equal(0.05f, values[0]); // default consonant → ceiling
+            Assert.Equal(0.8f, values[1]);  // vowel
+            Assert.Equal(0.05f, values[2]); // s (−80%) still hits ceiling from 0.8
+            Assert.Equal(0.05f, values[3]); // sh (−60%) still hits ceiling from 0.8
+        }
+
+        [Fact]
+        public void ConsonantAttenuateKeepFactorsForSAndSh() {
+            Assert.Equal(0.2f, PhonemeVarianceRemap.GetConsonantAttenuateKeepFactor("ru/s"));
+            Assert.Equal(0.2f, PhonemeVarianceRemap.GetConsonantAttenuateKeepFactor("en/s"));
+            Assert.Equal(0.2f, PhonemeVarianceRemap.GetConsonantAttenuateKeepFactor("es/s"));
+            Assert.Equal(0.4f, PhonemeVarianceRemap.GetConsonantAttenuateKeepFactor("ru/sh"));
+            Assert.Equal(0.4f, PhonemeVarianceRemap.GetConsonantAttenuateKeepFactor("ru/shj"));
+            Assert.Equal(0.4f, PhonemeVarianceRemap.GetConsonantAttenuateKeepFactor("en/sh"));
+            Assert.Equal(0.5f, PhonemeVarianceRemap.GetConsonantAttenuateKeepFactor("ru/k"));
+            Assert.Equal(0.5f, PhonemeVarianceRemap.GetConsonantAttenuateKeepFactor("en/t"));
+        }
+
+        [Fact]
+        public void CombinedMouthOpeningSKeepBelowCeiling() {
+            // Small openings: s (−80%) keeps less than default (−50%).
+            var values = new[] { 0.08f, 0.08f };
+            var keeps = new[] { 0.5f, 0.2f };
+            PhonemeVarianceRemap.AttenuateCombinedMouthOpening(values, keeps);
+            Assert.Equal(0.04f, values[0], 3);
+            Assert.Equal(0.016f, values[1], 3);
+        }
     }
 }

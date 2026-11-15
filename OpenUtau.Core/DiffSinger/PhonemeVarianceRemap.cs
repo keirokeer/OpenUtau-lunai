@@ -173,6 +173,15 @@ namespace OpenUtau.Core.DiffSinger {
             IReadOnlyList<float> segmentScales,
             float frameMs,
             string abbr) {
+            FillAndCrossfade(scales, durations, segmentScales, frameMs, GetCrossfadeMs(abbr));
+        }
+
+        static void FillAndCrossfade(
+            float[] scales,
+            IReadOnlyList<int> durations,
+            IReadOnlyList<float> segmentScales,
+            float frameMs,
+            float crossfadeMs) {
             int totalFrames = scales.Length;
             int frame = 0;
             for (int i = 0; i < segmentScales.Count; ++i) {
@@ -183,8 +192,9 @@ namespace OpenUtau.Core.DiffSinger {
                     scales[j] = scale;
                 }
             }
+            // Remap OPEC uses ~20ms; consonant attenuate may pass a longer window.
             int crossfadeFrames = Math.Clamp(
-                (int)Math.Round(GetCrossfadeMs(abbr) / frameMs), 1, 20);
+                (int)Math.Round(crossfadeMs / Math.Max(frameMs, 0.001f)), 1, 40);
             frame = 0;
             for (int i = 0; i < segmentScales.Count - 1; ++i) {
                 int boundary = frame + durations[i];
@@ -213,6 +223,12 @@ namespace OpenUtau.Core.DiffSinger {
             }
             return Config.Value.open_mouth?.crossfade_ms ?? 20f;
         }
+
+        /// <summary>
+        /// Longer than remap OPEC crossfade (20ms) so consonant mouth-opening
+        /// attenuation eases in/out more gently than the user-curve filter.
+        /// </summary>
+        const float MouthOpeningAttenuateCrossfadeMs = 56f;
 
         public static float RemapBaseline(string abbr) {
             return abbr == Format.Ustx.OPEC ? 50f : 0f;
@@ -249,6 +265,118 @@ namespace OpenUtau.Core.DiffSinger {
             var result = userSamples.ToArray();
             ApplyToUserSamples(result, scales, abbr);
             return result;
+        }
+
+        /// <summary>
+        /// Keep-factor after consonant attenuation (1 = unchanged). Separate from the
+        /// OPEC/TENC user-curve remap tables: default −50%, s −80%, sh/shj −60%.
+        /// </summary>
+        internal static float GetConsonantAttenuateKeepFactor(string symbol) {
+            string b = symbol;
+            int slash = symbol.LastIndexOf('/');
+            if (slash >= 0 && slash + 1 < symbol.Length) {
+                b = symbol[(slash + 1)..];
+            }
+            // sh before s (ru/sh, ru/shj, en/sh, …).
+            if (b.StartsWith("sh", StringComparison.OrdinalIgnoreCase)) {
+                return 0.4f; // −60%
+            }
+            if (b.Equals("s", StringComparison.OrdinalIgnoreCase)) {
+                return 0.2f; // −80%
+            }
+            return 0.5f; // −50%
+        }
+
+        static float GetMouthOpeningAttenuateKeep(string symbol, PhonemeTypeLookup? types) {
+            if (IsPassthroughPhoneme(symbol) || symbol == "AP") {
+                return 1f;
+            }
+            // Same gate as before: only OPEC openness scale == 0 (stops/nasals/fricatives…).
+            if (GetOpenMouthScale(symbol, types) > 0f) {
+                return 1f;
+            }
+            return GetConsonantAttenuateKeepFactor(symbol);
+        }
+
+        static float[] BuildMouthOpeningAttenuateKeepFactors(
+            RenderPhrase phrase,
+            float frameMs,
+            int headFrames,
+            int tailFrames,
+            PhonemeTypeLookup? types) {
+            var segments = DiffSingerUtils.PaddedSegments(phrase, frameMs, headFrames, tailFrames);
+            var phonemes = segments.Select(s => s.Phoneme).ToArray();
+            var durations = DiffSingerUtils.PaddedPhoneDurations(phrase, frameMs, headFrames, tailFrames);
+            int totalFrames = durations.Sum();
+            var keeps = Enumerable.Repeat(1f, totalFrames).ToArray();
+            if (totalFrames == 0 || phonemes.Length == 0) {
+                return keeps;
+            }
+            if (phonemes.Length == durations.Length) {
+                var segmentKeeps = phonemes.Select(p => GetMouthOpeningAttenuateKeep(p, types)).ToArray();
+                FillAndCrossfade(keeps, durations, segmentKeeps, frameMs, MouthOpeningAttenuateCrossfadeMs);
+                return keeps;
+            }
+            if (durations.Length < phonemes.Length + 2) {
+                return keeps;
+            }
+            var phoneKeeps = phonemes.Select(p => GetMouthOpeningAttenuateKeep(p, types)).ToArray();
+            var bodyDurations = new int[phonemes.Length];
+            for (int i = 0; i < phonemes.Length; ++i) {
+                bodyDurations[i] = durations[i + 1];
+            }
+            var bodyOnly = Enumerable.Repeat(1f, bodyDurations.Sum()).ToArray();
+            FillAndCrossfade(bodyOnly, bodyDurations, phoneKeeps, frameMs, MouthOpeningAttenuateCrossfadeMs);
+            int head = Math.Max(0, durations[0]);
+            for (int i = 0; i < bodyOnly.Length && head + i < totalFrames; ++i) {
+                keeps[head + i] = bodyOnly[i];
+            }
+            return keeps;
+        }
+
+        /// <summary>
+        /// Always-on consonant guard for the combined OPEC curve (0–1), independent of the
+        /// user-curve <see cref="DiffSingerPhonemeVarianceRemap"/> toggle. Only openness
+        /// scale == 0 phones are reduced (default −50%; s −80%; sh −60%), with a longer
+        /// crossfade than the remap filter. Hard ceiling 0.05 blends in with the keep factor.
+        /// </summary>
+        public static void AttenuateCombinedMouthOpening(
+            RenderPhrase phrase,
+            float[] mouthOpening01,
+            float frameMs,
+            int headFrames,
+            int tailFrames,
+            PhonemeTypeLookup? types = null) {
+            if (mouthOpening01 == null || mouthOpening01.Length == 0) {
+                return;
+            }
+            if (phrase.singer is not DiffSingerSinger dsSinger || !dsSinger.Found
+                || !dsSinger.dsConfig.useMouthOpeningEmbed) {
+                return;
+            }
+            types ??= PhonemeTypeLookup.TryFromSinger(phrase.singer);
+            var keeps = BuildMouthOpeningAttenuateKeepFactors(
+                phrase, frameMs, headFrames, tailFrames, types);
+            AttenuateCombinedMouthOpening(mouthOpening01, keeps);
+        }
+
+        /// <param name="keepFactors">1 = unchanged; &lt;1 = multiply then soft-cap toward 0.05.</param>
+        internal static void AttenuateCombinedMouthOpening(float[] mouthOpening01, float[] keepFactors) {
+            // 5 on the 0–100 piano-roll scale → 0.05 in the acoustic 0–1 embed.
+            const float consonantCeiling = 0.05f;
+            int n = Math.Min(mouthOpening01.Length, keepFactors.Length);
+            for (int i = 0; i < n; ++i) {
+                float keep = keepFactors[i];
+                if (keep >= 0.999f) {
+                    continue;
+                }
+                mouthOpening01[i] *= keep;
+                // Blend hard cap with attenuation strength so longer crossfades stay smooth.
+                float strength = SmoothStep(Math.Clamp(1f - keep, 0f, 1f));
+                float ceiling = 1f + (consonantCeiling - 1f) * strength;
+                mouthOpening01[i] = Math.Min(mouthOpening01[i], ceiling);
+                mouthOpening01[i] = Math.Clamp(mouthOpening01[i], 0f, 1f);
+            }
         }
 
         static float SmoothStep(float t) => t * t * (3f - 2f * t);

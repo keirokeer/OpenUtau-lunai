@@ -562,6 +562,8 @@ namespace OpenUtau.Core.DiffSinger {
                         varianceResult.frameMs, frameMs);
                     var mouthOpening = predictedMouthOpening.Zip(userMouthOpening, varianceDeltaFunctions[Format.Ustx.OPEC])
                         .Select(x => Math.Clamp(x, 0f, 1f)).ToArray();
+                    PhonemeVarianceRemap.AttenuateCombinedMouthOpening(
+                        phrase, mouthOpening, (float)frameMs, headFrames, tailFrames);
                     acousticInputs.Add(NamedOnnxValue.CreateFromTensor("mouth_opening",
                         new DenseTensor<float>(mouthOpening, new int[] { mouthOpening.Length })
                         .Reshape(new int[] { 1, mouthOpening.Length })));
@@ -944,15 +946,18 @@ namespace OpenUtau.Core.DiffSinger {
                     deltaCurve = PhonemeVarianceRemap.ApplyIfEnabled(
                         phrase, deltaCurve, abbr, frameMs, headFrames, tailFrames);
                 }
+                var combined = realCurve.Zip(deltaCurve, varianceDeltaFunctions[abbr]).ToArray();
+                if (abbr == Format.Ustx.OPEC) {
+                    PhonemeVarianceRemap.AttenuateCombinedMouthOpening(
+                        phrase, combined, frameMs, headFrames, tailFrames);
+                }
                 var normFunc = t.Item4;
                 return new RenderRealCurveResult {
                     abbr = abbr,
                     ticks = Enumerable.Range(0, realCurve.Length)
                         .Select(i => (float)phrase.timeAxis.MsPosToTickPos(startMs + i * frameMs) - phrase.position)
                         .ToArray(),
-                    values = realCurve.Zip(deltaCurve, varianceDeltaFunctions[abbr])
-                        .Select(normFunc)
-                        .ToArray()
+                    values = combined.Select(normFunc).ToArray()
                 };
             }).ToList();
             return realCurves;
