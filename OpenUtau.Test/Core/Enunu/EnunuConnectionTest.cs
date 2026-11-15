@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Newtonsoft.Json;
 using OpenUtau.Core.Enunu;
 using Xunit;
 
@@ -24,22 +25,22 @@ namespace OpenUtau.Core {
         public void CommandRequestsMatchTheServerFormat() {
             // ENUNUServer 2: style shift at [5] is required; acoustic_f0 carries the f0 at [6] as numbers.
             Assert.Equal("[\"acoustic\",\"a.tmp\",\"\",\"hash\",\"600\",0]",
-                Json.Serialize(EnunuConnection.CommandRequest(EnunuCommand.Acoustic, "a.tmp", "", "hash")));
-            Assert.Equal("[\"acoustic_f0\",\"a.tmp\",\"\",\"hash\",\"600\",0,[0,220.5]]",
-                Json.Serialize(EnunuConnection.CommandRequest(EnunuCommand.AcousticF0, "a.tmp", "", "hash", new double[] { 0, 220.5 })));
+                JsonConvert.SerializeObject(EnunuConnection.CommandRequest(EnunuCommand.Acoustic, "a.tmp", "", "hash")));
+            Assert.Equal("[\"acoustic_f0\",\"a.tmp\",\"\",\"hash\",\"600\",0,[0.0,220.5]]",
+                JsonConvert.SerializeObject(EnunuConnection.CommandRequest(EnunuCommand.AcousticF0, "a.tmp", "", "hash", new double[] { 0, 220.5 })));
         }
 
         [Fact]
         public void ReadsFeaturesOnlyFromNewServers() {
-            var legacy = Json.Deserialize<VersionResponse>(
-                "{\"result\": {\"name\": \"SimpleENUNUServer\", \"version\": \"0.5.0\", \"author\": \"x\"}}");
+            var legacy = JsonConvert.DeserializeObject<VersionResponse>(
+                "{\"result\": {\"name\": \"SimpleENUNUServer\", \"version\": \"0.5.0\", \"author\": \"x\"}}")!;
             Assert.Null(legacy.result.features);
 
-            var current = Json.Deserialize<VersionResponse>(
+            var current = JsonConvert.DeserializeObject<VersionResponse>(
                 "{\"result\": {\"name\": \"SimpleENUNUServer\", \"version\": \"2.0.0\", \"author\": \"roku10shi\", " +
                 "\"features\": {\"commands\": [\"timing\", \"acoustic\", \"pitch\", \"acoustic_f0\", \"synthe\", \"config\"], " +
                 "\"style_shift\": true, \"pitch_n_frames\": true, " +
-                "\"diffusion\": {\"mgc\": {\"method\": \"ddim\", \"steps\": 25}}}}}");
+                "\"diffusion\": {\"mgc\": {\"method\": \"ddim\", \"steps\": 25}}}}}")!;
             Assert.True(current.result.features!.SupportsPitch);
             Assert.True(current.result.features.Has(EnunuCommand.Config));
             Assert.Equal(25, current.result.features.diffusion!["mgc"].steps);
@@ -47,16 +48,16 @@ namespace OpenUtau.Core {
 
         [Fact]
         public void ReadsResponses() {
-            var pitch = Json.Deserialize<PitchResponse>(
-                "{\"result\": {\"path_f0\": \"p.npy\", \"lf0_conditioning\": true, \"n_frames\": 12}}");
+            var pitch = JsonConvert.DeserializeObject<PitchResponse>(
+                "{\"result\": {\"path_f0\": \"p.npy\", \"lf0_conditioning\": true, \"n_frames\": 12}}")!;
             Assert.Null(pitch.Error);
             Assert.True(pitch.result.lf0_conditioning);
             Assert.Equal(12, pitch.result.n_frames);
 
             // acoustic has no lf0_conditioning; acoustic_f0 has it.
-            var acoustic = Json.Deserialize<AcousticResponse>("{\"result\": {\"path_f0\": \"f.npy\", \"path_mel\": null}}");
+            var acoustic = JsonConvert.DeserializeObject<AcousticResponse>("{\"result\": {\"path_f0\": \"f.npy\", \"path_mel\": null}}")!;
             Assert.Null(acoustic.result.lf0_conditioning);
-            var error = Json.Deserialize<AcousticResponse>("{\"error\": \"boom\"}");
+            var error = JsonConvert.DeserializeObject<AcousticResponse>("{\"error\": \"boom\"}")!;
             Assert.Equal("boom", error.Error);
         }
 
