@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
@@ -17,11 +16,11 @@ namespace OpenUtau.App.Controls {
         const double SearchHeight = 32;
         const double TypeFilterHeight = 28;
         const int MinVisibleRows = 4;
-        // Flyout presenter padding/border + footer + search row + type filters.
-        const double ChromeHeight = 50 + SearchHeight + TypeFilterHeight;
+        // Flyout presenter padding/border + footer + search row (type chips added when shown).
+        const double BaseChromeHeight = 50 + SearchHeight;
 
         private int maxRows = int.MaxValue;
-        private IDisposable? itemsSubscription;
+        private IDisposable? sizeSubscription;
         private Control? pressedTile;
 
         public SingerFlyout() {
@@ -37,10 +36,11 @@ namespace OpenUtau.App.Controls {
 
         protected override void OnDataContextChanged(EventArgs e) {
             base.OnDataContextChanged(e);
-            itemsSubscription?.Dispose();
-            itemsSubscription = null;
+            sizeSubscription?.Dispose();
+            sizeSubscription = null;
             if (DataContext is SingerFlyoutViewModel viewModel) {
-                itemsSubscription = viewModel.WhenAnyValue(x => x.Items)
+                // Sized for the singers the type filter leaves, so searching doesn't resize the flyout.
+                sizeSubscription = viewModel.WhenAnyValue(x => x.ListSizeCount, x => x.ShowTypeFilter)
                     .Subscribe(_ => UpdateSize());
             }
         }
@@ -57,7 +57,8 @@ namespace OpenUtau.App.Controls {
             var anchorBottom = anchor.PointToScreen(new Point(0, anchor.Bounds.Height));
             if (screen != null) {
                 var area = screen.WorkingArea;
-                int RowsFor(double pixels) => (int)((pixels / screen.Scaling - ChromeHeight) / TileHeight);
+                double chrome = BaseChromeHeight + (ShowTypeChips() ? TypeFilterHeight : 0);
+                int RowsFor(double pixels) => (int)((pixels / screen.Scaling - chrome) / TileHeight);
                 int below = RowsFor(area.Bottom - anchorBottom.Y);
                 int above = RowsFor(anchorTop.Y - area.Y);
                 maxRows = Math.Max(MinVisibleRows, below >= MinVisibleRows ? below : Math.Max(below, above));
@@ -67,35 +68,25 @@ namespace OpenUtau.App.Controls {
                 TileScroller, WorkspaceScrollbarHelper.UseClassicScrollbars);
         }
 
+        bool ShowTypeChips() => (DataContext as SingerFlyoutViewModel)?.ShowTypeFilter ?? false;
+
         void UpdateSize() {
-            int count = CountVisibleRows();
-            int rows = Math.Clamp(count, 1, Math.Max(1, maxRows));
+            int count = (DataContext as SingerFlyoutViewModel)?.ListSizeCount ?? 1;
+            int rows = Math.Clamp(Math.Max(1, count), 1, Math.Max(1, maxRows));
             TileScroller.Height = rows * TileHeight;
-            // Cap width so the flyout presenter cannot grow past the list (e.g. wide type chips).
+            // At least the list width; the filter row can widen the flyout beyond that.
             TileScroller.MinWidth = ListWidth;
-            TileScroller.MaxWidth = ListWidth;
             TileScroller.Width = ListWidth;
+            if (TypeChips is { IsVisible: true } && TypeChips.Bounds.Width > ListWidth) {
+                TileScroller.Width = TypeChips.Bounds.Width;
+            }
             TileScroller.Offset = new Vector(0, 0);
         }
 
-        int CountVisibleRows() {
-            if (DataContext is not SingerFlyoutViewModel viewModel) {
-                return 0;
-            }
-            int n = 0;
-            foreach (var item in viewModel.Items) {
-                if (item is SingerTileViewModel || item is SingerFlyoutSeparatorViewModel) {
-                    n++;
-                }
-            }
-            return Math.Max(n, 1);
-        }
-
-        void TypeFilterClicked(object? sender, RoutedEventArgs e) {
-            if (sender is ToggleButton { DataContext: SingerTypeFilterViewModel filter } button &&
+        void TypeChipClicked(object? sender, RoutedEventArgs e) {
+            if (sender is Control { DataContext: SingerTypeChipViewModel chip } &&
                 DataContext is SingerFlyoutViewModel viewModel) {
-                viewModel.SelectTypeFilter(filter);
-                button.IsChecked = filter.IsSelected;
+                viewModel.ToggleTypeFilter(chip.Type);
                 e.Handled = true;
             }
         }

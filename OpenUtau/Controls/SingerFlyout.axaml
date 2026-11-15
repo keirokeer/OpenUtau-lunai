@@ -73,7 +73,9 @@
       <Setter Property="BorderBrush" Value="{DynamicResource MutedIconBrush}"/>
       <Setter Property="Background" Value="Transparent"/>
     </Style>
-    <Style Selector="ToggleButton.typeFilter">
+    <!-- Singer type filter: all chips lit while showing every type, one chip lit while filtered.
+         Plain buttons, since their lit state comes from the filter rather than from a click. -->
+    <Style Selector="Button.typeChip">
       <Setter Property="Height" Value="22"/>
       <Setter Property="MinHeight" Value="22"/>
       <Setter Property="Padding" Value="6,0"/>
@@ -86,7 +88,6 @@
       <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
       <Setter Property="HorizontalContentAlignment" Value="Center"/>
       <Setter Property="VerticalContentAlignment" Value="Center"/>
-      <!-- Keep outline on hover (Fluent otherwise clears BorderBrush). -->
       <Style Selector="^:pointerover">
         <Setter Property="BorderBrush" Value="{DynamicResource NeutralAccentBrushSemi}"/>
       </Style>
@@ -95,15 +96,14 @@
         <Setter Property="BorderBrush" Value="{DynamicResource NeutralAccentBrushSemi}"/>
         <Setter Property="BorderThickness" Value="1"/>
       </Style>
-      <!-- Checked: no border (clean corners). Extra padding replaces the 1px border so text stays put. -->
-      <Style Selector="^:checked">
+      <Style Selector="^.on">
         <Setter Property="Foreground" Value="{DynamicResource WhiteKeyNameBrush}"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="BorderBrush" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Padding" Value="7,1"/>
       </Style>
-      <Style Selector="^:checked /template/ ContentPresenter#PART_ContentPresenter">
+      <Style Selector="^.on /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource NeutralAccentBrush}"/>
         <Setter Property="BorderBrush" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
@@ -111,14 +111,14 @@
         <Setter Property="Foreground" Value="{DynamicResource WhiteKeyNameBrush}"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
       </Style>
-      <Style Selector="^:checked:pointerover">
+      <Style Selector="^.on:pointerover">
         <Setter Property="Foreground" Value="{DynamicResource WhiteKeyNameBrush}"/>
         <Setter Property="FontWeight" Value="SemiBold"/>
         <Setter Property="BorderBrush" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Padding" Value="7,1"/>
       </Style>
-      <Style Selector="^:checked:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Style Selector="^.on:pointerover /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource NeutralAccentBrush}"/>
         <Setter Property="BorderBrush" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
@@ -201,17 +201,18 @@
     </Border>
     <TextBox Name="SearchBox" DockPanel.Dock="Top" Classes="singerSearch"
              Text="{Binding SearchText}" PlaceholderText="{DynamicResource lunai.search}"/>
-    <ItemsControl DockPanel.Dock="Top" ItemsSource="{Binding TypeFilters}" Margin="0,0,0,4">
+    <!-- Docked above the list; horizontal so the chip row never wraps. Hidden when only All would show. -->
+    <ItemsControl Name="TypeChips" DockPanel.Dock="Top" Margin="0,0,0,4" HorizontalAlignment="Left"
+                  ItemsSource="{Binding TypeChips}" IsVisible="{Binding ShowTypeFilter}">
       <ItemsControl.ItemsPanel>
         <ItemsPanelTemplate>
-          <WrapPanel Orientation="Horizontal"/>
+          <StackPanel Orientation="Horizontal" Spacing="0"/>
         </ItemsPanelTemplate>
       </ItemsControl.ItemsPanel>
       <ItemsControl.ItemTemplate>
-        <DataTemplate DataType="vm:SingerTypeFilterViewModel">
-          <ToggleButton Classes="typeFilter" Content="{Binding Label}"
-                        IsChecked="{Binding IsSelected, Mode=OneWay}"
-                        Click="TypeFilterClicked"/>
+        <DataTemplate DataType="vm:SingerTypeChipViewModel">
+          <Button Classes="typeChip" Classes.on="{Binding IsOn}" Content="{Binding Label}"
+                  ToolTip.Tip="{Binding ToolTipText}" Click="TypeChipClicked"/>
         </DataTemplate>
       </ItemsControl.ItemTemplate>
     </ItemsControl>

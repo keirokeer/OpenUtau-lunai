@@ -20,18 +20,6 @@ using Serilog;
 namespace OpenUtau.App.ViewModels {
     public sealed class SingerFlyoutSeparatorViewModel { }
 
-    public partial class SingerTypeFilterViewModel : ViewModelBase {
-        public USingerType? Type { get; }
-        public string Label { get; }
-        [Reactive] public partial bool IsSelected { get; set; }
-
-        public SingerTypeFilterViewModel(USingerType? type, string label, bool isSelected) {
-            Type = type;
-            Label = label;
-            IsSelected = isSelected;
-        }
-    }
-
     public partial class SingerTileViewModel : ViewModelBase {
         public USinger Singer { get; }
         public string Name => Singer.LocalizedName;
@@ -109,6 +97,25 @@ namespace OpenUtau.App.ViewModels {
         }
     }
 
+    /// <summary>
+    /// A singer type chip of the flyout's filter row. Every chip is lit while showing all types,
+    /// then only the chosen one is.
+    /// </summary>
+    public class SingerTypeChipViewModel : ViewModelBase {
+        /// <summary>Null for the "All" chip.</summary>
+        public USingerType? Type { get; }
+        public string Label { get; }
+        public bool IsOn { get; }
+        public string ToolTipText { get; }
+
+        public SingerTypeChipViewModel(USingerType? type, string label, bool isOn, string toolTipText) {
+            Type = type;
+            Label = label;
+            IsOn = isOn;
+            ToolTipText = toolTipText;
+        }
+    }
+
     public partial class SingerFlyoutViewModel : ViewModelBase, ICmdSubscriber {
         /// <summary>How many recent singers to show above the separator.</summary>
         public const int MaxRecentDisplayed = 5;
@@ -122,8 +129,21 @@ namespace OpenUtau.App.ViewModels {
         };
 
         [Reactive] public partial IReadOnlyList<object> Items { get; set; } = Array.Empty<object>();
-        [Reactive] public partial IReadOnlyList<SingerTypeFilterViewModel> TypeFilters { get; set; }
-            = Array.Empty<SingerTypeFilterViewModel>();
+        [Reactive] public partial IReadOnlyList<SingerTypeChipViewModel> TypeChips { get; set; }
+            = Array.Empty<SingerTypeChipViewModel>();
+
+        /// <summary>The singer type filter, or null for all of them. Kept only while the flyout is open.</summary>
+        [Reactive] public partial USingerType? TypeFilter { get; set; }
+
+        /// <summary>The filter row is only worth its space when there is more than one type to choose from.</summary>
+        public bool ShowTypeFilter => TypeChips.Count > 1;
+
+        /// <summary>
+        /// Rows the list shows for the current type filter, ignoring the search text.
+        /// Sizes the flyout, so searching doesn't resize it while filtering does.
+        /// </summary>
+        [Reactive] public partial int ListSizeCount { get; set; } = 1;
+
         [Reactive] public partial bool IsEmpty { get; set; }
         [Reactive] public partial bool CanClearSinger { get; set; }
         [Reactive] public partial string SearchText { get; set; } = string.Empty;
@@ -140,7 +160,7 @@ namespace OpenUtau.App.ViewModels {
         private List<USinger> allSingers = new();
         private List<USinger> recentSingers = new();
         private List<USinger> restSingers = new();
-        private USingerType? selectedType;
+        private IReadOnlyList<USingerType> availableTypes = Array.Empty<USingerType>();
 
         public SingerFlyoutViewModel(
                 Func<USinger?> getCurrentSinger,
@@ -151,6 +171,8 @@ namespace OpenUtau.App.ViewModels {
             this.allSetSingerCommand = allSetSingerCommand;
             this.WhenAnyValue(x => x.SearchText)
                 .Subscribe(_ => PublishItems());
+            this.WhenAnyValue(x => x.TypeFilter)
+                .Subscribe(_ => ApplyTypeFilter());
             Rebuild();
         }
 
@@ -164,27 +186,42 @@ namespace OpenUtau.App.ViewModels {
                 allSingers.Insert(0, current);
             }
             (recentSingers, restSingers) = OrderSingers(allSingers, Preferences.Default.RecentSingers);
-            RebuildTypeFilters();
+            var present = allSingers.Select(s => s.SingerType).ToHashSet();
+            availableTypes = TypeFilterOrder.Where(present.Contains).ToArray();
+            if (TypeFilter is { } filter && !availableTypes.Contains(filter)) {
+                TypeFilter = null;
+            }
             CanClearSinger = current != null && (current.Found || !string.IsNullOrEmpty(current.Name));
-            PublishItems();
+            ApplyTypeFilter();
             this.RaisePropertyChanged(nameof(HasAdditionalSingersFolder));
         }
 
-        void RebuildTypeFilters() {
-            var present = allSingers.Select(s => s.SingerType).ToHashSet();
-            if (selectedType != null && !present.Contains(selectedType.Value)) {
-                selectedType = null;
-            }
-            var filters = new List<SingerTypeFilterViewModel> {
-                new(null, ThemeManager.GetString("lunai.tab.all"), selectedType == null),
+        /// <summary>
+        /// All-hot while no type is picked, one-hot for a picked type.
+        /// Clicking the lit type, or the All chip, goes back to all-hot.
+        /// </summary>
+        public void ToggleTypeFilter(USingerType? type) {
+            TypeFilter = type == null || TypeFilter == type ? null : type;
+        }
+
+        void ApplyTypeFilter() {
+            BuildTypeChips();
+            this.RaisePropertyChanged(nameof(ShowTypeFilter));
+            PublishItems();
+        }
+
+        void BuildTypeChips() {
+            var chips = new List<SingerTypeChipViewModel> {
+                new SingerTypeChipViewModel(null,
+                    ThemeManager.GetString("tracks.filtertype.all"), TypeFilter == null,
+                    ThemeManager.GetString("tracks.filtertype.all.tip")),
             };
-            foreach (var type in TypeFilterOrder) {
-                if (!present.Contains(type)) {
-                    continue;
-                }
-                filters.Add(new SingerTypeFilterViewModel(type, DisplayName(type), selectedType == type));
+            foreach (var type in availableTypes) {
+                var label = DisplayName(type);
+                chips.Add(new SingerTypeChipViewModel(type, label, TypeFilter == null || TypeFilter == type,
+                    string.Format(ThemeManager.GetString("tracks.filtertype.only"), label)));
             }
-            TypeFilters = filters;
+            TypeChips = chips;
         }
 
         public static string DisplayName(USingerType type) => type switch {
@@ -196,40 +233,36 @@ namespace OpenUtau.App.ViewModels {
             _ => type.ToString(),
         };
 
-        public void SelectTypeFilter(SingerTypeFilterViewModel filter) {
-            selectedType = filter.Type;
-            foreach (var f in TypeFilters) {
-                f.IsSelected = ReferenceEquals(f, filter);
-            }
-            PublishItems();
-        }
+        bool MatchesTypeFilter(USingerType type) =>
+            TypeFilter is not { } filter || type == filter;
 
         void PublishItems() {
             var current = getCurrentSinger();
             var query = SearchText?.Trim() ?? string.Empty;
             bool nameFiltering = query.Length > 0;
-            bool typeFiltering = selectedType != null;
+            bool typeFiltering = TypeFilter != null;
 
-            IEnumerable<USinger> Match(IEnumerable<USinger> source) {
-                IEnumerable<USinger> result = source;
-                if (typeFiltering) {
-                    result = result.Where(s => s.SingerType == selectedType);
-                }
-                if (nameFiltering) {
+            IEnumerable<USinger> Match(IEnumerable<USinger> source, bool applyName) {
+                IEnumerable<USinger> result = source.Where(s => MatchesTypeFilter(s.SingerType));
+                if (applyName && nameFiltering) {
                     result = result.Where(s => SingerTileViewModel.Matches(
                         SingerTileViewModel.BuildSearchTerms(s), query));
                 }
                 return result;
             }
 
+            // Size from the type filter only, so typing in search doesn't resize the flyout.
+            ListSizeCount = CountListRows(Match(allSingers, applyName: false), Match(recentSingers, applyName: false),
+                Match(restSingers, applyName: false), typeFiltering);
+
             var list = new List<object>();
             if (nameFiltering || typeFiltering) {
-                foreach (var singer in Match(allSingers).LocalizedOrderBy(s => s.LocalizedName)) {
+                foreach (var singer in Match(allSingers, applyName: true).LocalizedOrderBy(s => s.LocalizedName)) {
                     list.Add(new SingerTileViewModel(singer, current != null && singer.Equals(current)));
                 }
             } else {
-                var recent = Match(recentSingers).ToList();
-                var rest = Match(restSingers).ToList();
+                var recent = Match(recentSingers, applyName: true).ToList();
+                var rest = Match(restSingers, applyName: true).ToList();
                 foreach (var singer in recent) {
                     list.Add(new SingerTileViewModel(singer, current != null && singer.Equals(current)));
                 }
@@ -242,6 +275,23 @@ namespace OpenUtau.App.ViewModels {
             }
             Items = list;
             IsEmpty = !Items.OfType<SingerTileViewModel>().Any();
+        }
+
+        static int CountListRows(
+                IEnumerable<USinger> allMatched,
+                IEnumerable<USinger> recentMatched,
+                IEnumerable<USinger> restMatched,
+                bool typeFiltering) {
+            if (typeFiltering) {
+                return Math.Max(1, allMatched.Count());
+            }
+            var recent = recentMatched.ToList();
+            var rest = restMatched.ToList();
+            int n = recent.Count + rest.Count;
+            if (recent.Count > 0 && rest.Count > 0) {
+                n++; // separator
+            }
+            return Math.Max(1, n);
         }
 
         /// <summary>
