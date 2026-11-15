@@ -198,7 +198,8 @@
                   IsEnabled="{Binding DiffSingerMergeOverlappingPhrases}"
                   ToolTip.Tip="{DynamicResource prefs.rendering.mergephrases}">
               <TextBlock Text="{DynamicResource prefs.rendering.mergephrases}"/>
-              <c:WorkspacePanelComboBox Classes="workspacePanelCombo" Width="120"
+              <c:WorkspacePanelComboBox Classes="workspacePanelCombo" Grid.Column="1" Width="120"
+                                        HorizontalAlignment="Right" VerticalAlignment="Center"
                                         ItemsSource="{Binding MergePhrasesSecs}"
                                         SelectedIndex="{Binding MergePhrasesSecIndex}"/>
             </Grid>

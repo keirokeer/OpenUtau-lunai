@@ -422,9 +422,10 @@
             <TextBlock Text="{DynamicResource prefs.diffsinger.mergeoverlappingphrases}" HorizontalAlignment="Left" />
             <ToggleSwitch IsChecked="{Binding DiffSingerMergeOverlappingPhrases}" />
           </Grid>
-          <Grid Margin="0,5,0,0" IsEnabled="{Binding DiffSingerMergeOverlappingPhrases}">
+          <Grid Margin="0,5,0,0" ColumnDefinitions="*,Auto" IsEnabled="{Binding DiffSingerMergeOverlappingPhrases}">
             <TextBlock Text="{DynamicResource prefs.rendering.mergephrases}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-            <c:WorkspacePanelComboBox Classes="workspacePanelCombo" Width="120" HorizontalAlignment="Right"
+            <c:WorkspacePanelComboBox Classes="workspacePanelCombo" Grid.Column="1" Width="120"
+                                      HorizontalAlignment="Right" VerticalAlignment="Center"
                                       ItemsSource="{Binding MergePhrasesSecs}"
                                       SelectedIndex="{Binding MergePhrasesSecIndex}"/>
           </Grid>
