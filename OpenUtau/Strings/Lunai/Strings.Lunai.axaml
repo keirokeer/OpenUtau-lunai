@@ -1,4 +1,4 @@
-﻿<!--Lunai-only strings and overrides. Not managed by Crowdin.-->
+<!--Lunai-only strings and overrides. Not managed by Crowdin.-->
 <!--Merged after upstream Strings*.axaml in App.SetLanguage.-->
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:system="clr-namespace:System;assembly=mscorlib"
@@ -410,6 +410,7 @@
   <system:String x:Key="tip.notes.zoomy">Alt + scroll wheel to zoom vertically</system:String>
 
   <system:String x:Key="tracks.mixfx">Track Polish</system:String>
+  <system:String x:Key="tracks.phonemizer.unsupported">Not supported by this singer</system:String>
   <system:String x:Key="tracks.rotateselectedtracksingers">Rotate singers across selected tracks</system:String>
   <system:String x:Key="tracks.singer.applytoalltracks.tooltip">Apply to all selected tracks</system:String>
   <system:String x:Key="tracks.singer.favorite.tooltip">Add singer to favorites</system:String>

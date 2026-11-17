@@ -292,6 +292,13 @@ namespace OpenUtau.App.ViewModels {
             var available = PhonemizerFactory.EnumerateForSinger(singer).ToArray();
             var availableTypes = available.Select(factory => factory.type).ToHashSet();
             bool flatMenu = PhonemizerFactory.UsesFlatPhonemizerMenu(singer);
+            var listed = new HashSet<Type>();
+
+            void AddSeparatorIfNeeded() {
+                if (items.Count > 0) {
+                    items.Add(new PhonemizerMenuSeparatorViewModel());
+                }
+            }
 
             string defaultHeader = "Default";
             if (TryGetPartTrack(out var trackForHeader)) {
@@ -304,57 +311,81 @@ namespace OpenUtau.App.ViewModels {
                 CommandParameter = null
             });
 
-            items.Add(new MenuItemViewModel() { Header = "-", Height = 1 });
             var recentItems = Preferences.Default.RecentPhonemizers
                 .Select(name => PhonemizerFactory.Get(name))
                 .OfType<PhonemizerFactory>()
-                .Where(factory => availableTypes.Contains(factory.type))
-                .OrderBy(factory => factory.tag)
-                .Select(factory => new MenuItemViewModel() {
-                    Header = factory.ToString(),
-                    Command = SelectPhonemizerCommand,
-                    CommandParameter = factory.name,
+                .Where(factory => availableTypes.Contains(factory.type) && !listed.Contains(factory.type))
+                .Select(factory => {
+                    listed.Add(factory.type);
+                    return new MenuItemViewModel() {
+                        Header = factory.ToString(),
+                        Command = SelectPhonemizerCommand,
+                        CommandParameter = factory.name,
+                    };
                 })
                 .ToArray();
-            items.AddRange(recentItems);
+            if (recentItems.Length > 0) {
+                AddSeparatorIfNeeded();
+                items.AddRange(recentItems);
+            }
 
             if (flatMenu) {
-                var listed = items
-                    .Select(item => item.CommandParameter)
-                    .OfType<string>()
-                    .Select(name => PhonemizerFactory.Get(name))
-                    .OfType<PhonemizerFactory>()
-                    .Select(factory => factory.type)
-                    .ToHashSet();
                 var remaining = available
                     .Where(factory => !listed.Contains(factory.type))
                     .OrderBy(factory => factory.tag)
                     .ThenBy(factory => factory.name)
-                    .Select(factory => new MenuItemViewModel() {
-                        Header = factory.ToString(),
-                        Command = SelectPhonemizerCommand,
-                        CommandParameter = factory.name,
+                    .Select(factory => {
+                        listed.Add(factory.type);
+                        return new MenuItemViewModel() {
+                            Header = factory.ToString(),
+                            Command = SelectPhonemizerCommand,
+                            CommandParameter = factory.name,
+                        };
                     })
                     .ToArray();
-                if (remaining.Length > 0 && items.Count > 0) {
-                    items.Add(new MenuItemViewModel() { Header = "-", Height = 1 });
+                if (remaining.Length > 0) {
+                    AddSeparatorIfNeeded();
+                    items.AddRange(remaining);
                 }
-                items.AddRange(remaining);
             } else {
-                if (items.Count > 0) {
-                    items.Add(new MenuItemViewModel() { Header = "-", Height = 1 });
+                var rest = available.Where(factory => !listed.Contains(factory.type)).ToArray();
+                if (rest.Length > 0) {
+                    AddSeparatorIfNeeded();
+                    items.AddRange(rest.GroupBy(factory => factory.language)
+                        .OrderBy(group => group.Key)
+                        .Select(group => new MenuItemViewModel() {
+                            Header = GetPhonemizerGroupHeader(group.Key),
+                            Items = group.OrderBy(factory => factory.tag).ThenBy(factory => factory.name)
+                                .Select(factory => new MenuItemViewModel() {
+                                    Header = factory.ToString(),
+                                    Command = SelectPhonemizerCommand,
+                                    CommandParameter = factory.name,
+                                }).ToArray(),
+                        }));
+                    foreach (var factory in rest) {
+                        listed.Add(factory.type);
+                    }
                 }
-                items.AddRange(available.GroupBy(factory => factory.language)
-                    .OrderBy(group => group.Key)
-                    .Select(group => new MenuItemViewModel() {
-                        Header = GetPhonemizerGroupHeader(group.Key),
-                        Items = group.OrderBy(factory => factory.tag).ThenBy(factory => factory.name)
-                            .Select(factory => new MenuItemViewModel() {
-                                Header = factory.ToString(),
-                                Command = SelectPhonemizerCommand,
-                                CommandParameter = factory.name,
-                            }).ToArray(),
-                    }));
+            }
+
+            var unsupported = PhonemizerFactory.GetAll()
+                .Where(factory => !availableTypes.Contains(factory.type)
+                    && factory.type != typeof(DefaultPhonemizer))
+                .OrderBy(factory => factory.tag)
+                .ThenBy(factory => factory.name)
+                .ToArray();
+            if (unsupported.Length > 0) {
+                AddSeparatorIfNeeded();
+                items.Add(new MenuItemViewModel {
+                    Header = ThemeManager.GetString("tracks.phonemizer.unsupported"),
+                    IsEnabled = false,
+                    Height = 28,
+                });
+                items.AddRange(unsupported.Select(factory => new MenuItemViewModel() {
+                    Header = factory.ToString(),
+                    Command = SelectPhonemizerCommand,
+                    CommandParameter = factory.name,
+                }));
             }
 
             PhonemizerMenuItems = items;

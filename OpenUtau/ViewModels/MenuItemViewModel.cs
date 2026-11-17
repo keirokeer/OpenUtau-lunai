@@ -69,7 +69,8 @@ namespace OpenUtau.App.ViewModels {
 
     public sealed class PhonemizerMenuSeparatorViewModel : MenuItemViewModel {
         public PhonemizerMenuSeparatorViewModel() {
-            Height = 1;
+            // Tall enough that inset ContextMenu item margins do not clip the line.
+            Height = 9;
             IsEnabled = false;
         }
 
@@ -82,7 +83,7 @@ namespace OpenUtau.App.ViewModels {
             void Create() {
                 Header ??= new Border {
                     Height = 1,
-                    Margin = new Thickness(0),
+                    Margin = new Thickness(10, 4),
                     Background = ThemeManager.MutedIconBrush,
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     VerticalAlignment = VerticalAlignment.Center,

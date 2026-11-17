@@ -41,7 +41,7 @@
       <Setter Property="MaxWidth" Value="10000"/>
       <Setter Property="MaxHeight" Value="10000"/>
       <Setter Property="Padding" Value="4"/>
-      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="CornerRadius" Value="{DynamicResource OverlayCornerRadius}"/>
       <Setter Property="ClipToBounds" Value="True"/>
       <Setter Property="Background" Value="{DynamicResource MenuFlyoutPresenterBackground}"/>
       <Setter Property="BorderBrush" Value="{DynamicResource MenuFlyoutPresenterBorderBrush}"/>
@@ -77,15 +77,25 @@
         </Style>
         <Style Selector="MenuItem.phonemizerMenuSeparator">
           <Setter Property="Padding" Value="0"/>
-          <Setter Property="Height" Value="1"/>
-          <Setter Property="MinHeight" Value="1"/>
-          <Setter Property="MaxHeight" Value="1"/>
+          <Setter Property="Height" Value="9"/>
+          <Setter Property="MinHeight" Value="9"/>
+          <Setter Property="MaxHeight" Value="9"/>
           <Setter Property="IsEnabled" Value="False"/>
+          <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="MenuItem.phonemizerMenuSeparator /template/ Border#PART_LayoutRoot">
+          <Setter Property="Margin" Value="0"/>
+          <Setter Property="CornerRadius" Value="0"/>
           <Setter Property="Background" Value="Transparent"/>
         </Style>
         <Style Selector="MenuItem.phonemizerMenuSeparator:pointerover,
                          MenuItem.phonemizerMenuSeparator:selected,
                          MenuItem.phonemizerMenuSeparator:pressed">
+          <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="MenuItem.phonemizerMenuSeparator:pointerover /template/ Border#PART_LayoutRoot,
+                         MenuItem.phonemizerMenuSeparator:selected /template/ Border#PART_LayoutRoot,
+                         MenuItem.phonemizerMenuSeparator:pressed /template/ Border#PART_LayoutRoot">
           <Setter Property="Background" Value="Transparent"/>
         </Style>
         <!-- Collapse Fluent chrome slots so header (and apply button) can use full width -->

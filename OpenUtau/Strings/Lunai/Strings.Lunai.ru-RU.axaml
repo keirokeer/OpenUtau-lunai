@@ -1,4 +1,4 @@
-﻿<!--Lunai overlay for ru-RU. Not managed by Crowdin.-->
+<!--Lunai overlay for ru-RU. Not managed by Crowdin.-->
 <!--Professional UI translation of Lunai-only strings.-->
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:system="clr-namespace:System;assembly=mscorlib"
@@ -414,6 +414,7 @@
   <system:String x:Key="tip.notes.zoomy">Alt + колёсико для вертикального масштабирования</system:String>
 
   <system:String x:Key="tracks.mixfx">Обработка трека</system:String>
+  <system:String x:Key="tracks.phonemizer.unsupported">Не поддерживаются этим исполнителем</system:String>
   <system:String x:Key="tracks.rotateselectedtracksingers">Ротация вокалистов на выбранных треках</system:String>
   <system:String x:Key="tracks.singer.applytoalltracks.tooltip">Применить ко всем выбранным трекам</system:String>
   <system:String x:Key="tracks.singer.favorite.tooltip">Добавить вокалиста в избранное</system:String>
