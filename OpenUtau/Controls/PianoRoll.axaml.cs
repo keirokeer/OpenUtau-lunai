@@ -2013,8 +2013,7 @@ namespace OpenUtau.App.Controls {
                 Cursor = ViewConstants.cursorNo;
             }
             if (editState != null) {
-                editState.ctrlShiftHeld = args.KeyModifiers == (cmdKey | KeyModifiers.Shift);
-                editState.shiftHeld = args.KeyModifiers == KeyModifiers.Shift;
+                ApplyExpDrawModifiers(editState, args.KeyModifiers);
                 editState.Begin(point.Pointer, point.Position);
                 editState.Update(point.Pointer, point.Position);
             }
@@ -2028,8 +2027,7 @@ namespace OpenUtau.App.Controls {
                 valueTipPointerPosition = args.GetCurrentPoint(ValueTipCanvas!).Position;
             }
             if (editState != null) {
-                editState.ctrlShiftHeld = args.KeyModifiers != KeyModifiers.Shift && ViewModel.CurveViewModel.CurveTool == CurveTools.CurveLineTool;
-                editState.shiftHeld = args.KeyModifiers == KeyModifiers.Shift && (ViewModel.CurveViewModel.CurveTool == CurveTools.CurveLineTool || (editState is ExpSetValueState expSetValueState && !expSetValueState.IsCurve));
+                ApplyExpDrawModifiers(editState, args.KeyModifiers);
                 editState.Update(point.Pointer, point.Position);
             } else {
                 Cursor = null;
@@ -2045,12 +2043,20 @@ namespace OpenUtau.App.Controls {
             }
             var control = (Control)sender;
             var point = args.GetCurrentPoint(control);
-            editState.ctrlShiftHeld = args.KeyModifiers == (cmdKey | KeyModifiers.Shift);
-            editState.shiftHeld = args.KeyModifiers == KeyModifiers.Shift;
+            ApplyExpDrawModifiers(editState, args.KeyModifiers);
             editState.Update(point.Pointer, point.Position);
             editState.End(point.Pointer, point.Position);
             editState = null;
             Cursor = null;
+        }
+
+        // Pen: Shift = horizontal, Ctrl/Cmd+Shift = straight. Line tool keeps always-on straight drag.
+        void ApplyExpDrawModifiers(NoteEditState state, KeyModifiers modifiers) {
+            bool shiftOnly = modifiers == KeyModifiers.Shift;
+            bool ctrlShift = modifiers == (cmdKey | KeyModifiers.Shift);
+            bool lineTool = ViewModel?.CurveViewModel?.CurveTool == CurveTools.CurveLineTool;
+            state.shiftHeld = shiftOnly;
+            state.ctrlShiftHeld = ctrlShift || (lineTool && !shiftOnly);
         }
 
         public void PhonemeCanvasDoubleTapped(object sender, TappedEventArgs args) {
