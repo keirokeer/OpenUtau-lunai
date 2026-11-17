@@ -245,7 +245,7 @@
                  Text="{DynamicResource tracks.nosinger}"/>
       <!-- overlay from the start so the first frame is never classic (ApplyScrollViewer also sets it). -->
       <ScrollViewer Name="TileScroller" IsVisible="{Binding !IsEmpty}"
-                    Classes="workspaceScroll workspaceDockPanelScroll tightOverlayInset overlay"
+                    Classes="workspaceScroll workspaceDockPanelScroll tightOverlayInset overlay fastWheelScroll"
                     HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto"
                     AllowAutoHide="False">
         <!-- Panel swapped in code: StackPanel (list) or WrapPanel Vertical (expanded + horizontal scroll). -->

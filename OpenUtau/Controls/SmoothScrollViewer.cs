@@ -21,18 +21,19 @@ namespace OpenUtau.App.Controls {
     /// </summary>
     public static class SmoothScrollViewer {
         const double LineStep = 48;
+        const double FastLineStep = 72;
+
+        /// <summary>Larger wheel step (e.g. track singer list with many entries).</summary>
+        public const string FastWheelClass = "fastWheelScroll";
 
         static readonly ConditionalWeakTable<ScrollViewer, State> States = new();
-        static bool classHandlersRegistered;
 
-        /// <summary>Register once at app start so every ScrollViewer can glide.</summary>
+        /// <summary>
+        /// Kept for App startup call sites. Does not auto-attach to every ScrollViewer —
+        /// piano roll / tracks keep port-commit SmoothViewport on ScrollBars only.
+        /// Call <see cref="Attach"/> (via WorkspaceScrollbarHelper / SingerFlyout) where needed.
+        /// </summary>
         public static void RegisterClassHandlers() {
-            if (classHandlersRegistered) {
-                return;
-            }
-            classHandlersRegistered = true;
-            ScrollViewer.LoadedEvent.AddClassHandler<ScrollViewer>(
-                (sv, _) => Attach(sv));
         }
 
         public static void Attach(ScrollViewer scrollViewer) {
@@ -150,7 +151,10 @@ namespace OpenUtau.App.Controls {
                     return;
                 }
 
-                double amount = -delta * LineStep;
+                double lineStep = scrollViewer.Classes.Contains(FastWheelClass)
+                    ? FastLineStep
+                    : LineStep;
+                double amount = -delta * lineStep;
                 // At the end of this scroller, don't swallow the wheel so a parent can scroll.
                 if (horizontal) {
                     double x = scrollViewer.Offset.X;

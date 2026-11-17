@@ -191,9 +191,8 @@ namespace OpenUtau.App.Controls {
         private bool active;
 
         /// <summary>
-        /// When true, keep gliding even if Offset/Value was changed externally mid-motion
-        /// (e.g. Avalonia ScrollContentPresenter also applied a wheel notch). Used by
-        /// <see cref="SmoothScrollViewer"/> so native scroll cannot cancel the glide.
+        /// Opt-in for <see cref="SmoothScrollViewer"/> only. Piano roll / tracks
+        /// ScrollBars leave this false — same behavior as port commit 445118a30.
         /// </summary>
         public bool IgnoreExternalMoves { get; set; }
 
