@@ -161,6 +161,33 @@ namespace OpenUtau.App.Controls {
             } else {
                 (barY, barHeight) = ViewConstants.GetClassicPhonemeEnvelopeLayout();
             }
+            // Right-edge sticks only at render-phrase ends (not every phoneme bar).
+            var phraseEndPhonemes = new HashSet<UPhoneme>();
+            if (usePhonemeBars && Part.renderPhrases != null) {
+                foreach (var phrase in Part.renderPhrases) {
+                    int phraseStart = phrase.position - Part.position;
+                    int phraseEnd = phraseStart + phrase.duration;
+                    UPhoneme? last = null;
+                    foreach (var ph in Part.phonemes) {
+                        if (ph.Parent.OverlapError) {
+                            continue;
+                        }
+                        // Phoneme belongs to the phrase if its note overlaps the phrase span.
+                        int noteStart = ph.Parent.position;
+                        int noteEnd = ph.Parent.End;
+                        if (noteEnd > phraseStart && noteStart < phraseEnd) {
+                            last = ph;
+                        }
+                    }
+                    if (last != null) {
+                        phraseEndPhonemes.Add(last);
+                    }
+                }
+                // Before phrases exist, keep a closing stick on the last phoneme.
+                if (phraseEndPhonemes.Count == 0 && Part.phonemes.Count > 0) {
+                    phraseEndPhonemes.Add(Part.phonemes[Part.phonemes.Count - 1]);
+                }
+            }
             foreach (var phoneme in Part.phonemes) {
                 double leftBound = viewModel.Project.timeAxis.MsPosToTickPos(phoneme.PositionMs - phoneme.preutter) - Part.position;
                 double rightBound = phoneme.End;
@@ -186,8 +213,12 @@ namespace OpenUtau.App.Controls {
                             var deltaRect = new Rect(xMin, barY, xMax - xMin, barHeight);
                             context.DrawRectangle(ThemeManager.PhonemeBrush, null, deltaRect);
                         }
-                        var rect = new Rect(xLeft, barY, xRight - xLeft, barHeight + 1);
-                        context.DrawRectangle(brush, pen, rect);
+                        var rect = new Rect(xLeft, barY, xRight - xLeft, barHeight);
+                        context.DrawRectangle(brush, null, rect);
+                        if (phraseEndPhonemes.Contains(phoneme)) {
+                            var penBar = selectedNotes.Contains(phoneme.Parent) ? ThemeManager.NoteBorderPenPressed : ThemeManager.NoteBorderPen;
+                            context.DrawLine(penBar, new Point(xRight, barY), new Point(xRight, barY + barHeight));
+                        }
                     } else {
                         brush = selectedNotes.Contains(phoneme.Parent) ? ThemeManager.NoteBrushPressed : ThemeManager.PhonemeBrush;
                         // Standard UTAU mode: draw envelope shape with preutter/overlap points
@@ -236,7 +267,7 @@ namespace OpenUtau.App.Controls {
                     penPos = ThemeManager.NoteBorderPenThickness3;
                 }
                 if (diffSingerMode) {
-                    // Timing indicator on phoneme start (thicker when moved).
+                    // Left border / timing indicator (thicker when moved).
                     var xLeft = viewModel.TickToneToPoint(phoneme.position, 0).X;
                     context.DrawLine(penPos, new Point(xLeft, barY), new Point(xLeft, barY + barHeight));
                 } else {
