@@ -123,7 +123,8 @@ namespace OpenUtau.Core.DiffSinger
                 int totalFrames,
                 int headFrames,
                 int tailFrames,
-                float? maxSpeakerAmount = null) {
+                float? maxSpeakerAmount = null,
+                bool useDefaultSpeakerOnly = false) {
             var singer = phrase.singer;
             var hiddenSize = dsConfig.hiddenSize;
             var speakerEmbeds = getSpeakerEmbeds();
@@ -133,8 +134,17 @@ namespace OpenUtau.Core.DiffSinger
             // When all |a| ≈ 0, fall back to one-hot CLR / phoneme suffix so note-level
             // voice color and "Default voice color for new notes" stay pure.
             int baseSpkId = 0;
-            if (singer.Subbanks != null && singer.Subbanks.Count > 0) {
+            if (!useDefaultSpeakerOnly && singer.Subbanks != null && singer.Subbanks.Count > 0) {
                 baseSpkId = getSpeakerIndexBySuffix(singer.Subbanks[0].Suffix);
+            }
+            if (useDefaultSpeakerOnly) {
+                var flat = speakerEmbeds[":", baseSpkId].ToArray<float>();
+                var tiled = new float[totalFrames * hiddenSize];
+                for (int frameId = 0; frameId < totalFrames; frameId++) {
+                    flat.CopyTo(tiled.AsSpan(frameId * hiddenSize, hiddenSize));
+                }
+                return new DenseTensor<float>(tiled, new int[] { totalFrames, hiddenSize })
+                    .Reshape(new int[] { 1, totalFrames, hiddenSize });
             }
             var segments = DiffSingerUtils.PaddedSegments(phrase, frameMs, headFrames, tailFrames);
             var defaultSpkByFrame = new List<int>();

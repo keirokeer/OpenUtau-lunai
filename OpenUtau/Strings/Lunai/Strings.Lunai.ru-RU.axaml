@@ -269,6 +269,9 @@
   <system:String x:Key="prefs.diffsinger.section.debug">Отладка</system:String>
   <system:String x:Key="prefs.diffsinger.section.general">Общие</system:String>
   <system:String x:Key="prefs.diffsinger.section.pitch">Pitch и F0</system:String>
+  <system:String x:Key="prefs.diffsinger.pitchsourcesinger">Войсбанк-источник питча</system:String>
+  <system:String x:Key="prefs.diffsinger.pitchsourcesinger.hint">DiffSinger банк с моделью питча для Ctrl+Shift+G (Загрузить питч из войсбанка-источника) на любом движке трека (DiffSinger, Enunu, Voicevox, Classic). При разных словарях фонемы/алиасы подбираются похожие.</system:String>
+  <system:String x:Key="prefs.diffsinger.pitchsourcesinger.none">(Нет)</system:String>
   <system:String x:Key="prefs.diffsinger.section.quality">Качество</system:String>
   <system:String x:Key="prefs.diffsinger.section.renderquality">Качество рендера</system:String>
   <system:String x:Key="prefs.diffsinger.section.steps">Шаги рендера</system:String>

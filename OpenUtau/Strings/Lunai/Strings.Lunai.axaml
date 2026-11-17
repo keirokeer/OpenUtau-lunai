@@ -266,6 +266,9 @@
   <system:String x:Key="prefs.diffsinger.section.debug">Debug</system:String>
   <system:String x:Key="prefs.diffsinger.section.general">General</system:String>
   <system:String x:Key="prefs.diffsinger.section.pitch">Pitch &amp; F0</system:String>
+  <system:String x:Key="prefs.diffsinger.pitchsourcesinger">Pitch source voicebank</system:String>
+  <system:String x:Key="prefs.diffsinger.pitchsourcesinger.hint">DiffSinger bank with a pitch model used by Ctrl+Shift+G (Load pitch from source singer) on any track engine (DiffSinger, Enunu, Voicevox, Classic). Phonemes/aliases are remapped when dictionaries differ.</system:String>
+  <system:String x:Key="prefs.diffsinger.pitchsourcesinger.none">(None)</system:String>
   <system:String x:Key="prefs.diffsinger.section.quality">Quality</system:String>
   <system:String x:Key="prefs.diffsinger.section.renderquality">Render quality</system:String>
   <system:String x:Key="prefs.diffsinger.section.steps">Render steps</system:String>

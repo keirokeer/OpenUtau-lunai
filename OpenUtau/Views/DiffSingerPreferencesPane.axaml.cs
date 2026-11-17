@@ -19,6 +19,9 @@ namespace OpenUtau.App.Views {
             AttachedToVisualTree += (_, _) => {
                 ClosePanelButton.IsVisible = IsHostedInPianoRollDock();
                 ScheduleApplyScrollStyle();
+                if (DataContext is PreferencesViewModel prefs) {
+                    prefs.RefreshDiffSingerPitchSourceOptions();
+                }
             };
             DetachedFromVisualTree += (_, _) => {
                 scrollStyleApplyGeneration++;

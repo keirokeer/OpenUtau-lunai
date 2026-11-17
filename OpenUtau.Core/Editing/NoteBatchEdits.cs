@@ -6,6 +6,7 @@ using OpenUtau.Core.DiffSinger;
 using OpenUtau.Core.Render;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Format;
+using Serilog;
 
 namespace OpenUtau.Core.Editing {
     public class AddTailNote : BatchEdit {
@@ -443,11 +444,14 @@ namespace OpenUtau.Core.Editing {
 
         public bool IsAsync => true;
 
-        private string name;
+        protected string name;
 
         public LoadRenderedPitch() {
             name = "pianoroll.menu.notes.loadrenderedpitch";
         }
+
+        /// <summary>When true, uses <see cref="DiffSinger.DiffSingerPitchSource"/> instead of the track singer.</summary>
+        protected virtual bool UseConfiguredPitchSource => false;
 
         public void Run(UProject project, UVoicePart part, List<UNote> selectedNotes, DocManager docManager) {
             RunAsync(
@@ -484,8 +488,21 @@ namespace OpenUtau.Core.Editing {
             Action<int, int> setProgressCallback, CancellationToken cancellationToken,
             bool recordUndo = true, bool showUnsupportedError = true, double? pitchSteps = null,
             bool fastRealtime = false) {
+            var pitchSource = UseConfiguredPitchSource
+                ? DiffSinger.DiffSingerPitchSource.TryResolveConfigured()
+                : null;
+            if (UseConfiguredPitchSource && pitchSource == null) {
+                if (showUnsupportedError) {
+                    var e = new MessageCustomizableException(
+                        "No DiffSinger pitch source singer configured",
+                        "<translate:errors.editing.autopitch.nosource>",
+                        new Exception());
+                    DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(e));
+                }
+                return;
+            }
             var renderer = project.tracks[part.trackNo].RendererSettings.Renderer;
-            if (renderer == null || !renderer.SupportsRenderPitch) {
+            if (pitchSource == null && (renderer == null || !renderer.SupportsRenderPitch)) {
                 if (showUnsupportedError) {
                     var e = new MessageCustomizableException(
                         "Current renderer doesn't support generating pitch curve",
@@ -519,11 +536,35 @@ namespace OpenUtau.Core.Editing {
             for (int ph_i = phrases.Count() - 1; ph_i >= 0; ph_i--) {
                 var phrase = phrases[ph_i];
                 RenderPitchResult result;
-                if (pitchSteps.HasValue && renderer is DiffSinger.DiffSingerRenderer diffSingerRenderer) {
+                if (pitchSource != null) {
+                    if (phrase.phones == null || phrase.phones.Length == 0) {
+                        finished += 1;
+                        setProgressCallback(finished, phrases.Length);
+                        continue;
+                    }
+                    var dsr = renderer as DiffSinger.DiffSingerRenderer
+                        ?? new DiffSinger.DiffSingerRenderer();
+                    try {
+                        result = dsr.LoadRenderedPitchFromSource(phrase, positions, pitchSource);
+                    } catch (Exception ex) {
+                        Log.Error(ex, "Pitch-from-source failed for phrase at {Position}", phrase.position);
+                        if (showUnsupportedError) {
+                            var e = new MessageCustomizableException(
+                                "Failed to generate pitch from source singer",
+                                "<translate:errors.editing.autopitch.sourcefailed>",
+                                ex);
+                            DocManager.Inst.ExecuteCmd(new ErrorMessageNotification(e));
+                            showUnsupportedError = false; // one dialog per run
+                        }
+                        finished += 1;
+                        setProgressCallback(finished, phrases.Length);
+                        continue;
+                    }
+                } else if (pitchSteps.HasValue && renderer is DiffSinger.DiffSingerRenderer diffSingerRenderer) {
                     result = diffSingerRenderer.LoadRenderedPitchLive(
                         phrase, positions, pitchSteps.Value, fastRealtime);
                 } else {
-                    result = renderer.LoadRenderedPitch(phrase, positions);
+                    result = renderer!.LoadRenderedPitch(phrase, positions);
                 }
                 if (result == null) {
                     continue;
@@ -687,6 +728,17 @@ namespace OpenUtau.Core.Editing {
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Ctrl+Shift+R: generate PITD with the DiffSinger pitch bank chosen in preferences.
+    /// </summary>
+    public class LoadPitchFromSourceSinger : LoadRenderedPitch {
+        public LoadPitchFromSourceSinger() {
+            name = "pianoroll.menu.notes.loadpitchfromsource";
+        }
+
+        protected override bool UseConfiguredPitchSource => true;
     }
 
     public class BakePitch : BatchEdit {

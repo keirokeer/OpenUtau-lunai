@@ -192,6 +192,8 @@ OpenUtau стремится стать средой редактирования
   <system:String x:Key="errors.diffsinger.downloadvocoder1">Ошибка загрузки вокодера </system:String>
   <system:String x:Key="errors.diffsinger.downloadvocoder2">. Пожалуйста, загрузите вокодер из: </system:String>
   <system:String x:Key="errors.editing.autopitch.unsupported">Данный войсбанк не поддерживает авто генерацию питча. Пожалуйста, используйте Diffsinger или Enunu войсбанк.</system:String>
+  <system:String x:Key="errors.editing.autopitch.nosource">Не выбран DiffSinger войсбанк-источник питча. Выберите банк с моделью питча в настройках DiffSinger.</system:String>
+  <system:String x:Key="errors.editing.autopitch.sourcefailed">Не удалось сгенерировать питч из войсбанка-источника для части фраз. Подробности в логе.</system:String>
   <system:String x:Key="errors.encryptedarchive">Зашифрованные архивы не поддерживаются. Пожалуйста, откройте папку Singers (Инструменты &gt; Параметры &gt; Пути) и вручную извлеките туда файлы архива.</system:String>
   <system:String x:Key="errors.expression.abbrlong">Аббревиатура должна содержать от 1 до 4 символов</system:String>
   <system:String x:Key="errors.expression.abbrset">Аббревиатура должна быть указана</system:String>
@@ -514,6 +516,7 @@ OpenUtau стремится стать средой редактирования
   <system:String x:Key="pianoroll.menu.notes.hanzitopinyin">Ханьцзы в пиньинь</system:String>
   <system:String x:Key="pianoroll.menu.notes.lengthencrossfade">Удлинить кроссфейд</system:String>
   <system:String x:Key="pianoroll.menu.notes.loadrenderedpitch">Загрузить отрендеренный питч</system:String>
+  <system:String x:Key="pianoroll.menu.notes.loadpitchfromsource">Загрузить питч из войсбанка-источника</system:String>
   <system:String x:Key="pianoroll.menu.notes.octavedown">Переместить на октаву ниже</system:String>
   <system:String x:Key="pianoroll.menu.notes.octaveup">Переместить на октаву выше</system:String>
   <system:String x:Key="pianoroll.menu.notes.quantize">Выровнять по сетке</system:String>

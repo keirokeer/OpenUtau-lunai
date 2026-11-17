@@ -155,6 +155,14 @@
                   Header="{DynamicResource prefs.diffsinger.section.pitch}">
           <StackPanel Classes="diffSingerSectionContent">
             <Grid Classes="prefRow" ColumnDefinitions="*,Auto"
+                  ToolTip.Tip="{DynamicResource prefs.diffsinger.pitchsourcesinger.hint}">
+              <TextBlock Text="{DynamicResource prefs.diffsinger.pitchsourcesinger}"/>
+              <c:WorkspacePanelComboBox Classes="workspacePanelCombo" Grid.Column="1" MinWidth="160" MaxWidth="240"
+                                        HorizontalAlignment="Right" VerticalAlignment="Center"
+                                        ItemsSource="{Binding DiffSingerPitchSourceOptions}"
+                                        SelectedItem="{Binding DiffSingerPitchSourceSinger}"/>
+            </Grid>
+            <Grid Classes="prefRow" ColumnDefinitions="*,Auto"
                   ToolTip.Tip="{DynamicResource prefs.diffsinger.phonemevarianceremap.hint}">
               <TextBlock Text="{DynamicResource prefs.diffsinger.phonemevarianceremap}"/>
               <ToggleSwitch IsChecked="{Binding DiffSingerPhonemeVarianceRemap}"/>

@@ -240,6 +240,8 @@ Do you want to continue by splitting at the nearest position after current playh
   <system:String x:Key="errors.diffsinger.downloadvocoder1">Error loading vocoder </system:String>
   <system:String x:Key="errors.diffsinger.downloadvocoder2">. Please download vocoder from </system:String>
   <system:String x:Key="errors.editing.autopitch.unsupported">The current voicebank doesn't support generating pitch curve. Please use a Diffsinger or Enunu voicebank.</system:String>
+  <system:String x:Key="errors.editing.autopitch.nosource">No DiffSinger pitch source voicebank is selected. Choose one with a pitch model in DiffSinger settings.</system:String>
+  <system:String x:Key="errors.editing.autopitch.sourcefailed">Failed to generate pitch from the source voicebank for some phrases. Check the log for details.</system:String>
   <system:String x:Key="errors.encryptedarchive">Encrypted archive files are not supported. Please open the Singer folder from Tools > Preferences > Paths and extract the archive file manually to this location.</system:String>
   <system:String x:Key="errors.expression.abbrlong">Abbreviation must be between 1 and 4 characters long</system:String>
   <system:String x:Key="errors.expression.abbrset">Abbreviation must be set</system:String>
@@ -657,6 +659,7 @@ Warning: this option removes custom presets.</system:String>
   <system:String x:Key="pianoroll.menu.notes.hanzitopinyin">Hanzi to pinyin</system:String>
   <system:String x:Key="pianoroll.menu.notes.lengthencrossfade">Lengthen crossfades</system:String>
   <system:String x:Key="pianoroll.menu.notes.loadrenderedpitch">Load rendered pitch</system:String>
+  <system:String x:Key="pianoroll.menu.notes.loadpitchfromsource">Load pitch from source singer</system:String>
   <system:String x:Key="pianoroll.menu.notes.octavedown">Move an octave down</system:String>
   <system:String x:Key="pianoroll.menu.notes.octaveup">Move an octave up</system:String>
   <system:String x:Key="pianoroll.menu.notes.quantize">Quantize to grid size</system:String>

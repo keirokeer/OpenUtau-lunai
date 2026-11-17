@@ -820,13 +820,24 @@ namespace OpenUtau.Core.DiffSinger {
         public RenderPitchResult LoadRenderedPitch(RenderPhrase phrase, HashSet<int> selectedNotePositions) {
             // Manual Ctrl+R / menu: new diffusion noise each time so repeated presses retake pitch.
             uint seed = (uint)Random.Shared.Next(1, int.MaxValue);
-            return LoadRenderedPitch(phrase, selectedNotePositions, pitchSteps: null, fastRealtime: false, noiseSeed: seed);
+            return LoadRenderedPitch(phrase, selectedNotePositions, pitchSteps: null, fastRealtime: false, noiseSeed: seed, pitchSinger: null);
+        }
+
+        /// <summary>
+        /// Generate pitch with another DiffSinger bank's pitch model (phonemes remapped as needed).
+        /// </summary>
+        internal RenderPitchResult LoadRenderedPitchFromSource(
+            RenderPhrase phrase, HashSet<int> selectedNotePositions, DiffSingerSinger pitchSinger) {
+            uint seed = (uint)Random.Shared.Next(1, int.MaxValue);
+            return LoadRenderedPitch(
+                phrase, selectedNotePositions, pitchSteps: null, fastRealtime: false,
+                noiseSeed: seed, pitchSinger: pitchSinger);
         }
 
         /// <summary>Live pitch: partial retake for changed notes with fast sampling settings.</summary>
         internal RenderPitchResult LoadRenderedPitchLive(
             RenderPhrase phrase, HashSet<int> selectedNotePositions, double pitchSteps, bool fastRealtime) {
-            return LoadRenderedPitch(phrase, selectedNotePositions, pitchSteps, fastRealtime, noiseSeed: null);
+            return LoadRenderedPitch(phrase, selectedNotePositions, pitchSteps, fastRealtime, noiseSeed: null, pitchSinger: null);
         }
 
         RenderPitchResult LoadRenderedPitch(
@@ -834,8 +845,9 @@ namespace OpenUtau.Core.DiffSinger {
             HashSet<int> selectedNotePositions,
             double? pitchSteps,
             bool fastRealtime,
-            uint? noiseSeed) {
-            DiffSingerSinger singer = (DiffSingerSinger) phrase.singer;
+            uint? noiseSeed,
+            DiffSingerSinger? pitchSinger) {
+            DiffSingerSinger singer = pitchSinger ?? (DiffSingerSinger)phrase.singer;
             if (!singer.HasPitchPredictor) {
                 throw new Exception("This singer has no pitch predictor.");
             }
@@ -849,8 +861,14 @@ namespace OpenUtau.Core.DiffSinger {
             // Use the reference inside SessionLock so a concurrent FreeMemory cannot dispose it first.
             lock (singer.SessionLock) {
                 var pitchPredictor = singer.getPitchPredictor()!;
+                // Always remap when using a configured pitch-source bank so Classic/Enunu/Voicevox
+                // aliases and cross-DiffSinger language tags resolve into the pitch vocab.
+                Func<string, string>? remap = pitchSinger != null
+                    ? DiffSingerPhonemeMapper.ForPitch(pitchPredictor).Map
+                    : null;
                 if (retakeNoteIndexes.Count == 0 || retakeNoteIndexes.Count == phrase.notes.Length) {
-                    return pitchPredictor.Process(phrase, pitchSteps, fastRealtime, noiseSeed: noiseSeed);
+                    return pitchPredictor.Process(
+                        phrase, pitchSteps, fastRealtime, noiseSeed: noiseSeed, remapPhoneme: remap);
                 }
                 var frameMs = pitchPredictor.FrameMs;
                 int headFrames = DiffSingerUtils.headFrames;
@@ -861,7 +879,8 @@ namespace OpenUtau.Core.DiffSinger {
                     x => x * 0.01).Select(f => (float)f).ToArray();
                 return pitchPredictor.Process(
                     phrase, pitchSteps, fastRealtime,
-                    retakeNoteIndexes: retakeNoteIndexes, existingPitch: existingPitch, noiseSeed: noiseSeed);
+                    retakeNoteIndexes: retakeNoteIndexes, existingPitch: existingPitch, noiseSeed: noiseSeed,
+                    remapPhoneme: remap);
             }
         }
 

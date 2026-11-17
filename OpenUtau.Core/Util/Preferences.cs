@@ -269,6 +269,25 @@ namespace OpenUtau.Core.Util {
             }
             var have = new HashSet<string>(Default.Shortcuts.Select(s => s.ActionId));
             bool added = false;
+            // Undo the brief Ctrl+Shift+R → loadpitchfromsource migration; keep refresh on Ctrl+Shift+R.
+            // Pitch-from-source ships as Ctrl+Shift+G (Alt+R is Randomize Tuning).
+            const string pitchFromSource = "pianoroll.menu.notes.loadpitchfromsource";
+            const string refreshCurves = "pianoroll.menu.notes.refreshrealcurves";
+            var pitchBinding = Default.Shortcuts.FirstOrDefault(s => s.ActionId == pitchFromSource);
+            if (pitchBinding != null
+                && pitchBinding.KeyName == "R"
+                && pitchBinding.ModifiersName == "Control, Shift") {
+                pitchBinding.KeyName = "G";
+                pitchBinding.ModifiersName = "Control, Shift";
+                added = true;
+            }
+            var refreshBinding = Default.Shortcuts.FirstOrDefault(s => s.ActionId == refreshCurves);
+            if (refreshBinding != null
+                && refreshBinding.KeyName == "R"
+                && refreshBinding.ModifiersName == "Control, Alt, Shift") {
+                refreshBinding.ModifiersName = "Control, Shift";
+                added = true;
+            }
             foreach (var binding in shipped) {
                 if (have.Contains(binding.ActionId)) {
                     continue;
@@ -379,6 +398,11 @@ namespace OpenUtau.Core.Util {
             /// </summary>
             public float MergePhrasesSec = 0;
             public bool DiffSingerShowPhonemeVarianceRemapPreview = false;
+            /// <summary>
+            /// Singer id of a DiffSinger bank with a pitch model used by Ctrl+Shift+G
+            /// (<c>loadpitchfromsource</c>), independent of the track singer.
+            /// </summary>
+            public string DiffSingerPitchSourceSingerId = string.Empty;
             public bool SkipRenderingMutedTracks = false;
             public string Language = string.Empty;
             public string? SortingOrder = null;
@@ -596,6 +620,7 @@ namespace OpenUtau.Core.Util {
                 
                 new ShortcutBinding { ActionId = "pianoroll.menu.notes.loadrenderedpitch", KeyName = "R", ModifiersName = "Control" },
                 new ShortcutBinding { ActionId = "pianoroll.menu.notes.refreshrealcurves", KeyName = "R", ModifiersName = "Control, Shift" },
+                new ShortcutBinding { ActionId = "pianoroll.menu.notes.loadpitchfromsource", KeyName = "G", ModifiersName = "Control, Shift" },
                 new ShortcutBinding { ActionId = "context.note.acousticretake", KeyName = "R", ModifiersName = "Shift" },
                 new ShortcutBinding { ActionId = "pianoroll.menu.notes.bakepitch", KeyName = "K", ModifiersName = "Alt" },
 

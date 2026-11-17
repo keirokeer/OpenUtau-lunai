@@ -216,6 +216,8 @@ namespace OpenUtau.App.ViewModels {
         public List<string> MergePhrasesSecs { get; } = new List<string> { "Auto", "2.5", "5", "7.5", "10" };
         [Reactive] public partial int MergePhrasesSecIndex { get; set; }
         [Reactive] public partial bool DiffSingerShowPhonemeVarianceRemapPreview { get; set; }
+        public List<OpenUtau.Core.DiffSinger.PitchSourceSingerOption> DiffSingerPitchSourceOptions { get; private set; } = new();
+        [Reactive] public partial OpenUtau.Core.DiffSinger.PitchSourceSingerOption? DiffSingerPitchSourceSinger { get; set; }
 
         // Advanced
         [Reactive] public partial bool RememberMid { get; set; }
@@ -620,6 +622,7 @@ namespace OpenUtau.App.ViewModels {
                     ? "Auto"
                     : Preferences.Default.MergePhrasesSec.ToString(CultureInfo.InvariantCulture)));
             DiffSingerShowPhonemeVarianceRemapPreview = Preferences.Default.DiffSingerShowPhonemeVarianceRemapPreview;
+            RefreshDiffSingerPitchSourceOptions();
             SkipRenderingMutedTracks = Preferences.Default.SkipRenderingMutedTracks;
             ThemeName = Preferences.Default.ThemeName;
             UiFontPath = Preferences.Default.UiFontPath;
@@ -1260,6 +1263,12 @@ namespace OpenUtau.App.ViewModels {
                     Preferences.Default.DiffSingerPhonemeVarianceRemap = enabled;
                     Preferences.Save();
                 });
+            this.WhenAnyValue(vm => vm.DiffSingerPitchSourceSinger)
+                .Skip(1)
+                .Subscribe(option => {
+                    Preferences.Default.DiffSingerPitchSourceSingerId = option?.Id ?? string.Empty;
+                    Preferences.Save();
+                });
             this.WhenAnyValue(vm => vm.DiffSingerLangCodeHide)
                 .Skip(1)
                 .Subscribe(useCache => {
@@ -1372,6 +1381,19 @@ namespace OpenUtau.App.ViewModels {
             Preferences.Save();
             ToolsManager.Inst.Initialize();
             this.RaisePropertyChanged(nameof(WinePath));
+        }
+
+        public void RefreshDiffSingerPitchSourceOptions() {
+            var noneLabel = ThemeManager.GetString("prefs.diffsinger.pitchsourcesinger.none") ?? "(None)";
+            DiffSingerPitchSourceOptions = OpenUtau.Core.DiffSinger.DiffSingerPitchSource.ListOptions()
+                .Select(o => string.IsNullOrEmpty(o.Id)
+                    ? new OpenUtau.Core.DiffSinger.PitchSourceSingerOption(string.Empty, noneLabel)
+                    : o)
+                .ToList();
+            string id = Preferences.Default.DiffSingerPitchSourceSingerId ?? string.Empty;
+            int idx = DiffSingerPitchSourceOptions.FindIndex(o => o.Id == id);
+            DiffSingerPitchSourceSinger = DiffSingerPitchSourceOptions[idx >= 0 ? idx : 0];
+            this.RaisePropertyChanged(nameof(DiffSingerPitchSourceOptions));
         }
 
         public void RefreshThemes() {

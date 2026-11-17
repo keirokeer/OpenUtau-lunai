@@ -86,6 +86,7 @@ namespace OpenUtau.App.Controls {
         /// </summary>
         static readonly HashSet<string> NoteCommandShortcutActionIds = new(StringComparer.Ordinal) {
             "pianoroll.menu.notes.loadrenderedpitch",
+            "pianoroll.menu.notes.loadpitchfromsource",
             "pianoroll.menu.notes.refreshrealcurves",
             "context.note.acousticretake",
         };
@@ -149,6 +150,9 @@ namespace OpenUtau.App.Controls {
             switch (action) {
                 case "pianoroll.menu.notes.loadrenderedpitch":
                     noteBatchEditCommand?.Execute(new LoadRenderedPitch()).Subscribe();
+                    return true;
+                case "pianoroll.menu.notes.loadpitchfromsource":
+                    noteBatchEditCommand?.Execute(new LoadPitchFromSourceSinger()).Subscribe();
                     return true;
                 case "pianoroll.menu.notes.refreshrealcurves":
                     noteBatchEditCommand?.Execute(new RefreshRealCurves()).Subscribe();
@@ -725,6 +729,7 @@ namespace OpenUtau.App.Controls {
             });
             ViewModel.NoteBatchEdits.AddRange(new List<BatchEdit>() {
                 new LoadRenderedPitch(),
+                new LoadPitchFromSourceSinger(),
                 new RefreshRealCurves(),
                 new AddTailNote("-", "pianoroll.menu.notes.addtaildash"),
                 new AddTailNote("R", "pianoroll.menu.notes.addtailrest"),

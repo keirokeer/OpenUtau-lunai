@@ -29,6 +29,8 @@ namespace OpenUtau.Core.DiffSinger
 
         public float FrameMs => frameMs;
         public bool UseExpr => dsConfig.use_expr;
+        internal IReadOnlyDictionary<string, int> PhonemeTokenTable => phonemeTokens;
+        internal IG2p G2p => g2p;
 
         public DsPitch(string rootPath)
         {
@@ -110,25 +112,37 @@ namespace OpenUtau.Core.DiffSinger
             return token;
         }
         
-        public RenderPitchResult Process(RenderPhrase phrase, double? pitchStepsOverride = null, bool fastRealtime = false, HashSet<int>? retakeNoteIndexes = null, float[]? existingPitch = null, uint? noiseSeed = null) {
+        public RenderPitchResult Process(
+            RenderPhrase phrase,
+            double? pitchStepsOverride = null,
+            bool fastRealtime = false,
+            HashSet<int>? retakeNoteIndexes = null,
+            float[]? existingPitch = null,
+            uint? noiseSeed = null,
+            Func<string, string>? remapPhoneme = null) {
+            string Map(string p) => remapPhoneme != null ? remapPhoneme(p) : p;
+
             var startMs = phrase.phones[0].positionMs - DiffSingerUtils.GetHeadMs(frameMs);
             int headFrames = DiffSingerUtils.headFrames;
             int tailFrames = DiffSingerUtils.tailFrames;
-            //Check if all phonemes are defined in dsdict.yaml (for their types)
+            //Check if all (possibly remapped) phonemes are defined in dsdict.yaml (for their types)
             foreach (var phone in phrase.phones) {
-                if (!g2p.IsValidSymbol(phone.phoneme)) {
+                var mapped = Map(phone.phoneme);
+                if (!g2p.IsValidSymbol(mapped)) {
                     throw new InvalidDataException(
-                        $"Type definition of symbol \"{phone.phoneme}\" not found. Consider adding it to dsdict.yaml of the pitch predictor.");
+                        $"Type definition of symbol \"{mapped}\" (from \"{phone.phoneme}\") not found. Consider adding it to dsdict.yaml of the pitch predictor.");
                 }
             }
             //Linguistic Encoder
             var linguisticInputs = new List<NamedOnnxValue>();
-            var segments = DiffSingerUtils.PaddedSegments(phrase, frameMs, headFrames, tailFrames);
+            var segments = DiffSingerUtils.PaddedSegments(phrase, frameMs, headFrames, tailFrames)
+                .Select(s => (Phoneme: Map(s.Phoneme), s.DurationMs, s.PhoneIndex))
+                .ToList();
             var tokens = segments.Select(x => (Int64)PhonemeTokenize(x.Phoneme)).ToArray();
             var ph_dur = DiffSingerUtils.PaddedPhoneDurations(phrase, frameMs, headFrames, tailFrames);
             int totalFrames = ph_dur.Sum();
             Func<string, int?> tryBlendToken = p =>
-                phonemeTokens.TryGetValue(p, out int tok) ? tok : null;
+                phonemeTokens.TryGetValue(Map(p), out int tok) ? tok : null;
             var segmentPhoneIndexes = segments.Select(s => s.PhoneIndex).ToArray();
             var tokensB = DiffSingerPhonemeBlend.BuildTokensB(tokens, phrase.phones, segmentPhoneIndexes, tryBlendToken);
             var tokenBlendWeights = DiffSingerPhonemeBlend.BuildTokenBlendWeights(
@@ -139,7 +153,7 @@ namespace OpenUtau.Core.DiffSinger
                 .Reshape(new int[] { 1, tokens.Length })));
             if(dsConfig.predict_dur){
                 //if predict_dur is true, use word encode mode
-                var (word_div, word_dur) = DiffSingerUtils.PaddedWordDivAndDur(phrase, ph_dur, g2p.IsVowel, frameMs, headFrames, tailFrames);
+                var (word_div, word_dur) = DiffSingerUtils.WordDivAndDur(segments, ph_dur, g2p.IsVowel);
                 linguisticInputs.Add(NamedOnnxValue.CreateFromTensor("word_div",
                     new DenseTensor<Int64>(word_div, new int[] { word_div.Length }, false)
                     .Reshape(new int[] { 1, word_div.Length })));
@@ -154,10 +168,11 @@ namespace OpenUtau.Core.DiffSinger
             }
             //Language id
             if(dsConfig.use_lang_id){
-                var langIdByPhone = DiffSingerUtils.PaddedLanguageIds(
-                    phrase, frameMs, headFrames, tailFrames,
-                    phoneme => (long)languageIds.GetValueOrDefault(
-                        DiffSingerUtils.PhonemeLanguage(phoneme), 0));
+                var langIdByPhone = segments
+                    .Select(s => s.PhoneIndex >= 0
+                        ? (long)languageIds.GetValueOrDefault(DiffSingerUtils.PhonemeLanguage(s.Phoneme), 0)
+                        : 0L)
+                    .ToArray();
                 var langIdTensor = new DenseTensor<Int64>(langIdByPhone, new int[] { langIdByPhone.Length }, false)
                     .Reshape(new int[] { 1, langIdByPhone.Length });
                 linguisticInputs.Add(NamedOnnxValue.CreateFromTensor("languages", langIdTensor));
@@ -230,7 +245,10 @@ namespace OpenUtau.Core.DiffSinger
                         .TakeWhile(ph => ph.position < note.end - 1)
                         .ToArray();
                     bool isRest = phs.Length == 0
-                        || phs.All(ph => ph.phoneme == "AP" || ph.phoneme == "SP" || !g2p.IsVowel(ph.phoneme));
+                        || phs.All(ph => {
+                            var m = Map(ph.phoneme);
+                            return m == "AP" || m == "SP" || !g2p.IsVowel(m);
+                        });
                     noteRestList.Add(isRest);
                 }
                 prevNoteEndMs = note.positionMs + note.durationMs;
@@ -335,9 +353,11 @@ namespace OpenUtau.Core.DiffSinger
             //Speaker
             if(dsConfig.speakers != null) {
                 var speakerEmbedManager = getSpeakerEmbedManager();
+                // Foreign track singer (Classic/Enunu/Voicevox/other DiffSinger): ignore its CLR/suffixes.
                 var spkEmbedTensor = speakerEmbedManager.PhraseSpeakerEmbedByFrame(
                     phrase, ph_dur, frameMs, totalFrames, headFrames, tailFrames,
-                    DiffSingerSpeakerEmbedManager.PitchVoiceColorAmountMax);
+                    DiffSingerSpeakerEmbedManager.PitchVoiceColorAmountMax,
+                    useDefaultSpeakerOnly: remapPhoneme != null);
                 pitchInputs.Add(NamedOnnxValue.CreateFromTensor("spk_embed", spkEmbedTensor));
             }
 
