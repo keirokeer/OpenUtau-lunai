@@ -9,6 +9,7 @@ using Avalonia.Media;
 using OpenUtau.App;
 using OpenUtau.App.Controls;
 using OpenUtau.Core;
+using OpenUtau.Core.DiffSinger;
 using OpenUtau.Core.Format;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
@@ -289,7 +290,9 @@ namespace OpenUtau.App.ViewModels {
             if (TryGetPartTrack(out var trackForSinger)) {
                 singer = trackForSinger.Singer;
             }
-            var available = PhonemizerFactory.EnumerateForSinger(singer).ToArray();
+            var allForEngine = PhonemizerFactory.EnumerateForSinger(singer).ToArray();
+            DiffSingerUtils.PartitionPhonemizersByDictionary(
+                singer, allForEngine, out var available, out var unsupported);
             var availableTypes = available.Select(factory => factory.type).ToHashSet();
             bool flatMenu = PhonemizerFactory.UsesFlatPhonemizerMenu(singer);
             var listed = new HashSet<Type>();
@@ -368,20 +371,17 @@ namespace OpenUtau.App.ViewModels {
                 }
             }
 
-            var unsupported = PhonemizerFactory.GetAll()
-                .Where(factory => !availableTypes.Contains(factory.type)
-                    && factory.type != typeof(DefaultPhonemizer))
-                .OrderBy(factory => factory.tag)
-                .ThenBy(factory => factory.name)
+            var unsupportedRemaining = unsupported
+                .Where(factory => !listed.Contains(factory.type))
                 .ToArray();
-            if (unsupported.Length > 0) {
+            if (unsupportedRemaining.Length > 0) {
                 AddSeparatorIfNeeded();
                 items.Add(new MenuItemViewModel {
                     Header = ThemeManager.GetString("tracks.phonemizer.unsupported"),
                     IsEnabled = false,
                     Height = 28,
                 });
-                items.AddRange(unsupported.Select(factory => new MenuItemViewModel() {
+                items.AddRange(unsupportedRemaining.Select(factory => new MenuItemViewModel() {
                     Header = factory.ToString(),
                     Command = SelectPhonemizerCommand,
                     CommandParameter = factory.name,

@@ -391,7 +391,9 @@ namespace OpenUtau.App.ViewModels {
 
         public void RefreshPhonemizers() {
             var items = new List<MenuItemViewModel>();
-            var available = PhonemizerFactory.EnumerateForSinger(track.Singer).ToArray();
+            var allForEngine = PhonemizerFactory.EnumerateForSinger(track.Singer).ToArray();
+            DiffSingerUtils.PartitionPhonemizersByDictionary(
+                track.Singer, allForEngine, out var available, out var unsupported);
             var availableTypes = available.Select(factory => factory.type).ToHashSet();
             bool flatMenu = PhonemizerFactory.UsesFlatPhonemizerMenu(track.Singer);
             var listed = new HashSet<Type>();
@@ -472,21 +474,18 @@ namespace OpenUtau.App.ViewModels {
                 }
             }
 
-            // 4) Not supported by this singer's engine (still selectable)
-            var unsupported = PhonemizerFactory.GetAll()
-                .Where(factory => !availableTypes.Contains(factory.type)
-                    && factory.type != typeof(DefaultPhonemizer))
-                .OrderBy(factory => factory.tag)
-                .ThenBy(factory => factory.name)
+            // 4) DiffSinger: same engine, but dedicated dsdict-*.yaml missing from voicebank
+            var unsupportedRemaining = unsupported
+                .Where(factory => !listed.Contains(factory.type))
                 .ToArray();
-            if (unsupported.Length > 0) {
+            if (unsupportedRemaining.Length > 0) {
                 AddSeparatorIfNeeded();
                 items.Add(new MenuItemViewModel {
                     Header = ThemeManager.GetString("tracks.phonemizer.unsupported"),
                     IsEnabled = false,
                     Height = 28,
                 });
-                items.AddRange(unsupported.Select(factory => new PhonemizerMenuItemViewModel(
+                items.AddRange(unsupportedRemaining.Select(factory => new PhonemizerMenuItemViewModel(
                     factory, SelectPhonemizerCommand, null, AllSetPhonemizerCommand)));
             }
 

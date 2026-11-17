@@ -1,10 +1,12 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using Microsoft.ML.OnnxRuntime.Tensors;
 using Newtonsoft.Json;
+using OpenUtau.Api;
 using OpenUtau.Core.Render;
 using OpenUtau.Core.Ustx;
 using OpenUtau.Core.Util;
@@ -548,6 +550,89 @@ namespace OpenUtau.Core.DiffSinger {
                 return phoneme.Split("/")[0];
             }
             return "";
+        }
+
+        static readonly ConcurrentDictionary<Type, string?> phonemizerDictionaryCache = new();
+
+        /// <summary>
+        /// Filenames of dsdict*.yaml present in the voicebank root or dsdur folder.
+        /// </summary>
+        public static HashSet<string> ListPhonemizerDictionaryFiles(USinger? singer) {
+            var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (singer == null || string.IsNullOrEmpty(singer.Location) || !Directory.Exists(singer.Location)) {
+                return names;
+            }
+            void Scan(string dir) {
+                if (!Directory.Exists(dir)) {
+                    return;
+                }
+                foreach (var path in Directory.EnumerateFiles(dir, "dsdict*.yaml")) {
+                    names.Add(Path.GetFileName(path));
+                }
+            }
+            Scan(singer.Location);
+            Scan(Path.Combine(singer.Location, "dsdur"));
+            return names;
+        }
+
+        /// <summary>
+        /// Dedicated dictionary filename for a DiffSinger phonemizer, or null if unknown
+        /// (plugins / rhythmizer / non-DiffSinger).
+        /// </summary>
+        public static string? TryGetPhonemizerDictionaryFileName(PhonemizerFactory? factory) {
+            if (factory?.type == null || !PhonemizerFactory.IsDiffSingerPhonemizer(factory)) {
+                return null;
+            }
+            return phonemizerDictionaryCache.GetOrAdd(factory.type, _ => {
+                try {
+                    var phonemizer = factory.Create();
+                    return phonemizer switch {
+                        DiffSingerBasePhonemizer basePhonemizer => basePhonemizer.GetRequiredDictionaryFileName(),
+                        DiffSingerRefinedPhonemizer refined => refined.GetRequiredDictionaryFileName(),
+                        _ => null,
+                    };
+                } catch {
+                    return null;
+                }
+            });
+        }
+
+        /// <summary>
+        /// Splits DiffSinger phonemizers into those whose dedicated dictionary exists in the
+        /// voicebank vs those that do not. Other singer types: all supported, none unsupported.
+        /// </summary>
+        public static void PartitionPhonemizersByDictionary(
+            USinger? singer,
+            IEnumerable<PhonemizerFactory> phonemizers,
+            out PhonemizerFactory[] supported,
+            out PhonemizerFactory[] unsupported) {
+            var all = phonemizers?.ToArray() ?? Array.Empty<PhonemizerFactory>();
+            if (singer?.SingerType != USingerType.DiffSinger) {
+                supported = all;
+                unsupported = Array.Empty<PhonemizerFactory>();
+                return;
+            }
+            var present = ListPhonemizerDictionaryFiles(singer);
+            if (present.Count == 0) {
+                supported = all;
+                unsupported = Array.Empty<PhonemizerFactory>();
+                return;
+            }
+            var supportedList = new List<PhonemizerFactory>();
+            var unsupportedList = new List<PhonemizerFactory>();
+            foreach (var factory in all) {
+                var dict = TryGetPhonemizerDictionaryFileName(factory);
+                if (dict == null || present.Contains(dict)) {
+                    supportedList.Add(factory);
+                } else {
+                    unsupportedList.Add(factory);
+                }
+            }
+            supported = supportedList.ToArray();
+            unsupported = unsupportedList
+                .OrderBy(factory => factory.tag)
+                .ThenBy(factory => factory.name)
+                .ToArray();
         }
     }
 }

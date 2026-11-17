@@ -208,6 +208,8 @@ namespace OpenUtau.Core.DiffSinger {
 
         // Abstract methods for customization
         protected virtual string GetDictionaryName() => "dsdict.yaml";
+        /// <summary>Dedicated dictionary file this phonemizer prefers (e.g. dsdict-en.yaml).</summary>
+        public string GetRequiredDictionaryFileName() => GetDictionaryName();
         public virtual string GetLangCode() => string.Empty;
         protected virtual IG2p LoadBaseG2p() => null;
         protected virtual string[] GetBaseG2pVowels() => new string[] { };
