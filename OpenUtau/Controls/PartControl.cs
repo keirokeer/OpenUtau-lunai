@@ -291,7 +291,7 @@ namespace OpenUtau.App.Controls {
                     if (i == phraseBlocks.Length - 1) {
                         endX = (int)((part.End - part.position) * tickWidth);
                     }
-                    var rect = new Rect(new Point(startX, inset), new Point(endX, Height - inset));
+                    var rect = new Rect(new Point(startX, inset), new Point(endX + 0.5, Height - inset));
                     phraseRects.Add(rect);
                     if (!rendered) {
                         continue;

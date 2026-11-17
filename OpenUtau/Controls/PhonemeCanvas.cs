@@ -186,13 +186,8 @@ namespace OpenUtau.App.Controls {
                             var deltaRect = new Rect(xMin, barY, xMax - xMin, barHeight);
                             context.DrawRectangle(ThemeManager.PhonemeBrush, null, deltaRect);
                         }
-                        var rect = new Rect(xLeft, barY, xRight - xLeft, barHeight);
-                        context.DrawRectangle(brush, null, rect);
-                        // Right border only for last phoneme (left border drawn below with penPos for timing indicator)
-                        if (phoneme == Part.phonemes[Part.phonemes.Count - 1]) {
-                            var penBar = selectedNotes.Contains(phoneme.Parent) ? ThemeManager.NoteBorderPenPressed : ThemeManager.NoteBorderPen;
-                            context.DrawLine(penBar, new Point(xRight, barY), new Point(xRight, barY + barHeight));
-                        }
+                        var rect = new Rect(xLeft, barY, xRight - xLeft, barHeight + 1);
+                        context.DrawRectangle(brush, pen, rect);
                     } else {
                         brush = selectedNotes.Contains(phoneme.Parent) ? ThemeManager.NoteBrushPressed : ThemeManager.PhonemeBrush;
                         // Standard UTAU mode: draw envelope shape with preutter/overlap points
@@ -241,7 +236,7 @@ namespace OpenUtau.App.Controls {
                     penPos = ThemeManager.NoteBorderPenThickness3;
                 }
                 if (diffSingerMode) {
-                    // Left border already drawn in diffSingerMode block; use penPos for timing indicator (thicker when moved)
+                    // Timing indicator on phoneme start (thicker when moved).
                     var xLeft = viewModel.TickToneToPoint(phoneme.position, 0).X;
                     context.DrawLine(penPos, new Point(xLeft, barY), new Point(xLeft, barY + barHeight));
                 } else {
