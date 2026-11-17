@@ -121,6 +121,10 @@ namespace OpenUtau.Core.DiffSinger
             uint? noiseSeed = null,
             Func<string, string>? remapPhoneme = null) {
             string Map(string p) => remapPhoneme != null ? remapPhoneme(p) : p;
+            // Reuse one mapper for vowel-like checks when remapping Classic/foreign phones.
+            DiffSingerPhonemeMapper? remapVowelHint = remapPhoneme != null
+                ? DiffSingerPhonemeMapper.ForPitch(this)
+                : null;
 
             var startMs = phrase.phones[0].positionMs - DiffSingerUtils.GetHeadMs(frameMs);
             int headFrames = DiffSingerUtils.headFrames;
@@ -247,7 +251,15 @@ namespace OpenUtau.Core.DiffSinger
                     bool isRest = phs.Length == 0
                         || phs.All(ph => {
                             var m = Map(ph.phoneme);
-                            return m == "AP" || m == "SP" || !g2p.IsVowel(m);
+                            if (m is "AP" or "SP" or "PAU" or "sil") {
+                                return true;
+                            }
+                            // Classic CV/kana may map to tokens that aren't g2p vowels as a whole
+                            // (e.g. "ka"); treat trailing/base vowels as voiced for melody encoding.
+                            if (remapVowelHint != null) {
+                                return !remapVowelHint.IsVowelLike(m);
+                            }
+                            return !g2p.IsVowel(m);
                         });
                     noteRestList.Add(isRest);
                 }
@@ -385,6 +397,9 @@ namespace OpenUtau.Core.DiffSinger
             Onnx.VerifyInputNames(pitchModel, pitchInputs);
             var pitchOutputs = pitchModel.Run(pitchInputs);
             var pitch_out = pitchOutputs.First().AsTensor<float>().ToArray();
+            // Head/tail/gap SP·AP frames are unvoiced: writing their model output into PITD
+            // draws wild diagonals (especially on Classic, where inter-note gaps are large).
+            var voiced = BuildVoicedMask(segments, ph_dur);
             var pitchEnd = phrase.timeAxis.MsPosToTickPos(startMs + (totalFrames - 1) * frameMs) - phrase.position;
             if(pitchEnd<=phrase.duration){
                 return new RenderPitchResult{
@@ -394,6 +409,7 @@ namespace OpenUtau.Core.DiffSinger
                     .ToArray(),
                     tones = pitch_out.Append(pitch_out[^1]).ToArray(),
                     retakeMask = retakeNoteIndexes != null ? retake.Append(retake[^1]).ToArray() : null,
+                    voiced = voiced.Append(false).ToArray(),
                 };
             }else{
                 return new RenderPitchResult{
@@ -402,8 +418,25 @@ namespace OpenUtau.Core.DiffSinger
                     .ToArray(),
                     tones = pitch_out,
                     retakeMask = retakeNoteIndexes != null ? retake : null,
+                    voiced = voiced,
                 };
             }
+        }
+
+        static bool[] BuildVoicedMask(
+            List<(string Phoneme, double DurationMs, int PhoneIndex)> segments,
+            int[] phDur) {
+            var voiced = new bool[phDur.Sum()];
+            int frame = 0;
+            for (int i = 0; i < segments.Count && i < phDur.Length; i++) {
+                bool isVoiced = segments[i].PhoneIndex >= 0
+                    && segments[i].Phoneme is not ("SP" or "AP" or "PAU" or "sil");
+                int n = phDur[i];
+                for (int j = 0; j < n && frame < voiced.Length; j++, frame++) {
+                    voiced[frame] = isVoiced;
+                }
+            }
+            return voiced;
         }
 
         const int DiffusionTimesteps = 1000;

@@ -69,9 +69,17 @@ namespace OpenUtau.Core {
         [Fact]
         public void ClassicKanaMapsToVowelOrRomaji() {
             var mapper = Mapper("a", "k", "ka", "SP");
-            // "か" → romaji "ka" (exact) preferred over vowel-only.
-            Assert.Equal("ka", mapper.Map("か"));
+            // Pitch prefers the mora vowel over a CV token.
+            Assert.Equal("a", mapper.Map("か"));
             Assert.Equal("a", mapper.Map("- あ"));
+        }
+
+        [Fact]
+        public void IsVowelLikeAcceptsCvTrailingVowel() {
+            var mapper = Mapper("ka", "a", "SP");
+            Assert.True(mapper.IsVowelLike("a"));
+            Assert.True(mapper.IsVowelLike("ka"));
+            Assert.False(mapper.IsVowelLike("SP"));
         }
 
         [Fact]

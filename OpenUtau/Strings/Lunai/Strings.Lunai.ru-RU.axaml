@@ -1,4 +1,4 @@
-<!--Lunai overlay for ru-RU. Not managed by Crowdin.-->
+﻿<!--Lunai overlay for ru-RU. Not managed by Crowdin.-->
 <!--Professional UI translation of Lunai-only strings.-->
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:system="clr-namespace:System;assembly=mscorlib"
@@ -270,7 +270,7 @@
   <system:String x:Key="prefs.diffsinger.section.general">Общие</system:String>
   <system:String x:Key="prefs.diffsinger.section.pitch">Pitch и F0</system:String>
   <system:String x:Key="prefs.diffsinger.pitchsourcesinger">Войсбанк-источник питча</system:String>
-  <system:String x:Key="prefs.diffsinger.pitchsourcesinger.hint">DiffSinger банк с моделью питча для Ctrl+Shift+G (Загрузить питч из войсбанка-источника) на любом движке трека (DiffSinger, Enunu, Voicevox, Classic). При разных словарях фонемы/алиасы подбираются похожие.</system:String>
+  <system:String x:Key="prefs.diffsinger.pitchsourcesinger.hint">DiffSinger банк с моделью питча для Ctrl+Alt+Shift+R (Загрузить питч из войсбанка-источника) на любом движке трека (DiffSinger, Enunu, Voicevox, Classic). При разных словарях фонемы/алиасы подбираются похожие.</system:String>
   <system:String x:Key="prefs.diffsinger.pitchsourcesinger.none">(Нет)</system:String>
   <system:String x:Key="prefs.diffsinger.section.quality">Качество</system:String>
   <system:String x:Key="prefs.diffsinger.section.renderquality">Качество рендера</system:String>

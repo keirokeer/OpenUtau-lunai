@@ -1,4 +1,4 @@
-<!--Lunai-only strings and overrides. Not managed by Crowdin.-->
+﻿<!--Lunai-only strings and overrides. Not managed by Crowdin.-->
 <!--Merged after upstream Strings*.axaml in App.SetLanguage.-->
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:system="clr-namespace:System;assembly=mscorlib"
@@ -267,7 +267,7 @@
   <system:String x:Key="prefs.diffsinger.section.general">General</system:String>
   <system:String x:Key="prefs.diffsinger.section.pitch">Pitch &amp; F0</system:String>
   <system:String x:Key="prefs.diffsinger.pitchsourcesinger">Pitch source voicebank</system:String>
-  <system:String x:Key="prefs.diffsinger.pitchsourcesinger.hint">DiffSinger bank with a pitch model used by Ctrl+Shift+G (Load pitch from source singer) on any track engine (DiffSinger, Enunu, Voicevox, Classic). Phonemes/aliases are remapped when dictionaries differ.</system:String>
+  <system:String x:Key="prefs.diffsinger.pitchsourcesinger.hint">DiffSinger bank with a pitch model used by Ctrl+Alt+Shift+R (Load pitch from source singer) on any track engine (DiffSinger, Enunu, Voicevox, Classic). Phonemes/aliases are remapped when dictionaries differ.</system:String>
   <system:String x:Key="prefs.diffsinger.pitchsourcesinger.none">(None)</system:String>
   <system:String x:Key="prefs.diffsinger.section.quality">Quality</system:String>
   <system:String x:Key="prefs.diffsinger.section.renderquality">Render quality</system:String>

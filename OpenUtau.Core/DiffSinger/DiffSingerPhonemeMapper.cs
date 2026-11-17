@@ -59,12 +59,21 @@ namespace OpenUtau.Core.DiffSinger {
                 return Prefer("SP", "AP", "PAU", "sil") ?? "SP";
             }
 
-            // Exact / retag on every candidate first (kana→romaji before fuzzy vowel fallback).
+            // Exact / retag first. Prefer a vowel hit: Classic VCV/kana is one phone per note,
+            // and pitch models care about the mora vowel more than a CV token or consonant.
+            string? nonVowelHit = null;
             foreach (var candidate in EnumerateCandidates(phoneme)) {
                 var hit = MapExactOrRetag(candidate);
-                if (hit != null) {
+                if (hit == null) {
+                    continue;
+                }
+                if (IsVowelLike(hit)) {
                     return hit;
                 }
+                nonVowelHit ??= hit;
+            }
+            if (nonVowelHit != null) {
+                return nonVowelHit;
             }
             foreach (var candidate in EnumerateCandidates(phoneme)) {
                 SplitLang(candidate, out _, out var basePhone);
@@ -75,6 +84,24 @@ namespace OpenUtau.Core.DiffSinger {
             }
 
             return Prefer("SP", "AP") ?? vocabArr.FirstOrDefault(IsUsable) ?? phoneme;
+        }
+
+        internal bool IsVowelLike(string phoneme) {
+            if (string.IsNullOrEmpty(phoneme) || RestAliases.Contains(phoneme)) {
+                return false;
+            }
+            if (g2p.IsValidSymbol(phoneme) && g2p.IsVowel(phoneme)) {
+                return true;
+            }
+            SplitLang(phoneme, out _, out var basePhone);
+            if (!string.IsNullOrEmpty(basePhone) && g2p.IsValidSymbol(basePhone) && g2p.IsVowel(basePhone)) {
+                return true;
+            }
+            if (string.IsNullOrEmpty(basePhone)) {
+                return false;
+            }
+            char last = basePhone[^1];
+            return last is 'a' or 'i' or 'u' or 'e' or 'o' or 'A' or 'I' or 'U' or 'E' or 'O';
         }
 
         string? MapExactOrRetag(string token) {
@@ -147,10 +174,11 @@ namespace OpenUtau.Core.DiffSinger {
                     yield break;
                 }
                 if (!string.IsNullOrEmpty(romaji)) {
-                    yield return romaji;
+                    // Vowel before full CV so pitch mapping locks onto the mora nucleus.
                     foreach (var piece in SplitCvRomaji(romaji)) {
                         yield return piece;
                     }
+                    yield return romaji;
                 }
                 yield break;
             }

@@ -596,6 +596,9 @@ namespace OpenUtau.Core.Editing {
                         // pitch model's output there is an artifact, and writing
                         // it back produces a spike at the phrase/gap boundary.
                         if (result.voiced != null && i < result.voiced.Length && !result.voiced[i]) {
+                            // Break the polyline so Set() does not draw a diagonal across the gap.
+                            lastX = null;
+                            lastY = null;
                             continue;
                         }
                         int x = phrase.position - part.position + (int)result.ticks[i];

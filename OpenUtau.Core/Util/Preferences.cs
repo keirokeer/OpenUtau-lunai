@@ -269,22 +269,23 @@ namespace OpenUtau.Core.Util {
             }
             var have = new HashSet<string>(Default.Shortcuts.Select(s => s.ActionId));
             bool added = false;
-            // Undo the brief Ctrl+Shift+R → loadpitchfromsource migration; keep refresh on Ctrl+Shift+R.
-            // Pitch-from-source ships as Ctrl+Shift+G (Alt+R is Randomize Tuning).
+            // Pitch-from-source: Ctrl+Alt+Shift+R. Keep refreshrealcurves on Ctrl+Shift+R.
+            // Migrate earlier temporary bindings (Ctrl+Shift+R or Ctrl+Shift+G).
             const string pitchFromSource = "pianoroll.menu.notes.loadpitchfromsource";
             const string refreshCurves = "pianoroll.menu.notes.refreshrealcurves";
             var pitchBinding = Default.Shortcuts.FirstOrDefault(s => s.ActionId == pitchFromSource);
             if (pitchBinding != null
-                && pitchBinding.KeyName == "R"
-                && pitchBinding.ModifiersName == "Control, Shift") {
-                pitchBinding.KeyName = "G";
-                pitchBinding.ModifiersName = "Control, Shift";
+                && ((pitchBinding.KeyName == "R" && pitchBinding.ModifiersName == "Control, Shift")
+                    || (pitchBinding.KeyName == "G" && pitchBinding.ModifiersName == "Control, Shift"))) {
+                pitchBinding.KeyName = "R";
+                pitchBinding.ModifiersName = "Control, Alt, Shift";
                 added = true;
             }
             var refreshBinding = Default.Shortcuts.FirstOrDefault(s => s.ActionId == refreshCurves);
             if (refreshBinding != null
                 && refreshBinding.KeyName == "R"
                 && refreshBinding.ModifiersName == "Control, Alt, Shift") {
+                // Only reclaim if pitch-from-source already owns / will own that chord.
                 refreshBinding.ModifiersName = "Control, Shift";
                 added = true;
             }
@@ -399,7 +400,7 @@ namespace OpenUtau.Core.Util {
             public float MergePhrasesSec = 0;
             public bool DiffSingerShowPhonemeVarianceRemapPreview = false;
             /// <summary>
-            /// Singer id of a DiffSinger bank with a pitch model used by Ctrl+Shift+G
+            /// Singer id of a DiffSinger bank with a pitch model used by Ctrl+Alt+Shift+R
             /// (<c>loadpitchfromsource</c>), independent of the track singer.
             /// </summary>
             public string DiffSingerPitchSourceSingerId = string.Empty;
@@ -620,7 +621,7 @@ namespace OpenUtau.Core.Util {
                 
                 new ShortcutBinding { ActionId = "pianoroll.menu.notes.loadrenderedpitch", KeyName = "R", ModifiersName = "Control" },
                 new ShortcutBinding { ActionId = "pianoroll.menu.notes.refreshrealcurves", KeyName = "R", ModifiersName = "Control, Shift" },
-                new ShortcutBinding { ActionId = "pianoroll.menu.notes.loadpitchfromsource", KeyName = "G", ModifiersName = "Control, Shift" },
+                new ShortcutBinding { ActionId = "pianoroll.menu.notes.loadpitchfromsource", KeyName = "R", ModifiersName = "Control, Alt, Shift" },
                 new ShortcutBinding { ActionId = "context.note.acousticretake", KeyName = "R", ModifiersName = "Shift" },
                 new ShortcutBinding { ActionId = "pianoroll.menu.notes.bakepitch", KeyName = "K", ModifiersName = "Alt" },
 
