@@ -29,7 +29,10 @@
               Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
               CornerRadius="6" MaxHeight="220"
               IsVisible="{Binding HasReleaseNotes}">
-        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer Classes="workspaceScroll"
+                      HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto"
+                      AllowAutoHide="False">
           <StackPanel Spacing="6">
             <TextBlock FontWeight="SemiBold"
                        Text="{DynamicResource updater.releasenotes}"/>

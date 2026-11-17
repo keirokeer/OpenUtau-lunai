@@ -8,6 +8,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
+using OpenUtau.App.Controls;
 using OpenUtau.App.Views;
 using OpenUtau.Colors;
 using Serilog;
@@ -28,6 +29,8 @@ namespace OpenUtau.App {
         public override void OnFrameworkInitializationCompleted() {
             Log.Information("Framework initialization completed.");
             UnhandledExceptionGuard.InstallUiThreadHandlers();
+            SmoothScrollViewer.RegisterClassHandlers();
+            WorkspaceScrollbarHelper.RegisterClassHandlers();
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop) {
                 desktop.MainWindow = new SplashWindow();
             }

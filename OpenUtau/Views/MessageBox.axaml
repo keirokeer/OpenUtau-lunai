@@ -7,7 +7,11 @@
         Icon="/Assets/open-utau.ico"
         Title="MessageBox" MinWidth="300" MinHeight="150"
         WindowStartupLocation="CenterScreen">
-  <ScrollViewer MaxHeight="700" VerticalScrollBarVisibility="Auto">
+  <ScrollViewer MaxHeight="700"
+                Classes="workspaceScroll"
+                VerticalScrollBarVisibility="Auto"
+                HorizontalScrollBarVisibility="Disabled"
+                AllowAutoHide="False">
     <Grid Margin="{Binding $parent.WindowDecorationMargin}">
       <Grid.RowDefinitions>
         <RowDefinition Height="*"/>

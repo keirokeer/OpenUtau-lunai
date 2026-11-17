@@ -14,7 +14,10 @@
     <StyleInclude Source="/Styles/PianoRollStyles.axaml"/>
   </Window.Styles>
   <Grid Margin="{Binding $parent.WindowDecorationMargin}">
-    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Visible">
+    <ScrollViewer Classes="workspaceScroll workspaceDockPanelScroll"
+                  HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto"
+                  AllowAutoHide="False">
       <StackPanel Margin="5">
         <TextBlock Text="{DynamicResource singers.publish.description}"/>
         <Grid ColumnDefinitions="Auto,Auto" RowDefinitions="25" VerticalAlignment="Center" Margin="4">

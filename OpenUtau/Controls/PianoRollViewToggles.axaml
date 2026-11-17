@@ -69,6 +69,7 @@
   <Grid RowDefinitions="*,Auto,Auto,Auto,Auto,Auto,Auto" ClipToBounds="False">
     <Grid Grid.Row="0" ClipToBounds="False">
       <ScrollViewer x:Name="MainTogglesScroll"
+                    Classes="noOverlayScroll"
                     HorizontalScrollBarVisibility="Disabled"
                     VerticalScrollBarVisibility="Hidden"
                     AllowAutoHide="False"

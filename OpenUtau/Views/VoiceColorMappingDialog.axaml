@@ -14,7 +14,11 @@
       <TextBlock Text="{Binding TrackName}" />
     </StackPanel>
 
-    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" >
+    <ScrollViewer Grid.Row="1"
+                  Classes="workspaceScroll workspaceDockPanelScroll tightOverlayInset"
+                  VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled"
+                  AllowAutoHide="False">
       <ItemsControl ItemsSource="{Binding ColorMappings}" VerticalAlignment="Stretch" >
         <ItemsControl.ItemTemplate>
           <DataTemplate>

@@ -14,8 +14,15 @@ namespace OpenUtau.App.Controls {
         public const double OverlayThumbThickness = 8;
         public const double OverlayBarThickness = 10;
 
+        /// <summary>
+        /// Opt out of automatic overlay styling (sync-only viewports, custom sibling bars).
+        /// </summary>
+        public const string NoOverlayScrollClass = "noOverlayScroll";
+
         /// <summary>Classic dedicated-track scrollbars are disabled; overlay mode is always used.</summary>
         public static bool UseClassicScrollbars => false;
+
+        static bool classHandlersRegistered;
 
         sealed class DockPanelScrollTag {
             public bool Classic;
@@ -23,6 +30,67 @@ namespace OpenUtau.App.Controls {
 
         public static bool IsInVisualTree(Control? control) =>
             control != null && control.IsAttachedToVisualTree();
+
+        /// <summary>
+        /// Register once at app start so plain ScrollViewers get overlay thumbs
+        /// (same look as DiffSinger / piano-roll dock panels), unless opted out.
+        /// </summary>
+        public static void RegisterClassHandlers() {
+            if (classHandlersRegistered) {
+                return;
+            }
+            classHandlersRegistered = true;
+            ScrollViewer.LoadedEvent.AddClassHandler<ScrollViewer>((sv, _) => {
+                TryApplyDefaultOverlay(sv);
+            });
+        }
+
+        /// <summary>
+        /// Promote a ScrollViewer to Lunai overlay scrollbars when safe.
+        /// Skips hidden/disabled sync viewports and <see cref="NoOverlayScrollClass"/>.
+        /// </summary>
+        public static void TryApplyDefaultOverlay(ScrollViewer scrollViewer) {
+            if (scrollViewer == null || !ShouldAutoApplyOverlay(scrollViewer)) {
+                return;
+            }
+            // TextBox/ComboBox/ListBox internals: overlay thumb only — do not mark
+            // workspaceScroll so SmoothScrollViewer won't treat them as nested panels.
+            if (!IsEmbeddedChromeScroll(scrollViewer)
+                && !scrollViewer.Classes.Contains("workspaceScroll")) {
+                scrollViewer.Classes.Add("workspaceScroll");
+            }
+            scrollViewer.AllowAutoHide = false;
+            ApplyScrollViewer(scrollViewer, UseClassicScrollbars);
+        }
+
+        static bool ShouldAutoApplyOverlay(ScrollViewer scrollViewer) {
+            if (scrollViewer.Classes.Contains(NoOverlayScrollClass)) {
+                return false;
+            }
+            // Hidden vertical bar: sync-only viewport or custom sibling ScrollBar.
+            if (scrollViewer.VerticalScrollBarVisibility == ScrollBarVisibility.Hidden) {
+                return false;
+            }
+            // No interactive bars at all (e.g. ExpSelector popup with Disabled/Disabled).
+            if (scrollViewer.VerticalScrollBarVisibility == ScrollBarVisibility.Disabled
+                && scrollViewer.HorizontalScrollBarVisibility == ScrollBarVisibility.Disabled) {
+                return false;
+            }
+            return true;
+        }
+
+        static bool IsEmbeddedChromeScroll(ScrollViewer scrollViewer) {
+            for (Visual? p = scrollViewer.GetVisualParent(); p != null; p = p.GetVisualParent()) {
+                if (p is TextBox or ComboBox or ListBox or AutoCompleteBox or DataGrid or TreeView) {
+                    return true;
+                }
+                // Stop at the nearest outer ScrollViewer (panel scroller).
+                if (p is ScrollViewer) {
+                    break;
+                }
+            }
+            return false;
+        }
 
         public static void ApplyHorizontalScrollBar(ScrollBar bar, bool classic) {
             if (!IsInVisualTree(bar)) {
@@ -76,6 +144,7 @@ namespace OpenUtau.App.Controls {
             // Always mark overlay up front so the first paint is not classic, even when the
             // viewer is not in the visual tree yet (e.g. flyout content before ShowAt).
             scrollViewer.Classes.Set("overlay", !classic);
+            SmoothScrollViewer.Attach(scrollViewer);
             if (!IsInVisualTree(scrollViewer)) {
                 void onAttached(object? s, VisualTreeAttachmentEventArgs e) {
                     scrollViewer.AttachedToVisualTree -= onAttached;

@@ -190,6 +190,13 @@ namespace OpenUtau.App.Controls {
         private double lastSet;
         private bool active;
 
+        /// <summary>
+        /// When true, keep gliding even if Offset/Value was changed externally mid-motion
+        /// (e.g. Avalonia ScrollContentPresenter also applied a wheel notch). Used by
+        /// <see cref="SmoothScrollViewer"/> so native scroll cannot cancel the glide.
+        /// </summary>
+        public bool IgnoreExternalMoves { get; set; }
+
         internal ValueGlide(SmoothViewport viewport, Func<double> get, Action<double> set, Func<double> min, Func<double> max) {
             this.viewport = viewport;
             this.get = get;
@@ -232,6 +239,9 @@ namespace OpenUtau.App.Controls {
         }
 
         private bool MovedElsewhere() {
+            if (IgnoreExternalMoves) {
+                return false;
+            }
             return Math.Abs(get() - lastSet) > 1e-6;
         }
 

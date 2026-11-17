@@ -773,7 +773,9 @@
           <ColumnDefinition Width="*"/>
           <ColumnDefinition Width="16"/>
         </Grid.ColumnDefinitions>
-        <ScrollViewer Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" VerticalScrollBarVisibility="Hidden">
+        <ScrollViewer Grid.Row="0" Grid.RowSpan="2" Grid.Column="0"
+                      Classes="noOverlayScroll"
+                      VerticalScrollBarVisibility="Hidden">
           <StackPanel>
             <c:ExpSelector Name="expSelector1" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Top"
                            Index="0" ToolTip.Tip="Alt + 1"/>

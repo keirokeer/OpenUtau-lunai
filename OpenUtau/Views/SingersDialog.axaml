@@ -36,7 +36,10 @@
       </ComboBox.ItemTemplate>    
     </ComboBox>
     <Border Grid.Row="0" Margin="120,40,0,30">
-      <ScrollViewer>
+      <ScrollViewer Classes="workspaceScroll"
+                    VerticalScrollBarVisibility="Auto"
+                    HorizontalScrollBarVisibility="Disabled"
+                    AllowAutoHide="False">
         <TextBlock x:Name="info" TextWrapping="Wrap" Text="{Binding Info}"/>
       </ScrollViewer>
     </Border>

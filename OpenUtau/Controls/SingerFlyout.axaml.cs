@@ -22,7 +22,6 @@ namespace OpenUtau.App.Controls {
         const int MinVisibleRows = 4;
         const double BaseChromeHeight = 50 + SearchHeight;
         const double ChromeWidth = 20;
-        const double WheelStep = 60;
 
         private int maxRows = int.MaxValue;
         private int maxColumns = 1;
@@ -38,7 +37,8 @@ namespace OpenUtau.App.Controls {
             WorkspaceScrollbarHelper.ApplyScrollViewer(
                 TileScroller, WorkspaceScrollbarHelper.UseClassicScrollbars);
             Loaded += OnLoaded;
-            TileScroller.AddHandler(PointerWheelChangedEvent, TileScrollerWheel, RoutingStrategies.Tunnel);
+            // Wheel smoothing: SmoothScrollViewer (tunnel) — vertical list and expanded
+            // horizontal pan (!canY → remap wheel to X) both go through it.
         }
 
         void OnLoaded(object? sender, RoutedEventArgs e) {
@@ -176,22 +176,6 @@ namespace OpenUtau.App.Controls {
             Dispatcher.UIThread.Post(
                 () => WorkspaceScrollbarHelper.RefreshScrollBars(TileScroller),
                 DispatcherPriority.Loaded);
-        }
-
-        void TileScrollerWheel(object? sender, PointerWheelEventArgs e) {
-            if (!IsExpanded()) {
-                return;
-            }
-            // Vertical wheel → horizontal pan while expanded (vertical bar is disabled).
-            double delta = Math.Abs(e.Delta.X) > Math.Abs(e.Delta.Y) ? e.Delta.X : e.Delta.Y;
-            double max = Math.Max(0, TileScroller.Extent.Width - TileScroller.Viewport.Width);
-            if (max <= 0) {
-                return;
-            }
-            TileScroller.Offset = new Vector(
-                Math.Clamp(TileScroller.Offset.X - delta * WheelStep, 0, max),
-                0);
-            e.Handled = true;
         }
 
         void ToggleExpandClicked(object? sender, RoutedEventArgs e) {

@@ -116,7 +116,11 @@
                             Content="{DynamicResource warnings.clear}" Click="OnClearWarnings"/>
                   </Grid>
                   <Border Height="1" Background="{DynamicResource MenuFlyoutPresenterBorderBrush}"/>
-                  <ScrollViewer MaxHeight="360" HorizontalScrollBarVisibility="Disabled">
+                  <ScrollViewer MaxHeight="360"
+                                Classes="workspaceScroll"
+                                HorizontalScrollBarVisibility="Disabled"
+                                VerticalScrollBarVisibility="Auto"
+                                AllowAutoHide="False">
                     <ItemsControl ItemsSource="{Binding Warnings}" Margin="0,4">
                       <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="vm:WarningItem">

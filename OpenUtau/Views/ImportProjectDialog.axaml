@@ -23,7 +23,11 @@
 
     <Grid RowDefinitions="*,Auto">
 
-      <ScrollViewer Grid.Row="0" MaxHeight="560" HorizontalScrollBarVisibility="Disabled">
+      <ScrollViewer Grid.Row="0" MaxHeight="560"
+                    Classes="workspaceScroll"
+                    HorizontalScrollBarVisibility="Disabled"
+                    VerticalScrollBarVisibility="Auto"
+                    AllowAutoHide="False">
 
         <StackPanel Spacing="12">
 
