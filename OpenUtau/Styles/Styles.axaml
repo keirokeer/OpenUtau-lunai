@@ -4,12 +4,12 @@
   <Style Selector="Control">
     <Style.Resources>
       <CornerRadius x:Key="ControlCornerRadius">6</CornerRadius>
-      <!-- Square corners for menus, flyouts, combo dropdowns (avoids hover rects vs rounded chrome). -->
-      <CornerRadius x:Key="OverlayCornerRadius">0</CornerRadius>
+      <!-- Match singer flyout / modern iOS-style overlays (rounded chrome + inset pill items). -->
+      <CornerRadius x:Key="OverlayCornerRadius">6</CornerRadius>
       <x:Double x:Key="MenuFlyoutThemeMinHeight">20</x:Double>
-      <Thickness x:Key="MenuFlyoutScrollerMargin">0</Thickness>
-      <Thickness x:Key="MenuFlyoutSeparatorThemePadding">0</Thickness>
-      <Thickness x:Key="ComboBoxDropdownContentMargin">0</Thickness>
+      <Thickness x:Key="MenuFlyoutScrollerMargin">0,2</Thickness>
+      <Thickness x:Key="MenuFlyoutSeparatorThemePadding">8,0</Thickness>
+      <Thickness x:Key="ComboBoxDropdownContentMargin">4,2</Thickness>
     </Style.Resources>
   </Style>
   <!-- Popups are separate top-levels in Avalonia and do not inherit Window.FontFamily. -->
@@ -41,6 +41,38 @@
     <Setter Property="Height" Value="24"/>
     <Setter Property="Padding" Value="8,2,8,2"/>
   </Style>
+  <!-- Inset rounded selection pills (same language as singer tiles). -->
+  <Style Selector="ContextMenu MenuItem /template/ Border#PART_LayoutRoot,
+                   MenuFlyoutPresenter MenuItem /template/ Border#PART_LayoutRoot,
+                   MenuItem MenuItem /template/ Border#PART_LayoutRoot,
+                   Popup MenuItem /template/ Border#PART_LayoutRoot">
+    <Setter Property="CornerRadius" Value="6"/>
+    <Setter Property="Margin" Value="4,1"/>
+  </Style>
+  <Style Selector="ContextMenu MenuItem:selected /template/ Border#PART_LayoutRoot,
+                   ContextMenu MenuItem:pointerover /template/ Border#PART_LayoutRoot,
+                   MenuFlyoutPresenter MenuItem:selected /template/ Border#PART_LayoutRoot,
+                   MenuFlyoutPresenter MenuItem:pointerover /template/ Border#PART_LayoutRoot,
+                   MenuItem MenuItem:selected /template/ Border#PART_LayoutRoot,
+                   MenuItem MenuItem:pointerover /template/ Border#PART_LayoutRoot,
+                   Popup MenuItem:selected /template/ Border#PART_LayoutRoot,
+                   Popup MenuItem:pointerover /template/ Border#PART_LayoutRoot">
+    <Setter Property="CornerRadius" Value="6"/>
+  </Style>
+  <Style Selector="ContextMenu">
+    <Setter Property="CornerRadius" Value="{DynamicResource OverlayCornerRadius}"/>
+    <Setter Property="Padding" Value="4,4"/>
+    <Setter Property="ClipToBounds" Value="True"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource MenuFlyoutPresenterBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+  </Style>
+  <Style Selector="MenuFlyoutPresenter">
+    <Setter Property="CornerRadius" Value="{DynamicResource OverlayCornerRadius}"/>
+    <Setter Property="Padding" Value="4,4"/>
+    <Setter Property="ClipToBounds" Value="True"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource MenuFlyoutPresenterBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="1"/>
+  </Style>
   <Style Selector="MenuItem /template/ Path#PART_ChevronPath">
     <Setter Property="RenderTransform" Value="Scale(0.75,0.75)"/>
     <Setter Property="Fill" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
@@ -60,14 +92,15 @@
   <Style Selector="MenuItem:separator">
     <Setter Property="Padding" Value="0"/>
     <Setter Property="Margin" Value="0"/>
-    <Setter Property="Height" Value="1"/>
-    <Setter Property="MinHeight" Value="1"/>
+    <!-- Tall enough for inset separator margins (was Height=1 and clipped). -->
+    <Setter Property="Height" Value="9"/>
+    <Setter Property="MinHeight" Value="9"/>
     <Setter Property="Background" Value="Transparent"/>
   </Style>
   <Style Selector="MenuItem > Separator, ContextMenu > Separator, MenuItem:separator /template/ Separator">
     <Setter Property="Background" Value="{DynamicResource MutedIconBrush}" />
     <Setter Property="HorizontalAlignment" Value="Stretch" />
-    <Setter Property="Margin" Value="0" />
+    <Setter Property="Margin" Value="10,4" />
     <Setter Property="Height" Value="1" />
   </Style>
   <Style Selector="MenuItem > Separator /template/ Border,
@@ -91,7 +124,24 @@
   <Style Selector="ContextMenu MenuItem">
     <Setter Property="Background" Value="Transparent"/>
     <Setter Property="FontSize" Value="12"/>
+    <Setter Property="Height" Value="28"/>
+    <Setter Property="MinHeight" Value="28"/>
     <Setter Property="Padding" Value="8,2,8,2"/>
+    <Setter Property="Margin" Value="0"/>
+  </Style>
+  <!-- Submenu / File menu popup rows: same taller pill-friendly height. -->
+  <Style Selector="MenuFlyoutPresenter MenuItem,
+                   MenuItem MenuItem,
+                   Popup MenuItem">
+    <Setter Property="Height" Value="28"/>
+    <Setter Property="MinHeight" Value="28"/>
+  </Style>
+  <Style Selector="MenuFlyoutPresenter MenuItem:separator,
+                   MenuItem MenuItem:separator,
+                   Popup MenuItem:separator,
+                   ContextMenu MenuItem:separator">
+    <Setter Property="Height" Value="9"/>
+    <Setter Property="MinHeight" Value="9"/>
   </Style>
 
   <Style Selector="ContextMenu.WithCommand MenuItem">
@@ -427,17 +477,33 @@
     <Setter Property="BorderBrush" Value="{DynamicResource MutedIconBrush}" />
   </Style>
   <Style Selector="ComboBox /template/ Border#PopupBorder">
-    <Setter Property="BorderBrush" Value="{DynamicResource MutedIconBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource MenuFlyoutPresenterBorderBrush}" />
+    <Setter Property="CornerRadius" Value="{DynamicResource OverlayCornerRadius}" />
+    <Setter Property="ClipToBounds" Value="True" />
+    <Setter Property="Padding" Value="4,2" />
   </Style>
   <Style Selector="ComboBox:dropdownopen /template/ Border#PopupBorder">
-    <Setter Property="BorderBrush" Value="{DynamicResource MutedIconBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource MenuFlyoutPresenterBorderBrush}" />
+    <Setter Property="CornerRadius" Value="{DynamicResource OverlayCornerRadius}" />
   </Style>
   <Style Selector="ComboBox:dropdownopen /template/ Border#HighlightBackground,
           ComboBox:dropdownopen:focus-visible /template/ Border#HighlightBackground">
     <Setter Property="IsVisible" Value="False" />
   </Style>
   <Style Selector="FlyoutPresenter">
-    <Setter Property="BorderBrush" Value="{DynamicResource MutedIconBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource MenuFlyoutPresenterBorderBrush}" />
+    <Setter Property="CornerRadius" Value="{DynamicResource OverlayCornerRadius}" />
+    <Setter Property="ClipToBounds" Value="True" />
+    <Setter Property="Padding" Value="4" />
+  </Style>
+  <!-- Combo dropdown items: inset rounded hover (skip workspacePanelCombo — custom HoverFill). -->
+  <Style Selector="ComboBox:not(.workspacePanelCombo) ComboBoxItem">
+    <Setter Property="Height" Value="26"/>
+    <Setter Property="MinHeight" Value="26"/>
+  </Style>
+  <Style Selector="ComboBox:not(.workspacePanelCombo) ComboBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Margin" Value="4,1" />
   </Style>
 
   <Style Selector="ListBoxItem">

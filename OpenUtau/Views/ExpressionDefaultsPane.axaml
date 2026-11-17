@@ -146,34 +146,32 @@
     <vm:ExpressionDefaultsViewModel/>
   </Design.DataContext>
   <Grid RowDefinitions="Auto,*">
-    <Grid Grid.Row="0" Margin="16,12,40,8" ColumnDefinitions="*,Auto">
-      <StackPanel Grid.Column="0" Spacing="2">
-        <TextBlock Text="{Binding PanelTitle}" Classes="notePropsPanelTitle"/>
-        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-          <Border Classes="expModeTab"
-                  Classes.selected="{Binding !IsTrackMode}"
-                  PointerPressed="OnProjectModePressed">
-            <TextBlock Text="{DynamicResource workspace.panel.expressions.mode.project}"/>
-          </Border>
-          <Border x:Name="TrackModeTab"
-                  Classes="expModeTab"
-                  Classes.selected="{Binding IsTrackMode}"
-                  IsEnabled="{Binding CanUseTrackMode}"
-                  PointerPressed="OnTrackModePressed">
-            <TextBlock Text="{DynamicResource workspace.panel.expressions.mode.track}"/>
-          </Border>
-        </StackPanel>
-        <TextBlock Classes="expTrackSubtitle"
-                   Text="{Binding TrackSubtitle}"
-                   IsVisible="{Binding HasTrackSubtitle}"/>
+    <StackPanel Grid.Row="0" Margin="16,12,40,8" Spacing="2">
+      <TextBlock Text="{Binding PanelTitle}" Classes="notePropsPanelTitle"/>
+      <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+        <Border Classes="expModeTab"
+                Classes.selected="{Binding !IsTrackMode}"
+                PointerPressed="OnProjectModePressed">
+          <TextBlock Text="{DynamicResource workspace.panel.expressions.mode.project}"/>
+        </Border>
+        <Border x:Name="TrackModeTab"
+                Classes="expModeTab"
+                Classes.selected="{Binding IsTrackMode}"
+                IsEnabled="{Binding CanUseTrackMode}"
+                PointerPressed="OnTrackModePressed">
+          <TextBlock Text="{DynamicResource workspace.panel.expressions.mode.track}"/>
+        </Border>
       </StackPanel>
-      <Button x:Name="ClosePanelButton" Grid.Column="1" Classes="workspacePanelClose"
-              HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,-8,0"
-              IsVisible="False" Click="OnCloseDockedPanel"
-              ToolTip.Tip="{DynamicResource workspace.panel.close}">
-        <Path Classes="stroked"/>
-      </Button>
-    </Grid>
+      <TextBlock Classes="expTrackSubtitle"
+                 Text="{Binding TrackSubtitle}"
+                 IsVisible="{Binding HasTrackSubtitle}"/>
+    </StackPanel>
+    <Button x:Name="ClosePanelButton" Grid.Row="0" Classes="workspacePanelClose"
+            HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,0"
+            IsVisible="False" Click="OnCloseDockedPanel"
+            ToolTip.Tip="{DynamicResource workspace.panel.close}">
+      <Path Classes="stroked"/>
+    </Button>
     <ScrollViewer x:Name="ContentScroll" Grid.Row="1" Classes="workspaceScroll workspaceDockPanelScroll"
                   Margin="10,0,10,16"
                   HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto"

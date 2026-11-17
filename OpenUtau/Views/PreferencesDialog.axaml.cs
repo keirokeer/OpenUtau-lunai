@@ -5,6 +5,9 @@ using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
+using OpenUtau.App.Controls;
 using OpenUtau.App.ViewModels;
 using OpenUtau.Colors;
 using OpenUtau.Core;
@@ -16,6 +19,52 @@ namespace OpenUtau.App.Views {
 
         public PreferencesDialog() {
             InitializeComponent();
+            Opened += (_, _) => ApplyOverlayScrollbars();
+            ContentScroll.AttachedToVisualTree += (_, _) => ApplyOverlayScrollbars();
+            ShortcutsScroll.AttachedToVisualTree += (_, _) => ApplyOverlayScrollbars();
+            DrawerList.AttachedToVisualTree += (_, _) => ApplyOverlayScrollbars();
+        }
+
+        void ApplyOverlayScrollbars() {
+            ApplyOne(ContentScroll);
+            ApplyOne(ShortcutsScroll);
+            ApplyDrawerListScroll();
+            Dispatcher.UIThread.Post(() => {
+                ApplyOne(ContentScroll);
+                ApplyOne(ShortcutsScroll);
+                ApplyDrawerListScroll();
+            }, DispatcherPriority.Loaded);
+        }
+
+        static void ApplyOne(ScrollViewer? scrollViewer) {
+            if (scrollViewer != null && WorkspaceScrollbarHelper.IsInVisualTree(scrollViewer)) {
+                WorkspaceScrollbarHelper.ApplyScrollViewer(
+                    scrollViewer, WorkspaceScrollbarHelper.UseClassicScrollbars);
+            }
+        }
+
+        void ApplyDrawerListScroll() {
+            if (!WorkspaceScrollbarHelper.IsInVisualTree(DrawerList)) {
+                return;
+            }
+            var drawerScroll = DrawerList.GetVisualDescendants()
+                .OfType<ScrollViewer>()
+                .FirstOrDefault();
+            if (drawerScroll == null) {
+                return;
+            }
+            if (!drawerScroll.Classes.Contains("workspaceScroll")) {
+                drawerScroll.Classes.Add("workspaceScroll");
+            }
+            if (!drawerScroll.Classes.Contains("workspaceDockPanelScroll")) {
+                drawerScroll.Classes.Add("workspaceDockPanelScroll");
+            }
+            if (!drawerScroll.Classes.Contains("tightOverlayInset")) {
+                drawerScroll.Classes.Add("tightOverlayInset");
+            }
+            drawerScroll.AllowAutoHide = false;
+            WorkspaceScrollbarHelper.ApplyScrollViewer(
+                drawerScroll, WorkspaceScrollbarHelper.UseClassicScrollbars);
         }
 
         protected override void OnKeyDown(KeyEventArgs e) {

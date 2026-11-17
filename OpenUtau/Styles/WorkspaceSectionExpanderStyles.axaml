@@ -238,8 +238,8 @@
     <Setter Property="Theme" Value="{x:Null}"/>
     <Setter Property="Background" Value="Transparent"/>
     <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}"/>
-    <Setter Property="Height" Value="24"/>
-    <Setter Property="MinHeight" Value="24"/>
+    <Setter Property="Height" Value="28"/>
+    <Setter Property="MinHeight" Value="28"/>
     <Setter Property="Padding" Value="0"/>
     <Setter Property="Margin" Value="0"/>
     <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -247,13 +247,14 @@
       <ControlTemplate TargetType="ComboBoxItem">
         <Border x:Name="HoverFill"
                 Background="Transparent"
-                CornerRadius="0"
+                CornerRadius="6"
+                Margin="4,1"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Stretch">
           <ContentPresenter x:Name="PART_ContentPresenter"
                             Margin="6,0"
                             Background="Transparent"
-                            CornerRadius="0"
+                            CornerRadius="6"
                             Content="{TemplateBinding Content}"
                             ContentTemplate="{TemplateBinding ContentTemplate}"
                             HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"

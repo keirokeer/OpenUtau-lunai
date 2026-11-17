@@ -51,18 +51,44 @@
       <Setter Property="OffContent" Value="{DynamicResource button.off}"/>
       <Setter Property="HorizontalAlignment" Value="Right"/>
     </Style>
+    <!-- Nav drawer: inset rounded pills; paint on ListBoxItem.Background (Fluent binds the template to it). -->
+    <Style Selector="ListBox.prefsDrawer">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Padding" Value="0"/>
+    </Style>
+    <Style Selector="ListBox.prefsDrawer ListBoxItem">
+      <Setter Property="Height" Value="40"/>
+      <Setter Property="MinHeight" Value="40"/>
+      <Setter Property="Padding" Value="12,0"/>
+      <Setter Property="Margin" Value="4,2"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+      <Setter Property="Background" Value="Transparent"/>
+    </Style>
+    <Style Selector="ListBox.prefsDrawer ListBoxItem:pointerover">
+      <Setter Property="Background" Value="{DynamicResource MenuFlyoutItemBackgroundPointerOver}"/>
+    </Style>
+    <Style Selector="ListBox.prefsDrawer ListBoxItem:pressed">
+      <Setter Property="Background" Value="{DynamicResource MenuFlyoutItemBackgroundPressed}"/>
+    </Style>
+    <Style Selector="ListBox.prefsDrawer ListBoxItem:selected">
+      <Setter Property="Background" Value="{DynamicResource SystemControlHighlightListAccentLowBrush}"/>
+    </Style>
+    <Style Selector="ListBox.prefsDrawer ListBoxItem:selected:pointerover,
+                     ListBox.prefsDrawer ListBoxItem:selected:pressed">
+      <Setter Property="Background" Value="{DynamicResource SystemControlHighlightListAccentMediumBrush}"/>
+    </Style>
+    <Style Selector="ListBox.prefsDrawer ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="CornerRadius" Value="6"/>
+    </Style>
   </Window.Styles>
 
-  <Grid Margin="{Binding $parent.WindowDecorationMargin}" ColumnDefinitions="150,*">
-    <ListBox Classes="NoScroll" Name="DrawerList"
-              Focusable="{Binding ElementName=LeftDrawer, Path=LeftDrawerOpened}">
-      <ListBox.Styles>
-        <Style Selector="ListBoxItem">
-          <Setter Property="Height" Value="48" />
-          <Setter Property="Padding" Value="16,0" />
-          <Setter Property="VerticalContentAlignment" Value="Center" />
-        </Style>
-      </ListBox.Styles>
+  <!-- Left column wide enough for inset pills; both scroll lanes keep edge gaps. -->
+  <Grid Margin="{Binding $parent.WindowDecorationMargin}" ColumnDefinitions="168,Auto,*">
+    <ListBox Classes="prefsDrawer" Name="DrawerList" Margin="4,4,4,4"
+             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+             ScrollViewer.VerticalScrollBarVisibility="Auto">
       <ListBoxItem Content="{DynamicResource prefs.general}"/>
       <ListBoxItem Content="{DynamicResource prefs.shortcuts}"/>
       <ListBoxItem Content="{DynamicResource prefs.playback}"/>
@@ -74,7 +100,14 @@
       <ListBoxItem Content="{DynamicResource prefs.diffsinger}"/>
       <ListBoxItem Content="{DynamicResource prefs.advanced}"/>
     </ListBox>
-    <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Visible">
+    <Border Grid.Column="1" Width="1" Margin="0,8"
+            Background="{DynamicResource TickLineBrushLow}"/>
+    <ScrollViewer x:Name="ContentScroll" Grid.Column="2"
+                  Classes="workspaceScroll workspaceDockPanelScroll"
+                  Margin="0,4,10,4"
+                  HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto"
+                  AllowAutoHide="False">
       <Carousel Name="PageCarousel" Margin="10" HorizontalAlignment="Stretch" 
           SelectedIndex="{Binding ElementName=DrawerList, Path=SelectedIndex}">
         <!-- General -->
@@ -128,7 +161,11 @@
                 FontStyle="Italic" 
                 Opacity="0.75" 
                 TextWrapping="Wrap"/>
-          <ScrollViewer Grid.Row="3" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Visible">
+          <ScrollViewer x:Name="ShortcutsScroll" Grid.Row="3"
+                        Classes="workspaceScroll workspaceDockPanelScroll tightOverlayInset"
+                        HorizontalScrollBarVisibility="Disabled"
+                        VerticalScrollBarVisibility="Auto"
+                        AllowAutoHide="False">
             <ItemsControl ItemsSource="{Binding FilteredShortcuts}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate>

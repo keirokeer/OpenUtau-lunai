@@ -62,12 +62,18 @@
           <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
             <TextBlock FontWeight="Bold" VerticalAlignment="Center"
                        Text="{DynamicResource dawintegration.guide.caption}"/>
-            <Button Grid.Column="1" Content="×" Padding="8,0" Margin="8,0,0,0"
-                    Background="Transparent" BorderThickness="0"
-                    Click="OnCloseGuide"/>
+            <Button Grid.Column="1" Classes="workspacePanelClose"
+                    VerticalAlignment="Center" Margin="8,0,0,0"
+                    Click="OnCloseGuide"
+                    ToolTip.Tip="{DynamicResource workspace.panel.close}">
+              <Path Classes="stroked"/>
+            </Button>
           </Grid>
           <ScrollViewer Grid.Row="1" Margin="0,6,0,0"
-                        HorizontalScrollBarVisibility="Disabled">
+                        Classes="workspaceScroll"
+                        HorizontalScrollBarVisibility="Disabled"
+                        VerticalScrollBarVisibility="Auto"
+                        AllowAutoHide="False">
             <StackPanel Spacing="6">
               <TextBlock Text="{DynamicResource dawintegration.guide.what}" TextWrapping="Wrap"/>
 
