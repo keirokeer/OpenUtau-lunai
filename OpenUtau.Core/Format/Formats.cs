@@ -56,7 +56,8 @@ namespace OpenUtau.Core.Format {
         /// </summary>
         /// <param name="files">Names of the files to be loaded</param>
         /// <param name="options">Format-specific import options (used for SVP)</param>
-        public static UProject? ReadProject(string[] files, ProjectImportOptions? options = null){
+        /// <param name="forceOpenNewer">Open .ustx even when ustx_version is newer than this build.</param>
+        public static UProject? ReadProject(string[] files, ProjectImportOptions? options = null, bool forceOpenNewer = false){
             if (files.Length < 1) {
                 return null;
             }
@@ -64,7 +65,7 @@ namespace OpenUtau.Core.Format {
             UProject? project = null;
             switch (format) {
                 case ProjectFormats.Ustx:
-                    project = Ustx.Load(files[0]);
+                    project = Ustx.Load(files[0], forceOpenNewer);
                     break;
                 case ProjectFormats.Vsq3:
                 case ProjectFormats.Vsq4:
@@ -95,8 +96,9 @@ namespace OpenUtau.Core.Format {
         /// Load project from files.
         /// </summary>
         /// <param name="files">Names of the files to be loaded</param>
-        public static void LoadProject(string[] files, ProjectImportOptions? options = null) {
-            UProject project = ReadProject(files, options);
+        /// <param name="forceOpenNewer">Open .ustx even when ustx_version is newer than this build.</param>
+        public static void LoadProject(string[] files, ProjectImportOptions? options = null, bool forceOpenNewer = false) {
+            UProject project = ReadProject(files, options, forceOpenNewer);
             if (project != null) {
                 DocManager.Inst.ExecuteCmd(new LoadProjectNotification(project));
             }
@@ -108,7 +110,7 @@ namespace OpenUtau.Core.Format {
         /// </summary>
         /// <param name="files">Names of the files to be loaded</param>
         /// <returns></returns>
-        public static UProject[] ReadProjects(string[] files, ProjectImportOptions? options = null){
+        public static UProject[] ReadProjects(string[] files, ProjectImportOptions? options = null, bool forceOpenNewer = false){
             if (files == null || files.Length < 1) {
                 return new UProject[0];
             }
@@ -116,7 +118,7 @@ namespace OpenUtau.Core.Format {
                 .Select(file => {
                     var format = DetectProjectFormat(file);
                     var fileOptions = format == ProjectFormats.Svp ? options : null;
-                    return ReadProject(new string[] { file }, fileOptions);
+                    return ReadProject(new string[] { file }, fileOptions, forceOpenNewer);
                 })
                 .Where(p => p != null)
                 .Cast<UProject>()

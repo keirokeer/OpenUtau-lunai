@@ -144,7 +144,7 @@ namespace OpenUtau.Core.Format {
             }
         }
 
-        public static UProject Load(string filePath) {
+        public static UProject Load(string filePath, bool forceOpenNewer = false) {
             string text = File.ReadAllText(filePath, Encoding.UTF8);
             UProject project = Yaml.DefaultDeserializer.Deserialize<UProject>(text);
             AddDefaultExpressions(project);
@@ -152,13 +152,19 @@ namespace OpenUtau.Core.Format {
             project.Saved = true;
             project.AfterLoad();
             project.ValidateFull();
-            if (project.ustxVersion > kUstxVersion) {
-                throw new MessageCustomizableException($"Project file is newer than software: {filePath}", $"<translate:errors.failed.opennewerproject>:\n{filePath}", new FileFormatException("Project file is newer than software."));
+            // Missing ustx_version → treat as oldest and run upgrade steps below.
+            var fileVersion = project.ustxVersion ?? new Version(0, 0);
+            if (fileVersion > kUstxVersion) {
+                if (!forceOpenNewer) {
+                    throw new ProjectVersionTooNewException(filePath, fileVersion, kUstxVersion);
+                }
+                Log.Warning(
+                    "Opening project newer than this build supports: file={FileVersion}, supported={SupportedVersion}, path={Path}",
+                    fileVersion, kUstxVersion, filePath);
+            } else if (fileVersion < kUstxVersion) {
+                Log.Information($"Upgrading project from {fileVersion} to {kUstxVersion}");
             }
-            if (project.ustxVersion < kUstxVersion) {
-                Log.Information($"Upgrading project from {project.ustxVersion} to {kUstxVersion}");
-            }
-            if (project.ustxVersion < new Version(0, 4)) {
+            if (fileVersion < new Version(0, 4)) {
                 if (project.expressions.TryGetValue("acc", out var exp) && exp.name == "accent") {
                     project.expressions.Remove("acc");
                     exp.abbr = ATK;
@@ -175,7 +181,7 @@ namespace OpenUtau.Core.Format {
                     project.ValidateFull();
                 }
             }
-            if (project.ustxVersion < new Version(0, 5)) {
+            if (fileVersion < new Version(0, 5)) {
                 project.parts
                     .Where(part => part is UVoicePart)
                     .Select(part => part as UVoicePart)
@@ -185,14 +191,14 @@ namespace OpenUtau.Core.Format {
                     .ForEach(note => note.lyric = note.lyric.Replace("...", "+"));
                 project.ValidateFull();
             }
-            if (project.ustxVersion < new Version(0, 6)) {
+            if (fileVersion < new Version(0, 6)) {
 #pragma warning disable CS0612 // Type or member is obsolete
                 project.timeSignatures = new List<UTimeSignature> { new UTimeSignature(0, project.beatPerBar, project.beatUnit) };
                 project.tempos = new List<UTempo> { new UTempo(0, project.bpm) };
 #pragma warning restore CS0612 // Type or member is obsolete
                 project.ValidateFull();
             }
-            if (project.ustxVersion < new Version(0, 7)) {
+            if (fileVersion < new Version(0, 7)) {
                 var expSelectors = new UProject().expSelectors;
                 if (project.expSelectors.Length < expSelectors.Length) {
                     for (int i = 0; i < project.expSelectors.Length; i++) {

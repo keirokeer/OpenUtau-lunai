@@ -79,6 +79,16 @@
   <system:String x:Key="dialogs.importproject.timesig">Time signatures</system:String>
   <system:String x:Key="dialogs.messagebox.openlink">Open download page</system:String>
   <system:String x:Key="dialogs.messagebox.openpackages">Package Manager</system:String>
+  <system:String x:Key="dialogs.project.versiontoonew.caption">Incompatible project version</system:String>
+  <system:String x:Key="dialogs.project.versiontoonew.message">This project was saved with a newer ustx format than this OpenUtau Lunai build supports.
+
+Project version: {0}
+Supported version: {1}
+File: {2}
+
+You can still open it. Unknown fields from the newer format may be ignored, and some data can be lost. After opening, save the project to adapt it to this version.</system:String>
+  <system:String x:Key="dialogs.project.versiontoonew.openanyway">Open anyway</system:String>
+  <system:String x:Key="errors.failed.opennewerproject">This project uses a newer ustx format than this OpenUtau build supports</system:String>
   <system:String x:Key="dialogs.reportissue.discord.description">Join our server and describe the bug in #help. Attach a log from Help → Open Logs Location if needed.</system:String>
   <system:String x:Key="dialogs.reportissue.discord.open">Open Discord</system:String>
   <system:String x:Key="dialogs.reportissue.discord.title">Discord</system:String>

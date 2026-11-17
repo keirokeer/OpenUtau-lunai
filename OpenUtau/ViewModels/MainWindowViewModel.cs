@@ -295,14 +295,14 @@ namespace OpenUtau.App.ViewModels {
 
 
 
-        public void OpenProject(string[] files, Core.Format.ProjectImportOptions? importOptions = null) {
+        public void OpenProject(string[] files, Core.Format.ProjectImportOptions? importOptions = null, bool forceOpenNewer = false) {
             if (files == null) {
                 return;
             }
             DocManager.Inst.ExecuteCmd(new LoadingNotification(typeof(MainWindow), true, "project"));
             try {
 
-                Core.Format.Formats.LoadProject(files, importOptions);
+                Core.Format.Formats.LoadProject(files, importOptions, forceOpenNewer);
                 DocManager.Inst.ExecuteCmd(new VoiceColorRemappingNotification(-1, true));
                 this.RaisePropertyChanged(nameof(Title));
             } finally {

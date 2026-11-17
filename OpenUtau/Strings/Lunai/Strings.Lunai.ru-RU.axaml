@@ -79,6 +79,16 @@
   <system:String x:Key="dialogs.importproject.timesig">Размеры такта</system:String>
   <system:String x:Key="dialogs.messagebox.openlink">Открыть страницу загрузки</system:String>
   <system:String x:Key="dialogs.messagebox.openpackages">Менеджер пакетов</system:String>
+  <system:String x:Key="dialogs.project.versiontoonew.caption">Несовместимая версия проекта</system:String>
+  <system:String x:Key="dialogs.project.versiontoonew.message">Этот проект сохранён в более новом формате ustx, чем поддерживает эта сборка OpenUtau Lunai.
+
+Версия проекта: {0}
+Поддерживаемая версия: {1}
+Файл: {2}
+
+Можно открыть его всё равно. Поля из более нового формата могут быть проигнорированы, часть данных может потеряться. После открытия сохраните проект, чтобы адаптировать его под эту версию.</system:String>
+  <system:String x:Key="dialogs.project.versiontoonew.openanyway">Всё равно открыть</system:String>
+  <system:String x:Key="errors.failed.opennewerproject">Проект использует более новый формат ustx, чем поддерживает эта сборка OpenUtau</system:String>
   <system:String x:Key="dialogs.reportissue.discord.description">Зайдите на сервер и опишите баг в #help. Лог можно взять через Справка → Открыть расположение логов.</system:String>
   <system:String x:Key="dialogs.reportissue.discord.open">Открыть Discord</system:String>
   <system:String x:Key="dialogs.reportissue.discord.title">Discord</system:String>

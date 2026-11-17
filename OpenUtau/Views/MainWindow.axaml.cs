@@ -446,7 +446,7 @@ namespace OpenUtau.App.Views {
                 if (ContainsSvpFile(files) && importOptions == null) {
                     return;
                 }
-                viewModel.OpenProject(files, importOptions);
+                await OpenProjectWithVersionPromptAsync(files, importOptions);
                 viewModel.Page = 1;
             } catch (Exception e) {
                 Log.Error(e, $"Failed to open files {string.Join("\n", files)}");
@@ -2320,9 +2320,15 @@ namespace OpenUtau.App.Views {
             }
         }
 
-        public void OnWelcomeRecovery(object sender, RoutedEventArgs args) {
-            viewModel.OpenProject(new string[] { viewModel.RecoveryPath });
-            viewModel.Page = 1;
+        public async void OnWelcomeRecovery(object sender, RoutedEventArgs args) {
+            try {
+                await OpenProjectWithVersionPromptAsync(new[] { viewModel.RecoveryPath });
+                viewModel.Page = 1;
+            } catch (Exception e) {
+                Log.Error(e, "Failed to open recovery project");
+                _ = await MessageBox.ShowError(this, new MessageCustomizableException(
+                    "Failed to open file", "<translate:errors.failed.openfile>", e));
+            }
         }
 
         void MergePart(UPart part) {
@@ -2652,7 +2658,24 @@ namespace OpenUtau.App.Views {
                     return;
                 }
             }
-            var loaded = Formats.ReadProjects(files, svpOptions);
+            UProject[] loaded;
+            try {
+                loaded = Formats.ReadProjects(files, svpOptions);
+            } catch (Exception e) when (TryGetProjectVersionTooNew(e, out var tooNew)) {
+                var result = await MessageBox.Show(
+                    this,
+                    string.Format(
+                        ThemeManager.GetString("dialogs.project.versiontoonew.message"),
+                        tooNew!.ProjectVersion,
+                        tooNew.SupportedVersion,
+                        tooNew.FilePath),
+                    ThemeManager.GetString("dialogs.project.versiontoonew.caption"),
+                    MessageBox.MessageBoxButtons.OpenAnywayCancel);
+                if (result != MessageBox.MessageBoxResult.Yes) {
+                    return;
+                }
+                loaded = Formats.ReadProjects(files, svpOptions, forceOpenNewer: true);
+            }
             if (loaded.Length == 0) {
                 return;
             }
@@ -2695,7 +2718,7 @@ namespace OpenUtau.App.Views {
                     if (ContainsSvpFile(projectFiles) && importOptions == null) {
                         return;
                     }
-                    viewModel.OpenProject(projectFiles, importOptions);
+                    await OpenProjectWithVersionPromptAsync(projectFiles, importOptions);
                 } catch (Exception e) {
                     Log.Error(e, "Failed to open dropped project");
                     _ = await MessageBox.ShowError(this, new MessageCustomizableException("Failed to open file", "<translate:errors.failed.openfile>", e));
@@ -2727,6 +2750,71 @@ namespace OpenUtau.App.Views {
             }
         }
 
+        /// <summary>
+        /// Opens a project; if ustx_version is newer than this build, asks to open anyway.
+        /// </summary>
+        async Task OpenProjectWithVersionPromptAsync(
+                string[] files,
+                ProjectImportOptions? importOptions = null) {
+            try {
+                viewModel.OpenProject(files, importOptions);
+            } catch (Exception e) when (TryGetProjectVersionTooNew(e, out var tooNew)) {
+                await PromptOpenNewerProjectAsync(tooNew!, importOptions);
+            }
+        }
+
+        async Task PromptOpenNewerProjectAsync(
+                ProjectVersionTooNewException tooNew,
+                ProjectImportOptions? importOptions = null) {
+            string message = string.Format(
+                ThemeManager.GetString("dialogs.project.versiontoonew.message"),
+                tooNew.ProjectVersion,
+                tooNew.SupportedVersion,
+                tooNew.FilePath);
+            var result = await MessageBox.Show(
+                this,
+                message,
+                ThemeManager.GetString("dialogs.project.versiontoonew.caption"),
+                MessageBox.MessageBoxButtons.OpenAnywayCancel);
+            if (result != MessageBox.MessageBoxResult.Yes) {
+                return;
+            }
+            try {
+                viewModel.OpenProject(new[] { tooNew.FilePath }, importOptions, forceOpenNewer: true);
+                viewModel.Page = 1;
+            } catch (Exception e) {
+                Log.Error(e, "Failed to force-open newer project {Path}", tooNew.FilePath);
+                _ = await MessageBox.ShowError(this, new MessageCustomizableException(
+                    $"Failed to open file {tooNew.FilePath}",
+                    $"<translate:errors.failed.openfile>: {tooNew.FilePath}",
+                    e));
+            }
+        }
+
+        static bool TryGetProjectVersionTooNew(Exception? e, out ProjectVersionTooNewException? tooNew) {
+            tooNew = null;
+            while (e != null) {
+                if (e is ProjectVersionTooNewException found) {
+                    tooNew = found;
+                    return true;
+                }
+                if (e is MessageCustomizableException mce) {
+                    e = mce.SubstanceException;
+                    continue;
+                }
+                if (e is AggregateException ae) {
+                    foreach (var inner in ae.Flatten().InnerExceptions) {
+                        if (TryGetProjectVersionTooNew(inner, out tooNew)) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+                e = e.InnerException;
+            }
+            return false;
+        }
+
         public void OnNext(UCommand cmd, bool isUndo) {
             // Errors from missing packages become an offer to install them.
             var missingPackages = MissingPackageException.Collect((cmd as ErrorMessageNotification)?.e ?? (cmd as ToastNotification)?.e);
@@ -2744,8 +2832,15 @@ namespace OpenUtau.App.Views {
                            ThemeManager.GetString("dialogs.noresampler.caption"),
                            MessageBox.MessageBoxButtons.Ok);
                         break;
+                    case ProjectVersionTooNewException tooNew:
+                        _ = PromptOpenNewerProjectAsync(tooNew);
+                        break;
                     default:
-                        MessageBox.ShowError(this, notif.e, notif.message, true);
+                        if (TryGetProjectVersionTooNew(notif.e, out var nestedTooNew)) {
+                            _ = PromptOpenNewerProjectAsync(nestedTooNew!);
+                        } else {
+                            MessageBox.ShowError(this, notif.e, notif.message, true);
+                        }
                         break;
                 }
             } else if (cmd is TrackChangeRenderSettingCommand renderSettingCmd && !isUndo) {

@@ -21,7 +21,7 @@ using SharpCompress;
 
 namespace OpenUtau.App.Views {
     public partial class MessageBox : Window {
-        public enum MessageBoxButtons { Ok, OkCancel, YesNo, YesNoCancel, OkCopy, DropProjectOpenImportCancel }
+        public enum MessageBoxButtons { Ok, OkCancel, YesNo, YesNoCancel, OkCopy, DropProjectOpenImportCancel, OpenAnywayCancel }
         public enum MessageBoxResult { Ok, Cancel, Yes, No, OpenPackageManager, OpenUrl }
 
         public MessageBox() {
@@ -186,6 +186,10 @@ namespace OpenUtau.App.Views {
                 AddButton(ThemeManager.GetString("dialogs.dropproject.open"), MessageBoxResult.Yes);
                 AddButton(ThemeManager.GetString("dialogs.dropproject.import"), MessageBoxResult.No);
                 AddButton(ThemeManager.GetString("dialogs.messagebox.cancel"), MessageBoxResult.Cancel, true);
+            }
+            if (buttons == MessageBoxButtons.OpenAnywayCancel) {
+                AddButton(ThemeManager.GetString("dialogs.project.versiontoonew.openanyway"), MessageBoxResult.Yes);
+                AddButton(ThemeManager.GetString("button.cancel"), MessageBoxResult.Cancel, true);
             }
 
             if (buttons == MessageBoxButtons.OkCancel || buttons == MessageBoxButtons.YesNoCancel)
