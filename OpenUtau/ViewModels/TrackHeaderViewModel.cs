@@ -296,11 +296,18 @@ namespace OpenUtau.App.ViewModels {
             if (singer is USinger selectedSinger) {
                 Log.Information($"Loading Singer: {selectedSinger.Name}");
                 DocManager.Inst.ExecuteCmd(new TrackChangeSingerCommand(DocManager.Inst.Project, targetTrack, selectedSinger));
-                if (!string.IsNullOrEmpty(selectedSinger.Id) &&
-                    Preferences.Default.SingerPhonemizers.TryGetValue(selectedSinger.Id, out var phonemizerName) &&
-                    TryChangePhonemizer(targetTrack, phonemizerName)) {
-                } else if (!string.IsNullOrEmpty(selectedSinger.DefaultPhonemizer)) {
-                    TryChangePhonemizer(targetTrack, selectedSinger.DefaultPhonemizer);
+                var currentFactory = PhonemizerFactory.Get(targetTrack.Phonemizer.GetType());
+                // Keep the current phonemizer when the new singer still supports it
+                // (e.g. DiffSinger → DiffSinger with the same language phonemizer).
+                if (!IsPhonemizerAllowedForTrack(currentFactory, targetTrack)) {
+                    if (!string.IsNullOrEmpty(selectedSinger.Id) &&
+                        Preferences.Default.SingerPhonemizers.TryGetValue(selectedSinger.Id, out var phonemizerName) &&
+                        TryChangePhonemizer(targetTrack, phonemizerName)) {
+                    } else if (!string.IsNullOrEmpty(selectedSinger.DefaultPhonemizer)) {
+                        TryChangePhonemizer(targetTrack, selectedSinger.DefaultPhonemizer);
+                    } else {
+                        TryChangePhonemizer(targetTrack, currentFactory?.Id ?? string.Empty);
+                    }
                 }
                 if (!selectedSinger.Found || targetTrack.RendererSettings.Renderer is Core.Render.SineRenderer || selectedSinger.SingerType != targetTrack.RendererSettings.Renderer?.SingerType) {
                     var settings = new URenderSettings();
