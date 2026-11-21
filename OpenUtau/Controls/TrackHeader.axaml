@@ -159,10 +159,10 @@
       </ContextMenu.DataTemplates>
     </ContextMenu>
   </UserControl.Resources>
-  <Border Margin="2,1,2,1" BorderThickness="0"
+  <Border Margin="2,1,2,1" BorderThickness="0" ClipToBounds="True"
            Background="{Binding HeaderBackgroundBrush}"
            CornerRadius="6,0,0,6" PointerPressed="HeaderPointerPressed">
-    <Grid ColumnDefinitions="16,auto,*,auto" Background="Transparent">
+    <Grid ColumnDefinitions="16,auto,*,auto" Background="Transparent" ClipToBounds="True">
       <Border x:Name="TrackNoStripe" Grid.Column="0" Classes="trackNoStripe"
               Width="16" VerticalAlignment="Stretch"
               Background="{Binding TrackAccentColor}" CornerRadius="6,0,0,6"
@@ -269,9 +269,9 @@
                 Data="m 12.001453,14.34 a 2.35,2.35 0 0 1 -2.34,-2.34 2.35,2.35 0 0 1 2.34,-2.34 2.35,2.35 0 0 1 2.35,2.34 2.35,2.35 0 0 1 -2.35,2.35 m 4.98,-1.7 a 5.2,5.2 0 0 0 0,-1.32 l 1.41,-1.1 c 0.13,-0.1 0.16,-0.27 0.08,-0.42 l -1.34,-2.32 a 0.33,0.33 0 0 0 -0.4,-0.15 l -1.67,0.67 a 4.86,4.86 0 0 0 -1.14,-0.65 l -0.25,-1.78 a 0.34,0.34 0 0 0 -0.33,-0.28 h -2.68 c -0.17,0 -0.3,0.12 -0.33,0.28 l -0.25,1.78 c -0.42,0.16 -0.79,0.4 -1.14,0.65 l -1.66,-0.67 a 0.33,0.33 0 0 0 -0.41,0.15 l -1.34,2.32 a 0.33,0.33 0 0 0 0.08,0.43 l 1.41,1.09 a 5.73,5.73 0 0 0 0,1.32 l -1.41,1.11 a 0.33,0.33 0 0 0 -0.08,0.43 l 1.34,2.32 c 0.08,0.15 0.26,0.2 0.4,0.15 l 1.67,-0.68 c 0.35,0.27 0.71,0.5 1.14,0.66 l 0.25,1.78 c 0.02,0.16 0.16,0.28 0.33,0.28 h 2.68 c 0.17,0 0.3,-0.12 0.33,-0.28 l 0.25,-1.78 c 0.42,-0.17 0.79,-0.4 1.14,-0.66 l 1.66,0.68 c 0.15,0.05 0.33,0 0.41,-0.15 l 1.34,-2.32 a 0.34,0.34 0 0 0 -0.08,-0.43 l -1.41,-1.1 z"/>
         </Button>
       </Grid>
-      <Grid x:Name="ChipLayoutGrid" Grid.Column="3"
-            RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,Auto">
-        <ToggleButton x:Name="MuteChip" Grid.Row="0" Grid.Column="0" Classes="trackChip trackMuteChip" Margin="1,3,3,1" Padding="0"
+      <Grid x:Name="ChipLayoutGrid" Grid.Column="3" ClipToBounds="True"
+            RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,Auto,Auto,Auto">
+        <ToggleButton x:Name="MuteChip" Grid.Row="0" Grid.Column="0" Classes="trackChip trackMuteChip" Margin="1" Padding="0"
                       IsChecked="{Binding Mute, Mode=OneWay}" Command="{Binding ToggleMute}">
           <ToolTip.Tip>
             <TextBlock Text="{DynamicResource tracks.mute}" Foreground="{DynamicResource ToolTipForegroundBrush}"/>
@@ -287,7 +287,7 @@
             </ContextMenu>
           </ToggleButton.ContextMenu>
         </ToggleButton>
-        <ToggleButton x:Name="SoloChip" Grid.Row="1" Grid.Column="0" Classes="trackChip trackSoloChip" Margin="1,1,3,1" Padding="0"
+        <ToggleButton x:Name="SoloChip" Grid.Row="1" Grid.Column="0" Classes="trackChip trackSoloChip" Margin="1" Padding="0"
                       IsChecked="{Binding Solo, Mode=OneWay}" Command="{Binding ToggleSolo}">
           <ToolTip.Tip>
             <TextBlock Text="{DynamicResource tracks.solo}" Foreground="{DynamicResource ToolTipForegroundBrush}"/>
@@ -302,7 +302,7 @@
             </ContextMenu>
           </ToggleButton.ContextMenu>
         </ToggleButton>
-        <Button x:Name="FxChip" Grid.Row="2" Grid.Column="0" Classes="trackChip trackFxChip" Margin="1,-1,3,1" Padding="0"
+        <Button x:Name="FxChip" Grid.Row="2" Grid.Column="0" Classes="trackChip trackFxChip" Margin="1" Padding="0"
                 Classes.fxOn="{Binding MixFxEnabled}"
                 Command="{Binding OpenMixFxDialog}">
           <ToolTip.Tip>
@@ -310,7 +310,7 @@
           </ToolTip.Tip>
           <TextBlock Classes="fxLabel" Text="fx" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </Button>
-        <Button x:Name="SettingsChip" Grid.Row="3" Grid.Column="0" Classes="trackChip trackSettingsChip" Margin="1,1,3,1" Padding="0"
+        <Button x:Name="SettingsChip" Grid.Row="3" Grid.Column="0" Classes="trackChip trackSettingsChip" Margin="1" Padding="0"
                 Click="TrackSettingsButtonClicked" IsVisible="False"
                 ToolTip.Tip="{DynamicResource tracks.tracksettings}">
           <Path Classes="filled" Width="24" Height="24"

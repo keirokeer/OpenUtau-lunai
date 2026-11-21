@@ -106,17 +106,15 @@ namespace OpenUtau.App.Controls {
                 return;
             }
 
-            const int muteRow = 0;
-            const int soloRow = 1;
-            const int fxRow = 2;
-            const int settingsRow = 3;
-
             bool settingsVisible = ViewModel?.IsTrackSettingsVisible == true;
+            // 24px chip + 1+1 margin; use a conservative step so reflow happens before overlap.
             double chipStep = ViewConstants.TrackHeaderChipStep;
-            double availableHeight = Math.Max(chipStep, TrackHeight - 2);
-            int maxRows = Math.Max(1, (int)(availableHeight / chipStep));
-            int requiredRows = settingsVisible ? 4 : 3;
-            bool settingsBesideSolo = settingsVisible && maxRows < requiredRows;
+            double height = TrackHeight > 0 ? TrackHeight : Height;
+            double availableHeight = Math.Max(chipStep, height - 2);
+            int maxRows = Math.Max(1, (int)Math.Floor(availableHeight / chipStep));
+            // Settings in the chip column only when a full vertical stack still fits.
+            int stackedChipCount = settingsVisible ? 4 : 3;
+            bool settingsBesideSolo = settingsVisible && maxRows < stackedChipCount;
 
             SettingsInlineChip.IsVisible = settingsBesideSolo;
             SettingsChip.IsVisible = settingsVisible && !settingsBesideSolo;
@@ -125,31 +123,19 @@ namespace OpenUtau.App.Controls {
                 : new Thickness(0);
             SettingsInlineChip.Margin = new Thickness(0, ViewConstants.TrackSettingsInlineTop, 0, 0);
 
-            Grid.SetRow(MuteChip, muteRow);
-            Grid.SetColumn(MuteChip, 0);
-            Grid.SetRow(SoloChip, soloRow);
-            Grid.SetColumn(SoloChip, 0);
-
-            if (!settingsBesideSolo && settingsVisible) {
-                Grid.SetRow(SettingsChip, settingsRow);
-                Grid.SetColumn(SettingsChip, 0);
+            // Place mute / solo / fx (and settings when in-column) top-to-bottom, then next column.
+            var chips = new List<Control> { MuteChip, SoloChip, FxChip };
+            if (settingsVisible && !settingsBesideSolo) {
+                chips.Add(SettingsChip);
             }
 
             int overflowColumns = 0;
-            if (maxRows < 2) {
-                int col = 1;
-                Grid.SetRow(SoloChip, 0);
-                Grid.SetColumn(SoloChip, col++);
-                Grid.SetRow(FxChip, 0);
-                Grid.SetColumn(FxChip, col);
-                overflowColumns = col;
-            } else if (maxRows < 3) {
-                Grid.SetRow(FxChip, soloRow);
-                Grid.SetColumn(FxChip, 1);
-                overflowColumns = 1;
-            } else {
-                Grid.SetRow(FxChip, fxRow);
-                Grid.SetColumn(FxChip, 0);
+            for (int i = 0; i < chips.Count; i++) {
+                int row = i % maxRows;
+                int col = i / maxRows;
+                Grid.SetRow(chips[i], row);
+                Grid.SetColumn(chips[i], col);
+                overflowColumns = Math.Max(overflowColumns, col);
             }
 
             double extraWidth = overflowColumns * chipStep;
