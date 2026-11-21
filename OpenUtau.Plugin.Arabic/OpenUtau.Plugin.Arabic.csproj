@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <LangVersion>12</LangVersion>
+    <SatelliteResourceLanguages>none</SatelliteResourceLanguages>
+    <DebugType>embedded</DebugType>
+    <AssemblyName>OpenUtau.Plugin.Arabic</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OpenUtau.Core\OpenUtau.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Data\arabic-mapping.json" />
+  </ItemGroup>
+
+</Project>

@@ -51,7 +51,7 @@ namespace OpenUtau.Api {
             factory = new PhonemizerFactory() {
                 type = type,
                 name = attr.Name,
-                tag = attr.Tag,
+                tag = NormalizeDisplayTag(attr.Tag),
                 author = attr.Author,
                 language = attr.Language,
             };
@@ -90,6 +90,30 @@ namespace OpenUtau.Api {
         }
 
         public static PhonemizerFactory[] GetAll() => orderedFactories;
+
+        /// <summary>
+        /// Map upstream/plugin DIFFS-style tags to Lunai list labels (e.g. Japanese, Korean+).
+        /// </summary>
+        static string NormalizeDisplayTag(string tag) {
+            if (string.Equals(tag, "DIFFS PL", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(tag, "DIFFS PL ", StringComparison.OrdinalIgnoreCase)) {
+                return "Polish";
+            }
+            if (string.Equals(tag, "DIFFS FI", StringComparison.OrdinalIgnoreCase)) {
+                return "Finnish";
+            }
+            if (string.Equals(tag, "DIFFS AR", StringComparison.OrdinalIgnoreCase)) {
+                return "Arabic";
+            }
+            if (string.Equals(tag, "DIFFS IS MULTI", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(tag, "DIFFS IS", StringComparison.OrdinalIgnoreCase)) {
+                return "Icelandic";
+            }
+            if (string.Equals(tag, "DIFFS JA+", StringComparison.OrdinalIgnoreCase)) {
+                return "Japanese+";
+            }
+            return tag;
+        }
 
         static bool LanguageEquals(string? language, string expected) {
             return string.Equals(language, expected, StringComparison.OrdinalIgnoreCase);

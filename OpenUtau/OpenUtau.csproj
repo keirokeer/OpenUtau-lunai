@@ -86,7 +86,26 @@
   <ItemGroup>
     <ProjectReference Include="..\OpenUtau.Core\OpenUtau.Core.csproj" />
     <ProjectReference Include="..\OpenUtau.Plugin.Builtin\OpenUtau.Plugin.Builtin.csproj" />
+    <!-- Build bundled language phonemizer plugins; DLLs are copied into output Plugins/. -->
+    <ProjectReference Include="..\OpenUtau.Plugin.Arabic\OpenUtau.Plugin.Arabic.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\OpenUtau.Plugin.Icelandic\OpenUtau.Plugin.Icelandic.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <!-- Prebuilt Polish DiffSinger phonemizer (+ readme). Arabic/Icelandic DLLs added by CopyBundledPhonemizerPlugins. -->
+    <None Include="Plugins\**\*" CopyToOutputDirectory="PreserveNewest" Link="Plugins\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+  <Target Name="CopyBundledPhonemizerPlugins" AfterTargets="Build">
+    <ItemGroup>
+      <_BundledPhonemizerDll Include="..\OpenUtau.Plugin.Arabic\bin\$(Configuration)\net10.0\OpenUtau.Plugin.Arabic.dll" Condition="Exists('..\OpenUtau.Plugin.Arabic\bin\$(Configuration)\net10.0\OpenUtau.Plugin.Arabic.dll')" />
+      <_BundledPhonemizerDll Include="..\OpenUtau.Plugin.Icelandic\bin\$(Configuration)\net10.0\OpenUtau.Plugin.Icelandic.dll" Condition="Exists('..\OpenUtau.Plugin.Icelandic\bin\$(Configuration)\net10.0\OpenUtau.Plugin.Icelandic.dll')" />
+    </ItemGroup>
+    <MakeDir Directories="$(OutputPath)Plugins" />
+    <Copy SourceFiles="@(_BundledPhonemizerDll)" DestinationFolder="$(OutputPath)Plugins" SkipUnchangedFiles="true" Condition="'@(_BundledPhonemizerDll)' != ''" />
+  </Target>
   <ItemGroup Condition="'$(Configuration)'=='DEBUG'">
     <None Include="..\runtimes\**" CopyToOutputDirectory="PreserveNewest" LinkBase="runtimes\" />
   </ItemGroup>

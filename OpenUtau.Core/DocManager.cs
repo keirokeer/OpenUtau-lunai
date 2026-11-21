@@ -131,6 +131,11 @@ namespace OpenUtau.Core {
                 if (File.Exists(oldBuiltin)) {
                     File.Delete(oldBuiltin);
                 }
+                // App-bundled plugins shipped next to the executable (Lunai language packs).
+                string bundledPlugins = Path.Combine(AppContext.BaseDirectory, "Plugins");
+                if (Directory.Exists(bundledPlugins)) {
+                    SearchPluginInternal(bundledPlugins, files);
+                }
                 SearchPluginInternal(PathManager.Inst.PluginsPath, files);
             } catch (Exception e) {
                 Log.Error(e, "Failed to search plugins.");

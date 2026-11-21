@@ -108,7 +108,7 @@ namespace OpenUtau.Core.G2p {
 }
 
 namespace OpenUtau.Core.DiffSinger {
-    [Phonemizer("DiffSinger Finnish Phonemizer", "DIFFS FI", "Superbox", "FI")]
+    [Phonemizer("DiffSinger Finnish Phonemizer", "Finnish", language: "DiffSinger", author: "Superbox")]
     public class DiffSingerFinnishPhonemizer : DiffSingerG2pPhonemizer {
         protected override string GetDictionaryName() => "dsdict-fi.yaml";
         
